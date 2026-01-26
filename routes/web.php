@@ -10,9 +10,9 @@ Route::get('/table', function () {
     return view('table.tables');
 })->name('table');
 
-Route::get('/login', function () {
-    return view('auth.login');
-})->name('login');
+// Route::get('/login', function () {
+//     return view('auth.login');
+// })->name('login');
 
 
 
