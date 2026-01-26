@@ -145,6 +145,16 @@ class UserSeeder extends Seeder
         ]);
         $operatorMulti->assignRole('operator multi');
 
+        // --- Buat user Designer ---
+        $operatorMulti = User::create([
+            'nama' => 'Designer',
+            'username' => 'designer',
+            'email' => 'designer@example.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangBjm->id,
+        ]);
+        $operatorMulti->assignRole('designer');
+
         // --- Buat user Gudang utama ---
         $admin = User::create([
             'nama' => 'gudang',

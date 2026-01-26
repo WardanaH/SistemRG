@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\MCabang;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Notifiable;
@@ -20,4 +21,9 @@ class User extends Authenticatable
         'password',
         'cabang_id',
     ];
+
+    public function cabang()
+    {
+        return $this->belongsTo(MCabang::class, 'cabang_id');
+    }
 }
