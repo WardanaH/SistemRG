@@ -15,3 +15,23 @@ Route::get('/login', function () {
 })->name('login');
 
 
+
+// require route
+require __DIR__.'/auth.php';
+require __DIR__.'/manajemen.php';
+require __DIR__.'/operator.php';
+require __DIR__.'/designer.php';
+
+Route::get('/', function () {
+    $user = auth()->user();
+
+    if ($user->hasRole('manajemen')) {
+        return redirect()->route('manajemen.dashboard');
+    } elseif ($user->hasRole('operator indoor') || $user->hasRole('operator outdoor') || $user->hasRole('operator multi')) {
+        return redirect()->route('operator.dashboard');
+    } elseif ($user->hasRole('designer')) {
+        return redirect()->route('designer.dashboard');
+    }
+
+    return redirect()->route('auth.index');
+})->middleware('auth')->name('home');

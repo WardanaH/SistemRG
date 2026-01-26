@@ -4,62 +4,93 @@ namespace App\Http\Controllers;
 
 use App\Models\MCabang;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class MCabangController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        //
+        $cabangs = MCabang::paginate(15);
+        return view('spk.manajemen.cabang', compact('cabangs'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        //
+        return view('admin.cabangs.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
+        try {
+            $request->validate([
+                'kode' => 'required|string|max:20|unique:m_cabangs',
+                'nama' => 'required|string|max:255',
+                'email' => 'nullable|email',
+                'telepon' => 'nullable|string|max:20',
+                'alamat' => 'nullable|string',
+                'jenis' => 'required|in:pusat,cabang',
+            ]);
+            // dd($request->all());
+
+            MCabang::create(
+                [
+                    'kode' => $request->input('kode'),
+                    'nama' => $request->input('nama'),
+                    'slug' => str_replace(' ', '-', strtolower($request->input('nama'))),
+                    'email' => $request->input('email'),
+                    'telepon' => $request->input('telepon'),
+                    'alamat' => $request->input('alamat'),
+                    'jenis' => $request->input('jenis'),
+                ]
+            );
+
+            $isi = auth()->user()->username . " telah menambahkan cabang baru." . $request->input('nama');
+            $this->log($isi, "Penambahan");
+
+            return redirect()->route('manajemen.cabang')->with('success', 'Cabang berhasil dibuat.');
+        } catch (\Exception $e) {
+            Log::error('Gagal membuat cabang: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Gagal membuat cabang!');
+        }
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(MCabang $mCabang)
+    public function edit(MCabang $cabang)
     {
-        //
+        return view('admin.cabangs.edit', compact('cabang'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(MCabang $mCabang)
+    public function update(Request $request, MCabang $cabang)
     {
-        //
+        $validated = $request->validate([
+            'kode' => 'required|string|max:20|unique:cabangs,kode,' . $cabang->id,
+            'nama' => 'required|string|max:255',
+            'email' => 'nullable|email',
+            'telepon' => 'nullable|string|max:20',
+            'alamat' => 'nullable|string',
+        ]);
+
+        $cabang->update($validated);
+
+        $isi = auth()->user()->username . " telah mengedit cabang " . $cabang->nama . ".";
+        $this->log($isi, "Pengubahan");
+
+        return redirect()
+            ->route('manajemen.cabang')
+            ->with('success', 'Cabang berhasil diperbarui.');
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, MCabang $mCabang)
+    public function destroy(MCabang $cabang)
     {
-        //
-    }
+        try {
+            $isi = auth()->user()->username . " telah menghapus cabang " . $cabang->nama . ".";
+            $this->log($isi, "Penghapusan");
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(MCabang $mCabang)
-    {
-        //
+            $cabang->delete();
+
+            return redirect()->route('manajemen.cabang')->with('success', 'Cabang dihapus.');
+        } catch (\Throwable $th) {
+            Log::error('Gagal menghapus cabang: ' . $th->getMessage());
+            return redirect()->back()->with('error', 'Gagal menghapus cabang!');
+        }
     }
 }
