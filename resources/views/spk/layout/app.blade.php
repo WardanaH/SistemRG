@@ -1,50 +1,114 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SPK Restu Guru Promosindo</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>@yield('title', 'Dashboard')</title>
+
+    <!-- Fonts & Icons -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,900">
+    <link href="{{ asset('assets/css/nucleo-icons.css') }}" rel="stylesheet">
+    <link href="{{ asset('assets/css/nucleo-svg.css') }}" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/42d5adcbca.js" crossorigin="anonymous"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+
+    <!-- CSS -->
+    @stack('styles')
+    <link href="{{ asset('assets/css/material-dashboard.css?v=3.0.0') }}" rel="stylesheet">
+
+    <!-- Select2 -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
     <style>
-        /* CSS tambahan agar sidebar full height */
-        .wrapper {
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
+        /* ===============================
+        SELECT2 GLOBAL - MATERIAL LOOK
+        ================================ */
+        .select2-container {
+            width: 100% !important;
         }
-        .main-content {
-            flex: 1;
+
+        .select2-container--default .select2-selection--single {
+            height: 40px;
+            border-radius: 0.4rem;
+            /* border: 1px solid #1a73e8; */
+            padding: 8px 12px;
             display: flex;
+            align-items: center;
+            background-color: #fff;
         }
-        .sidebar-container {
-            min-width: 250px;
-            max-width: 250px;
-            min-height: calc(100vh - 56px); /* Mengurangi tinggi header */
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            padding-left: 0;
+            color: #344767;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 45px;
+        }
+
+        /* focus */
+        .select2-container--open .select2-selection--single {
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 0.15rem rgba(26, 115, 232, 0.25);
+        }
+
+        .select2-dropdown {
+            border-radius: 0.75rem !important;
+            border: 1px solid #1a73e8 !important;
         }
     </style>
 </head>
-<body>
 
-    <div class="wrapper">
-        @include('spk.layout.header')
+<body class="g-sidenav-show bg-gray-200">
 
-        <div class="container-fluid p-0">
-            <div class="row g-0">
-                <div class="col-auto bg-dark text-white sidebar-container">
-                    @include('spk.layout.sidebar')
-                </div>
+    @include('spk.layout.sidebar')
 
-                <main class="col p-4 bg-light">
-                    @yield('content')
-                </main>
-            </div>
+    <main class="main-content position-relative max-height-vh-100 h-100 border-radius-lg">
+        @include('spk.layout.navbar')
+
+        <div class="container-fluid py-4">
+            @yield('content')
+            @include('spk.layout.footer')
         </div>
+    </main>
 
-        @include('spk.layout.footer')
-    </div>
+    <!-- Core JS -->
+    <script src="{{ asset('assets/js/core/popper.min.js') }}"></script>
+    <script src="{{ asset('assets/js/core/bootstrap.min.js') }}"></script>
+    <script src="{{ asset('assets/js/plugins/perfect-scrollbar.min.js') }}"></script>
+    <script src="{{ asset('assets/js/plugins/smooth-scrollbar.min.js') }}"></script>
+    <script src="{{ asset('assets/js/plugins/chartjs.min.js') }}"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Material Dashboard -->
+    <script src="{{ asset('assets/js/material-dashboard.min.js?v=3.0.0') }}"></script>
+
+    <!-- Scrollbar Fix -->
+    <script>
+        if (navigator.platform.indexOf('Win') > -1 && document.querySelector('#sidenav-scrollbar')) {
+            Scrollbar.init(document.querySelector('#sidenav-scrollbar'), {
+                damping: '0.5'
+            });
+        }
+    </script>
+
+    <!-- select 2-->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+        $(function() {
+            $('.select2').select2({
+                width: '100%',
+                placeholder: 'Pilih data',
+                allowClear: true
+            });
+        });
+    </script>
+
+    @stack('scripts')
+
 </body>
+
 </html>

@@ -16,8 +16,9 @@ class UserController extends Controller
         $users = User::with('cabang', 'roles')->paginate(1000);
         $roles = Role::all();         // <-- pastikan ini ada
         $cabangs = MCabang::all();    // <-- dan ini juga
+        $title = 'Manajemen User';
 
-        return view('spk.manajemen.user', compact('users', 'roles', 'cabangs'));
+        return view('spk.manajemen.user', compact('users', 'roles', 'cabangs', 'title'));
     }
 
     public function create()

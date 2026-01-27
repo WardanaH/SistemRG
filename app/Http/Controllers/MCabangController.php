@@ -11,7 +11,8 @@ class MCabangController extends Controller
     public function index()
     {
         $cabangs = MCabang::paginate(15);
-        return view('spk.manajemen.cabang', compact('cabangs'));
+        $title = 'Manajemen Cabang';
+        return view('spk.manajemen.cabang', compact('cabangs', 'title'));
     }
 
     public function create()

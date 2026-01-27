@@ -1,59 +1,86 @@
-<div class="d-flex flex-column p-3 text-white h-100">
-    <ul class="nav nav-pills flex-column mb-auto">
+<aside class="sidenav navbar navbar-vertical navbar-expand-xs border-0 border-radius-xl my-3 fixed-start ms-3 bg-gradient-dark">
+    <div class="sidenav-header">
+        <i class="fas fa-times p-3 cursor-pointer text-white opacity-5 position-absolute end-0 top-0 d-none d-xl-none" id="iconSidenav"></i>
+        <a class="navbar-brand m-0" href="#">
+            <img src="{{ asset('assets/img/logo-ct.png') }}" class="navbar-brand-img h-100">
+            <span class="ms-1 font-weight-bold text-white">Material Dashboard</span>
+        </a>
+    </div>
 
-        <li class="nav-item mb-2">
-            <a href="{{ route('home') }}"
-                class="nav-link {{ request()->routeIs([
-                    'manajemen.dashboard',
-                    'operator.dashboard',
-                    'admin.dashboard',
-                    'designer.dashboard'
-                ]) ? 'active' : 'text-white' }}"
-                aria-current="page">
-                <i class="bi bi-speedometer2 me-2"></i>
-                Dashboard
-            </a>
-        </li>
+    <hr class="horizontal light mt-0 mb-2">
 
-        <hr class="text-white my-2">
-        <div class="text small fw-bold text-uppercase mb-1 ms-1">Manajemen {{ Auth::user()->roles->pluck('name')->first() }}</div>
+    <div class="collapse navbar-collapse w-auto">
+        <ul class="navbar-nav">
 
-        @hasrole('manajemen')
-        <li class="nav-item">
-            <a href="{{ route('manajemen.user') }}"
-                class="nav-link {{ request()->routeIs('manajemen.user*') ? 'active' : 'text-white' }}">
-                <i class="bi bi-people me-2"></i>
-                Manajemen User
-            </a>
-        </li>
+            <li class="nav-item">
+                <a class="nav-link text-white {{
+                    request()->routeIs(['manajemen.dashboard', 'operator.dashboard', 'admin.dashboard', 'designer.dashboard']) ? 'active bg-gradient-primary' : ''
+                    }}" href="{{ route('home') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons-round opacity-10">dashboard</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Dashboard</span>
+                </a>
+            </li>
 
-        <li class="nav-item">
-            <a href="{{ route('manajemen.cabang') }}"
-                class="nav-link {{ request()->routeIs('manajemen.cabang*') ? 'active' : 'text-white' }}">
-                <i class="bi bi-building me-2"></i>
-                Manajemen Cabang
-            </a>
-        </li>
-        @endhasrole
+            @hasrole('manajemen')
+            <li class="nav-item">
+                <a class="nav-link text-white {{
+                    request()->routeIs('manajemen.user') ? 'active bg-gradient-primary' : ''
+                    }}" href="{{ route('manajemen.user') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons-round opacity-10">person</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Manajemen User</span>
+                </a>
+            </li>
 
-        @hasrole('manajemen|operator indoor|operator outdoor|operator multi')
-        <li class="nav-item">
-            <a href="#"
-                class="nav-link {{ request()->routeIs('operator.barang*') ? 'active' : 'text-white' }}">
-                <i class="bi bi-box me-2"></i>
-                Manajemen Barang
-            </a>
-        </li>
-        @endhasrole
+            <li class="nav-item">
+                <a class="nav-link text-white {{
+                    request()->routeIs('manajemen.cabang') ? 'active bg-gradient-primary' : ''
+                    }}" href="{{ route('manajemen.cabang') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons-round opacity-10">location_on</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Manajemne Cabang</span>
+                </a>
+            </li>
 
-        @hasrole('manajemen|designer')
-        <li class="nav-item">
-            <a href="{{ route('designer.spk') }}"
-                class="nav-link {{ request()->routeIs('designer.spk*') ? 'active' : 'text-white' }}">
-                <i class="bi bi-box me-2"></i>
-                Manajemen SPK
-            </a>
-        </li>
-        @endhasrole
-    </ul>
-</div>
+            <li class="nav-item">
+                <a class="nav-link text-white {{
+                    request()->routeIs('manajemen.bahanbaku') ? 'active bg-gradient-primary' : ''
+                    }}" href="{{ route('manajemen.bahanbaku') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons-round opacity-10">inventory_2</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Manajemne Bahan Baku</span>
+                </a>
+            </li>
+            @endhasrole
+
+            @hasrole('manajemen|designer')
+            <li class="nav-item">
+                <a class="nav-link text-white {{
+                    request()->routeIs('designer.spk') ? 'active bg-gradient-primary' : ''
+                    }}" href="{{ route('designer.spk') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons-round opacity-10">work</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Buat SPK</span>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link text-white {{
+                    request()->routeIs('designer.spk.index') ? 'active bg-gradient-primary' : ''
+                    }}" href="{{ route('designer.spk.index') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons-round opacity-10">work</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Manajemen SPK</span>
+                </a>
+            </li>
+            @endhasrole
+        </ul>
+    </div>
+</aside>
