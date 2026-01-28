@@ -28,14 +28,17 @@ return new class extends Migration
             $table->integer('ukuran_lebar');
 
             // Relasi ke tabel m_bahan_bakus
+            $table->enum('status_spk', ['pending', 'acc', 'rejected']);
+            $table->text('alasan_pembatalan')->nullable();
+            $table->enum('status_produksi', ['pending', 'ongoing', 'done']);
+            $table->integer('kuantitas');
+            $table->string('finishing')->nullable(); // Tambahan: biasanya SPK butuh info finishing
+            $table->text('keterangan')->nullable(); // Text lebih panjang & nullable
+
             // Pastikan tabel 'm_bahan_bakus' sudah ada sebelum migration ini dijalankan
             $table->foreignId('bahan_id')
                 ->constrained('m_bahan_bakus')
                 ->onDelete('cascade');
-
-            $table->integer('kuantitas');
-            $table->string('finishing')->nullable(); // Tambahan: biasanya SPK butuh info finishing
-            $table->text('keterangan')->nullable(); // Text lebih panjang & nullable
 
             // Relasi ke Users (Designer)
             $table->foreignId('designer_id')

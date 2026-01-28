@@ -19,6 +19,7 @@ Route::get('/table', function () {
 // require route
 require __DIR__.'/auth.php';
 require __DIR__.'/manajemen.php';
+require __DIR__.'/admin.php';
 require __DIR__.'/operator.php';
 require __DIR__.'/designer.php';
 
@@ -31,6 +32,8 @@ Route::get('/', function () {
         return redirect()->route('operator.dashboard');
     } elseif ($user->hasRole('designer')) {
         return redirect()->route('designer.dashboard');
+    } elseif ($user->hasrole('admin')) {
+        return redirect()->route('admin.dashboard');
     }
 
     return redirect()->route('auth.index');

@@ -7,9 +7,9 @@ use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
-    Route::get('/manajemen/dashboard', [ManajemenController::class, 'index'])->name('manajemen.dashboard');
-    Route::get('/manajemen/user', [UserController::class, 'index'])->name('manajemen.user');
-    Route::post('/manajemen/user', [UserController::class, 'store'])->name('manajemen.user.store');
+    Route::get('/manajemen/dashboard', [ManajemenController::class, 'index'])->middleware('role:manajemen')->name('manajemen.dashboard');
+    Route::get('/manajemen/user', [UserController::class, 'index'])->middleware('role:manajemen')->name('manajemen.user');
+    Route::post('/manajemen/user', [UserController::class, 'store'])->middleware('role:manajemen')->name('manajemen.user.store');
     Route::get('/manajemen/user/{user}/edit', [UserController::class, 'edit'])->middleware('role:manajemen')->name('manajemen.user.edit');
     Route::post('/manajemen/user/{user}', [UserController::class, 'update'])->middleware('role:manajemen')->name('manajemen.user.update');
     Route::delete('/manajemen/user/{user}/delete', [UserController::class, 'destroy'])->middleware('role:manajemen')->name('manajemen.user.destroy');

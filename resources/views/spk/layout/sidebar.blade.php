@@ -58,26 +58,41 @@
             </li>
             @endhasrole
 
+            @hasrole('manajemen|designer|admin')
+            <li class="nav-item">
+                <a class="nav-link text-white {{
+                                request()->routeIs('spk.index') ? 'active bg-gradient-primary' : ''
+                                }}" href="{{ route('spk.index') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons-round opacity-10">book</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Manajemen SPK</span>
+                </a>
+            </li>
+            @endhasrole
+
             @hasrole('manajemen|designer')
             <li class="nav-item">
                 <a class="nav-link text-white {{
-                    request()->routeIs('designer.spk') ? 'active bg-gradient-primary' : ''
-                    }}" href="{{ route('designer.spk') }}">
+                    request()->routeIs('spk') ? 'active bg-gradient-primary' : ''
+                    }}" href="{{ route('spk') }}">
                     <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
                         <i class="material-icons-round opacity-10">work</i>
                     </div>
                     <span class="nav-link-text ms-1">Buat SPK</span>
                 </a>
             </li>
+            @endhasrole
 
+            @hasrole('manajemen|operator indoor|operator outdoor|operator multi')
             <li class="nav-item">
                 <a class="nav-link text-white {{
-                    request()->routeIs('designer.spk.index') ? 'active bg-gradient-primary' : ''
-                    }}" href="{{ route('designer.spk.index') }}">
+                                request()->routeIs('spk.produksi') ? 'active bg-gradient-primary' : ''
+                                }}" href="{{ route('spk.produksi') }}">
                     <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
-                        <i class="material-icons-round opacity-10">work</i>
+                        <i class="material-icons-round opacity-10">precision_manufacturing</i>
                     </div>
-                    <span class="nav-link-text ms-1">Manajemen SPK</span>
+                    <span class="nav-link-text ms-1">SPK Produksi</span>
                 </a>
             </li>
             @endhasrole

@@ -34,14 +34,14 @@
                     {{-- Judul & Tombol Tambah --}}
                     <div class="d-flex align-items-center">
                         <h6 class="text-white text-capitalize mb-0">Tabel Data SPK</h6>
-                        <a href="{{ route('designer.spk') }}" class="btn btn-sm btn-white text-primary ms-3 mb-0 d-flex align-items-center">
+                        <a href="{{ route('spk') }}" class="btn btn-sm btn-white text-primary ms-3 mb-0 d-flex align-items-center">
                             <i class="material-icons text-sm me-1">add</i> Buat Baru
                         </a>
                     </div>
 
                     {{-- SEARCH BAR (Desain Fixed / Anti-Numpuk) --}}
                     <div>
-                        <form action="{{ route('designer.spk.index') }}" method="GET">
+                        <form action="{{ route('spk.index') }}" method="GET">
                             <div class="bg-white rounded d-flex align-items-center px-2" style="height: 40px; min-width: 250px;">
                                 <i class="material-icons text-secondary text-sm">search</i>
                                 <input type="text"
@@ -52,7 +52,7 @@
                                     style="box-shadow: none !important; height: 100%; background: transparent;">
 
                                 @if(request('search'))
-                                <a href="{{ route('designer.spk.index') }}" class="text-danger d-flex align-items-center cursor-pointer" title="Reset">
+                                <a href="{{ route('spk.index') }}" class="text-danger d-flex align-items-center cursor-pointer" title="Reset">
                                     <i class="material-icons text-sm">close</i>
                                 </a>
                                 @endif
@@ -73,8 +73,10 @@
                                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-3">No. SPK / Tanggal</th>
                                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Pelanggan</th>
                                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Detail Order</th>
-                                <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Status</th>
+                                <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Jenis Order</th>
                                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">P. Jawab</th>
+                                <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Status SPK</th>
+                                <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Status Produksi</th>
                                 <th class="text-secondary opacity-7 text-end pe-4">Aksi</th>
                             </tr>
                         </thead>
@@ -121,9 +123,9 @@
                                     @if($spk->jenis_order_spk == 'outdoor')
                                     <span class="badge badge-sm bg-gradient-success">Outdoor</span>
                                     @elseif($spk->jenis_order_spk == 'indoor')
-                                    <span class="badge badge-sm bg-gradient-info">Indoor</span>
+                                    <span class="badge badge-sm bg-gradient-success">Indoor</span>
                                     @else
-                                    <span class="badge badge-sm bg-gradient-warning">Multi</span>
+                                    <span class="badge badge-sm bg-gradient-success">Multi</span>
                                     @endif
                                 </td>
 
@@ -132,33 +134,70 @@
                                     <div class="d-flex flex-column">
                                         <span class="text-xs text-secondary mb-0">
                                             <i class="material-icons text-xs me-1" style="font-size: 10px;">palette</i>
-                                            {{ Str::limit($spk->designer->name ?? '-', 10) }}
+                                            {{ Str::limit($spk->designer->nama ?? '-', 20) }}
                                         </span>
                                         <span class="text-xs text-secondary mb-0">
                                             <i class="material-icons text-xs me-1" style="font-size: 10px;">print</i>
-                                            {{ Str::limit($spk->operator->name ?? '-', 10) }}
+                                            {{ Str::limit($spk->operator->nama ?? '-', 20) }}
                                         </span>
                                     </div>
                                 </td>
 
-                                {{-- KOLOM 6: AKSI (BUTTONS) --}}
+                                {{-- KOLOM 6: Status SPK --}}
+                                <td class="align-middle text-center text-sm">
+                                    @if($spk->status_spk == 'pending')
+                                    <span class="badge badge-sm bg-gradient-warning">Pending</span>
+                                    @elseif($spk->status_spk == 'acc')
+                                    <span class="badge badge-sm bg-gradient-success">Acc</span>
+                                    @elseif($spk->status_spk == 'reject')
+                                    <span class="badge badge-sm bg-gradient-danger">Batal</span>
+                                    @endif
+                                </td>
+
+                                {{-- KOLOM 7: Status Produksi --}}
+                                <td class="align-middle text-center text-sm">
+                                    @if($spk->status_produksi == 'pending')
+                                    <span class="badge badge-sm bg-gradient-warning">Pending</span>
+                                    @elseif($spk->status_produksi == 'ongoing')
+                                    <span class="badge badge-sm bg-gradient-info">Proses</span>
+                                    @elseif($spk->status_produksi == 'done')
+                                    <span class="badge badge-sm bg-gradient-success">Selesai</span>
+                                    @endif
+                                </td>
+
+                                {{-- KOLOM 8: AKSI (BUTTONS) --}}
                                 <td class="align-middle text-end pe-4">
                                     <div class="d-flex justify-content-end align-items-center gap-2">
 
-                                        {{-- Tombol Cetak --}}
-                                        <a href="#" class="badge bg-gradient-primary text-white text-xs" data-toggle="tooltip" title="Cetak SPK" style="text-decoration: none;">
-                                            <i class="material-icons text-xs position-relative" style="top: 1px;">print</i> Cetak
+                                        @hasrole('manajemen|admin')
+                                        {{-- TOMBOL 1: UPDATE STATUS (MODAL) --}}
+                                        <button type="button"
+                                            class="badge bg-gradient-success border-0 text-white text-xs btn-modal-status"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalUpdateStatus"
+                                            data-id="{{ $spk->id }}"
+                                            data-no="{{ $spk->no_spk }}"
+                                            data-status="{{ $spk->status_spk }}"
+                                            data-toggle="tooltip"
+                                            title="Update Status Approval">
+                                            <i class="material-icons text-xs position-relative" style="top: 1px;">verified</i> Status
+                                        </button>
+                                        @endhasrole
+
+                                        {{-- TOMBOL 2: CETAK --}}
+                                        <a href="{{ route('manajemen.spk.cetak-spk', $spk->id) }}" target="_blank" class="badge bg-gradient-primary text-white text-xs" data-toggle="tooltip" title="Cetak SPK" style="text-decoration: none;">
+                                            <i class="material-icons text-xs position-relative" style="top: 1px;">print</i>
                                         </a>
 
-                                        {{-- Tombol Edit --}}
-                                        <a href="{{ route('designer.spk.edit', $spk->id) }}" class="badge bg-gradient-warning text-white text-xs" data-toggle="tooltip" title="Edit SPK" style="text-decoration: none;">
+                                        {{-- TOMBOL 3: EDIT DATA --}}
+                                        <a href="{{ route('spk.edit', $spk->id) }}" class="badge bg-gradient-warning text-white text-xs" data-toggle="tooltip" title="Edit Data" style="text-decoration: none;">
                                             <i class="material-icons text-xs position-relative" style="top: 1px;">edit</i>
                                         </a>
 
-                                        {{-- Tombol Hapus --}}
-                                        <form action="{{ route('designer.spk.destroy', $spk->id) }}" method="POST" class="d-inline delete-form m-0">
+                                        {{-- TOMBOL 4: HAPUS --}}
+                                        <form action="{{ route('spk.destroy', $spk->id) }}" method="POST" class="d-inline delete-form m-0">
                                             @csrf @method('DELETE')
-                                            <button type="button" class="badge bg-gradient-danger border-0 text-white text-xs btn-delete cursor-pointer" style="cursor: pointer;">
+                                            <button type="button" class="badge bg-gradient-danger border-0 text-white text-xs btn-delete cursor-pointer">
                                                 <i class="material-icons text-xs position-relative" style="top: 1px;">delete</i>
                                             </button>
                                         </form>
@@ -194,11 +233,51 @@
     </div>
 </div>
 
+<div class="modal fade" id="modalUpdateStatus" tabindex="-1" role="dialog" aria-labelledby="modalStatusLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title font-weight-normal" id="modalStatusLabel">Update Status SPK</h5>
+                <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <form id="formUpdateStatus" method="POST" action="">
+                @csrf
+                @method('PUT') <div class="modal-body">
+                    <p class="text-sm mb-3">Update status untuk No. SPK: <strong id="spkNoDisplay"></strong></p>
+
+                    <div class="input-group input-group-outline mb-3 is-filled">
+                        <select name="status_spk" id="selectStatus" class="form-control" style="appearance: auto; padding-left: 10px;">
+                            <option value="pending">Pending</option>
+                            <option value="acc">ACC (Setujui)</option>
+                            <option value="reject">Reject (Tolak)</option>
+                        </select>
+                    </div>
+
+                    {{--
+                    <div class="input-group input-group-outline mb-0">
+                        <label class="form-label">Catatan / Alasan (Opsional)</label>
+                        <input type="text" name="note" class="form-control">
+                    </div>
+                    --}}
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn bg-gradient-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn bg-gradient-success">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @endsection
 
 @push('scripts')
 <script>
     document.addEventListener("DOMContentLoaded", function() {
+        // 1. Logic SweetAlert Delete (Kode Lama Anda)
         const deleteButtons = document.querySelectorAll(".btn-delete");
         deleteButtons.forEach(btn => {
             btn.addEventListener("click", function() {
@@ -217,6 +296,31 @@
                         form.submit();
                     }
                 });
+            });
+        });
+
+        // 2. LOGIC MODAL STATUS (BARU)
+        const statusButtons = document.querySelectorAll(".btn-modal-status");
+        const modalForm = document.getElementById('formUpdateStatus');
+        const spkNoDisplay = document.getElementById('spkNoDisplay');
+        const selectStatus = document.getElementById('selectStatus');
+
+        statusButtons.forEach(btn => {
+            btn.addEventListener("click", function() {
+                // Ambil data dari tombol
+                let id = this.getAttribute('data-id');
+                let no = this.getAttribute('data-no');
+                let currentStatus = this.getAttribute('data-status');
+
+                // Update Teks di Modal
+                spkNoDisplay.textContent = no;
+                selectStatus.value = currentStatus; // Set dropdown sesuai status sekarang
+
+                // Update Action URL Form secara dinamis
+                // Ganti '0' dengan ID yang sebenarnya
+                let url = "{{ route('manajemen.spk.update-status', ':id') }}";
+                url = url.replace(':id', id);
+                modalForm.action = url;
             });
         });
     });

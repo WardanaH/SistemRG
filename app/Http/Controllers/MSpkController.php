@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use App\Models\MSpk;
 use App\Models\User;
 use App\Models\MBahanBaku;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\Builder;
 
 class MSpkController extends Controller
 {
@@ -73,44 +75,57 @@ class MSpkController extends Controller
         $spks = $query->latest()->paginate(10);
 
         return view('spk.designer.indexSpk', [
-            'title' => 'Daftar SPK',
+            'title' => 'Manajemen SPK',
             'spks' => $spks
         ]);
     }
 
     public function store(Request $request)
     {
-        // 1. Validasi
+        // --- 1. VALIDASI DATA ---
         $validated = $request->validate([
             'no_spk'          => 'required|unique:m_spks,no_spk',
-            'tanggal'         => 'required', // Nanti kita format ulang
+            'tanggal'         => 'required',
             'jenis_order'     => 'required|in:outdoor,indoor,multi',
-            'nama_pelanggan'  => 'required|string',
-            'no_telp'         => 'required|string',
+            'nama_pelanggan'  => 'required|string|max:255',
+
+            // Validasi Telepon: Wajib angka, min 10 digit, max 13 digit
+            'no_telp'         => 'required|numeric|digits_between:10,13',
+
             'nama_file'       => 'required|string',
-            'ukuran_p'        => 'required|numeric',
-            'ukuran_l'        => 'required|numeric',
-            'bahan_id'        => 'required|exists:m_bahan_bakus,id', // Ubah name="bahan" jadi bahan_id di view
+            'ukuran_p'        => 'required|numeric|min:0',
+            'ukuran_l'        => 'required|numeric|min:0',
+            'bahan_id'        => 'required|exists:m_bahan_bakus,id',
             'qty'             => 'required|integer|min:1',
             'finishing'       => 'nullable|string',
             'catatan'         => 'nullable|string',
-            'designer_id'     => 'required|exists:users,id', // Ubah name="designer" jadi designer_id
-            'operator_id'     => 'required|exists:users,id', // Ubah name="operator" jadi operator_id
+            'designer_id'     => 'required|exists:users,id',
+            'operator_id'     => 'required|exists:users,id',
+        ], [
+            // Custom Error Messages (Agar User Paham)
+            'no_telp.required'       => 'Nomor telepon wajib diisi.',
+            'no_telp.numeric'        => 'Nomor telepon harus berupa angka.',
+            'no_telp.digits_between' => 'Nomor WhatsApp tidak valid (harus 10-13 digit).',
+            'bahan_id.required'      => 'Silakan pilih bahan baku.',
+            'designer_id.required'   => 'Silakan pilih designer.',
+            'operator_id.required'   => 'Silakan pilih operator.',
         ]);
 
-        // dd($request->all());
+        // --- 2. FORMAT TANGGAL ---
+        // Ubah dari d-m-Y (View) ke Y-m-d (Database)
+        try {
+            $formattedDate = Carbon::createFromFormat('d-m-Y', $request->tanggal)->format('Y-m-d');
+        } catch (\Exception $e) {
+            $formattedDate = now()->format('Y-m-d');
+        }
 
-        // 2. Format Ulang Tanggal (Dari d-m-Y view ke Y-m-d database)
-        $date = \DateTime::createFromFormat('d-m-Y', $request->tanggal);
-        $formattedDate = $date ? $date->format('Y-m-d') : date('Y-m-d');
-
-        // 3. Simpan Data
+        // --- 3. SIMPAN KE DATABASE ---
         MSpk::create([
             'no_spk'          => $request->no_spk,
             'tanggal_spk'     => $formattedDate,
             'jenis_order_spk' => $request->jenis_order,
             'nama_pelanggan'  => $request->nama_pelanggan,
-            'no_telepon'      => $request->no_telp,
+            'no_telepon'      => $request->no_telp, // Pastikan kolom di DB 'no_telepon'
             'nama_file'       => $request->nama_file,
             'ukuran_panjang'  => $request->ukuran_p,
             'ukuran_lebar'    => $request->ukuran_l,
@@ -120,15 +135,121 @@ class MSpkController extends Controller
             'keterangan'      => $request->catatan,
             'designer_id'     => $request->designer_id,
             'operator_id'     => $request->operator_id,
-            'cabang_id'       => Auth::user()->cabang_id, // Otomatis dari user login
+            'cabang_id'       => Auth::user()->cabang_id, // Ambil otomatis dari user login
         ]);
 
-        return redirect()->route('designer.spk')->with('success', 'SPK Berhasil Dibuat!');
+        return redirect()->route('designer.spk.index')->with('success', 'SPK Berhasil Dibuat!');
     }
 
     public function destroy(MSpk $spk)
     {
         $spk->delete();
         return redirect()->route('designer.spk.index')->with('success', 'SPK Berhasil Dihapus!');
+    }
+
+    public function cetakSpk($id)
+    {
+        // Hanya ambil data SPK dan relasinya
+        $spk = MSpk::with(['bahan', 'designer', 'operator', 'cabang'])->findOrFail($id);
+
+        return view('spk.nota_spk.notaspk', compact('spk'));
+    }
+
+    public function updateStatus(Request $request, $id)
+    {
+        $request->validate([
+            'status_spk' => 'required|in:pending,acc,reject',
+        ]);
+
+        $spk = MSpk::findOrFail($id);
+        $spk->status_spk = $request->status_spk;
+
+        // Opsional: Jika status ACC, status produksi otomatis jadi ongoing?
+        if ($request->status_spk == 'acc') {
+            $spk->status_produksi = 'ongoing';
+        }
+
+        $spk->save();
+
+        return redirect()->back()->with('success', 'Status SPK berhasil diperbarui!');
+    }
+
+    public function operatorIndex(Request $request)
+    {
+        $user = Auth::user();
+
+        // 1. Query Dasar: Ambil SPK beserta relasinya
+        $query = MSpk::with(['bahan', 'designer', 'operator', 'cabang']);
+
+        // 2. Filter Wajib: Cabang, Status SPK (ACC), Status Produksi (Ongoing)
+        if ($user->cabang->jenis !== 'pusat') {
+            $query->where('cabang_id', $user->cabang_id);
+        }
+
+        $query->where('status_spk', 'acc')
+            ->where('status_produksi', 'ongoing');
+
+        // 3. Filter Berdasarkan Role Operator
+        // Logika: Jika user punya role 'operator indoor', tampilkan hanya order 'indoor', dst.
+        // Kita gunakan grouping (where function) untuk antisipasi jika user punya multiple role
+        $query->where(function (Builder $q) use ($user) {
+            $hasFilter = false;
+
+            if ($user->hasRole('operator indoor')) {
+                $q->orWhere('jenis_order_spk', 'indoor');
+                $hasFilter = true;
+            }
+
+            if ($user->hasRole('operator outdoor')) {
+                $q->orWhere('jenis_order_spk', 'outdoor');
+                $hasFilter = true;
+            }
+
+            if ($user->hasRole('operator multi')) {
+                $q->orWhere('jenis_order_spk', 'multi');
+                $hasFilter = true;
+            }
+
+            // Fallback: Jika user ditugaskan secara spesifik (by ID) meskipun jenisnya beda
+            $q->orWhere('operator_id', $user->id);
+
+            // Jika tidak punya role spesifik di atas (misal admin ngetest), tampilkan semua/kosongkan
+            if (!$hasFilter && !$user->hasRole('admin')) {
+                // Opsional: cegah akses atau tampilkan kosong
+                // $q->whereRaw('1 = 0');
+            }
+        });
+
+        // 4. Pencarian
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('no_spk', 'like', "%$search%")
+                    ->orWhere('nama_pelanggan', 'like', "%$search%");
+            });
+        }
+
+        $spks = $query->latest()->paginate(10);
+
+        return view('spk.operator.indexSpk', [
+            'title' => 'Produksi SPK',
+            'spks' => $spks
+        ]);
+    }
+
+    // Method untuk Operator Menyelesaikan Pekerjaan
+    public function selesaiProduksi($id)
+    {
+        $spk = MSpk::findOrFail($id);
+
+        // Validasi sederhana
+        if ($spk->status_spk != 'acc') {
+            return back()->with('error', 'SPK belum di-ACC!');
+        }
+
+        $spk->status_produksi = 'done';
+        $spk->save();
+
+        return back()->with('success', 'Status produksi berhasil diubah menjadi Selesai!');
     }
 }

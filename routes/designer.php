@@ -5,12 +5,32 @@ use App\Http\Controllers\MSpkController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
-    Route::get('/operator/dashboard', [DesignerController::class, 'index'])->name('designer.dashboard');
+    Route::get('/designer/dashboard', [DesignerController::class, 'index'])
+        ->name('designer.dashboard');
 
-    Route::get('/operator/spk/buat', [MSpkController::class, 'buat'])->name('designer.spk');
-    Route::get('/operator/spk', [MSpkController::class, 'index'])->name('designer.spk.index');
-    Route::post('/operator/spk', [MSpkController::class, 'store'])->name('designer.spk.store');
-    Route::get('/operator/spk/{spk}/edit', [MSpkController::class, 'edit'])->name('designer.spk.edit');
-    Route::delete('/operator/spk/{spk}', [MSpkController::class, 'update'])->name('designer.spk.update');
-    Route::delete('/operator/spk/{spk}/delete', [MSpkController::class, 'destroy'])->name('designer.spk.destroy');
+    Route::get('/spk/buat', [MSpkController::class, 'buat'])
+        ->middleware('role:manajemen|designer')
+        ->name('spk');
+    Route::get('/spk', [MSpkController::class, 'index'])
+        ->middleware('role:manajemen|designer|admin')
+        ->name('spk.index');
+    Route::post('/spk', [MSpkController::class, 'store'])
+        ->middleware('role:manajemen|designer')
+        ->name('spk.store');
+    Route::get('/spk/{spk}/edit', [MSpkController::class, 'edit'])
+        ->middleware('role:manajemen|designer')
+        ->name('spk.edit');
+    Route::delete('/spk/{spk}', [MSpkController::class, 'update'])
+        ->middleware('role:manajemen|designer')
+        ->name('spk.update');
+    Route::delete('/spk/{spk}/delete', [MSpkController::class, 'destroy'])
+        ->middleware('role:manajemen|designer')
+        ->name('spk.destroy');
+
+    Route::put('/manajemen/spk/update-status/{id}', [MSpkController::class, 'updateStatus'])
+        ->middleware('role:manajemen|admin')
+        ->name('manajemen.spk.update-status');
+    Route::get('/manajemen/spk/cetak-spk/{id}', [MSpkController::class, 'cetakSpk'])
+        ->middleware('role:manajemen|designer|admin|operator indoor|operator outdoor|operator multi')
+        ->name('manajemen.spk.cetak-spk');
 });
