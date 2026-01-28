@@ -12,6 +12,14 @@
         $pageTitle = 'Pengiriman Barang';
     } elseif (request()->routeIs('laporan.pengiriman*')) {
         $pageTitle = 'Laporan Pengiriman';
+    } elseif (request()->routeIs('gudangcabang.dashboard')) {
+        $pageTitle = 'Dashboard Cabang';
+    } elseif (request()->routeIs('gudangcabang.barang*')) {
+        $pageTitle = 'Data Barang Cabang';
+    } elseif (request()->routeIs('gudangcabang.penerimaan*')) {
+        $pageTitle = 'Penerimaan Barang';
+    } elseif (request()->routeIs('gudangcabang.laporan*')) {
+        $pageTitle = 'Laporan Penerimaan';
     } else {
         $pageTitle = 'Gudang Pusat';
     }
@@ -24,7 +32,13 @@
 
         <a class="navbar-brand m-0" href="{{ route('gudangpusat.dashboard') }}">
             <img src="{{ asset('assets/img/logo-ct.png') }}" class="navbar-brand-img h-100">
-            <span class="ms-1 font-weight-bold text-white">Gudang Pusat</span>
+            <span class="ms-1 font-weight-bold text-white">
+                @hasrole('inventory cabang')
+                    Gudang Cabang
+                @else
+                    Gudang Pusat
+                @endhasrole
+            </span>
         </a>
     </div>
 
@@ -36,6 +50,17 @@
             {{-- =====================
             DASHBOARD
             ===================== --}}
+            @hasrole('inventory cabang')
+            <li class="nav-item">
+                <a class="nav-link text-white {{ request()->routeIs('gudangcabang.dashboard') ? 'active bg-gradient-primary' : '' }}"
+                   href="{{ route('gudangcabang.dashboard') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons-round opacity-10">dashboard</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Dashboard Cabang</span>
+                </a>
+            </li>
+            @else
             <li class="nav-item">
                 <a class="nav-link text-white {{ request()->routeIs('gudangpusat.dashboard') ? 'active bg-gradient-primary' : '' }}"
                    href="{{ route('gudangpusat.dashboard') }}">
@@ -45,10 +70,22 @@
                     <span class="nav-link-text ms-1">Dashboard</span>
                 </a>
             </li>
+            @endhasrole
 
             {{-- =====================
             DATA BARANG
             ===================== --}}
+            @hasrole('inventory cabang')
+            <li class="nav-item">
+                <a class="nav-link text-white {{ request()->routeIs('gudangcabang.barang*') ? 'active bg-gradient-primary' : '' }}"
+                   href="{{ route('gudangcabang.barang') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons-round opacity-10">inventory_2</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Data Barang Cabang</span>
+                </a>
+            </li>
+            @else
             <li class="nav-item">
                 <a class="nav-link text-white {{ request()->routeIs('barang.pusat*') ? 'active bg-gradient-primary' : '' }}"
                    href="{{ route('barang.pusat') }}">
@@ -58,10 +95,40 @@
                     <span class="nav-link-text ms-1">Data Barang</span>
                 </a>
             </li>
+            @endhasrole
 
             {{-- =====================
-            PENGIRIMAN BARANG
+            PENERIMAAN BARANG (HANYA UNTUK CABANG)
             ===================== --}}
+            @hasrole('inventory cabang')
+            <li class="nav-item">
+                <a class="nav-link text-white {{ request()->routeIs('gudangcabang.penerimaan*') ? 'active bg-gradient-primary' : '' }}"
+                   href="{{ route('gudangcabang.penerimaan') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons-round opacity-10">assignment_turned_in</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Penerimaan Barang</span>
+                </a>
+            </li>
+
+            {{-- =====================
+            LAPORAN PENERIMAAN (HANYA UNTUK CABANG)
+            ===================== --}}
+            <li class="nav-item">
+                <a class="nav-link text-white {{ request()->routeIs('gudangcabang.laporan*') ? 'active bg-gradient-primary' : '' }}"
+                href="{{ route('gudangcabang.laporan.index') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons-round opacity-10">description</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Laporan Penerimaan</span>
+                </a>
+            </li>
+            @endhasrole
+
+            {{-- =====================
+            PENGIRIMAN BARANG (HANYA UNTUK GUDANG PUSAT)
+            ===================== --}}
+            @unlessrole('inventory cabang')
             <li class="nav-item">
                 <a class="nav-link text-white {{ request()->routeIs('pengiriman.pusat*') ? 'active bg-gradient-primary' : '' }}"
                    href="{{ route('pengiriman.pusat.index') }}">
@@ -73,17 +140,18 @@
             </li>
 
             {{-- =====================
-            LAPORAN PENGIRIMAN
+            LAPORAN PENGIRIMAN (HANYA UNTUK GUDANG PUSAT)
             ===================== --}}
             <li class="nav-item">
                 <a class="nav-link text-white {{ request()->routeIs('laporan.pengiriman*') ? 'active bg-gradient-primary' : '' }}"
-                href="{{ route('laporan.pengiriman.index') }}">
+                   href="{{ route('laporan.pengiriman.index') }}">
                     <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
                         <i class="material-icons-round opacity-10">description</i>
                     </div>
                     <span class="nav-link-text ms-1">Laporan Pengiriman</span>
                 </a>
             </li>
+            @endunlessrole
 
         </ul>
     </div>

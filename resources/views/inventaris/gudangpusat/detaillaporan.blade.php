@@ -28,72 +28,89 @@
                         <table class="table table-bordered">
                             <thead class="bg-light">
                                 <tr class="text-center">
-                                    <th style="width: 15%">Tanggal</th>
+                                    <th style="width: 12%">Tanggal</th>
                                     <th>Nama Barang</th>
                                     <th style="width: 10%">Jumlah</th>
                                     <th style="width: 10%">Satuan</th>
+                                    <th>Keterangan</th>
                                     <th style="width: 20%">Cabang Tujuan</th>
                                 </tr>
                             </thead>
 
                             <tbody>
                                 @forelse($pengiriman as $item)
-                                @php
-                                    $detail = $item->keterangan;
+                                    @php
+                                        $detail = $item->keterangan;
 
-                                    // Kalau bentuknya string (JSON)
-                                    if (is_string($detail)) {
-                                        $detail = json_decode($detail, true);
-                                    }
+                                        // Kalau bentuknya string (JSON)
+                                        if (is_string($detail)) {
+                                            $detail = json_decode($detail, true);
+                                        }
 
-                                    // Kalau hasil decode gagal
-                                    if (!is_array($detail)) {
-                                        $detail = [];
-                                    }
-                                @endphp
-
+                                        if (!is_array($detail)) {
+                                            $detail = [];
+                                        }
+                                    @endphp
 
                                     <tr>
+                                        {{-- Tanggal --}}
                                         <td class="text-center">
                                             {{ \Carbon\Carbon::parse($item->tanggal_pengiriman)->format('d-m-Y') }}
                                         </td>
 
                                         {{-- Nama Barang --}}
                                         <td>
-                                            @if(is_array($detail) && count($detail) > 0)
+                                            @if(count($detail) > 0)
                                                 @foreach($detail as $d)
-                                                    <div>{{ $d['nama_barang'] ?? '' }}</div>
+                                                    <div>{{ $d['nama_barang'] ?? '-' }}</div>
                                                 @endforeach
+                                            @else
+                                                -
                                             @endif
                                         </td>
 
                                         {{-- Jumlah --}}
                                         <td class="text-center">
-                                            @if(is_array($detail) && count($detail) > 0)
+                                            @if(count($detail) > 0)
                                                 @foreach($detail as $d)
-                                                    <div>{{ $d['jumlah'] ?? '' }}</div>
+                                                    <div>{{ $d['jumlah'] ?? '-' }}</div>
                                                 @endforeach
+                                            @else
+                                                -
                                             @endif
                                         </td>
 
                                         {{-- Satuan --}}
                                         <td class="text-center">
-                                            @if(is_array($detail) && count($detail) > 0)
+                                            @if(count($detail) > 0)
                                                 @foreach($detail as $d)
-                                                    <div>{{ $d['satuan'] ?? '' }}</div>
+                                                    <div>{{ $d['satuan'] ?? '-' }}</div>
                                                 @endforeach
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
+
+                                        {{-- Keterangan --}}
+                                        <td>
+                                            @if(count($detail) > 0)
+                                                @foreach($detail as $d)
+                                                    <div>{{ $d['keterangan'] ?? '-' }}</div>
+                                                @endforeach
+                                            @else
+                                                -
                                             @endif
                                         </td>
 
                                         {{-- Cabang Tujuan --}}
                                         <td>
-                                            {{ $item->cabangTujuan->nama ?? '' }}
+                                            {{ $item->cabangTujuan->nama ?? '-' }}
                                         </td>
                                     </tr>
 
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="text-center text-muted">
+                                        <td colspan="6" class="text-center text-muted">
                                             Tidak ada data pengiriman
                                         </td>
                                     </tr>

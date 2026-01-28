@@ -53,7 +53,7 @@ class AuthController extends Controller
                 $isi = Auth::user()
                     ->username . " telah login dicabang " . Auth::user()->cabang->nama . ".";
                 $this->log($isi, "Login");
-                return redirect()->route('templateinventaris.dashboard')
+                return redirect()->route('gudangcabang.dashboard')
                     ->with('success', 'Selamat datang kembali!');
             } elseif ($user->hasRole('manajemen')){
                 $isi = Auth::user()

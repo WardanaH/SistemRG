@@ -22,6 +22,7 @@ require __DIR__.'/manajemen.php';
 require __DIR__.'/operator.php';
 require __DIR__.'/designer.php';
 require __DIR__.'/gudang_pusat.php';
+require __DIR__.'/gudang_cabang.php';
 
 Route::get('/', function () {
     $user = auth()->user();

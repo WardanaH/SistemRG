@@ -98,16 +98,18 @@ class GudangPusatController extends Controller
                 continue;
             }
 
-            $barang = DB::table('gudang_barangs')
-                ->where('id', $item['gudang_barang_id'])
-                ->first();
+            $barang = MGudangBarang::find($item['gudang_barang_id']);
 
             if ($barang) {
                 $detailBarang[] = [
-                    'nama_barang' => $barang->nama_bahan,
-                    'jumlah' => $item['jumlah'],
-                    'satuan' => $barang->satuan ?? '-'
+                    'gudang_barang_id' => $barang->id,
+                    'nama_barang'      => $barang->nama_bahan,
+                    'jumlah'           => $item['jumlah'],
+                    'satuan'           => $barang->satuan ?? '-',
+                    'keterangan'       => $item['keterangan'] ?? null
                 ];
+
+                $barang->decrement('stok', $item['jumlah']);
             }
         }
 
