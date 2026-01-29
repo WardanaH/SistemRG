@@ -20,7 +20,7 @@ return new class extends Migration
             $table->enum('jenis_order_spk', ['outdoor', 'indoor', 'multi']);
 
             $table->string('nama_pelanggan');
-            $table->string('no_telepon'); // Perbaikan typo 'no_telpom'
+            $table->string('no_telepon')->nullable(); // Perbaikan typo 'no_telpom'
             $table->string('nama_file');
 
             // Detail Ukuran & Bahan

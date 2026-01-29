@@ -34,9 +34,12 @@
                     {{-- Judul & Tombol Tambah --}}
                     <div class="d-flex align-items-center">
                         <h6 class="text-white text-capitalize mb-0">Tabel Data SPK</h6>
+
+                        @hasrole('manajemen|designer')
                         <a href="{{ route('spk') }}" class="btn btn-sm btn-white text-primary ms-3 mb-0 d-flex align-items-center">
                             <i class="material-icons text-sm me-1">add</i> Buat Baru
                         </a>
+                        @endhasrole
                     </div>
 
                     {{-- SEARCH BAR (Desain Fixed / Anti-Numpuk) --}}

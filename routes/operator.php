@@ -15,4 +15,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/produksi/{id}/selesai', [MSpkController::class, 'selesaiProduksi'])
         ->middleware('role:manajemen|operator indoor|operator outdoor|operator multi')
         ->name('spk.selesai');
+    Route::get('/produksi/riwayat', [MSpkController::class, 'riwayat'])
+        ->middleware('role:manajemen|admin|operator indoor|operator outdoor|operator multi')
+        ->name('spk.riwayat');
 });

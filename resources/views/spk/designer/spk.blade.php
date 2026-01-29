@@ -98,7 +98,7 @@
                         <div class="col-md-6 mb-3">
                             <div class="input-group input-group-outline @error('no_telp') is-invalid @enderror">
                                 <label class="form-label">No. Telepon (WA)</label>
-                                <input type="number" name="no_telp" class="form-control" value="{{ old('no_telp') }}" required>
+                                <input type="number" name="no_telp" class="form-control" value="{{ old('no_telp') }}">
                             </div>
                             @error('no_telp')
                                 <div class="text-danger text-xs mt-1">
@@ -142,7 +142,7 @@
                             {{-- Dropdown Bahan --}}
                             <div class="col-md-3 mb-3">
                                 <div class="input-group input-group-outline @error('bahan_id') is-invalid @enderror">
-                                    <select name="bahan_id" class="form-control" style="appearance: auto; padding-left: 10px;" required>
+                                    <select class="select2" name="bahan_id" class="form-control" style="appearance: auto; padding-left: 10px;" required>
                                         <option value="" disabled selected>Pilih Bahan</option>
                                         @foreach($bahans as $bahan)
                                             <option value="{{ $bahan->id }}" {{ old('bahan_id') == $bahan->id ? 'selected' : '' }}>
@@ -189,7 +189,7 @@
                         {{-- Dropdown Designer --}}
                         <div class="col-md-6 mb-3">
                             <div class="input-group input-group-outline @error('designer_id') is-invalid @enderror">
-                                <select name="designer_id" class="form-control" style="appearance: auto; padding-left: 10px;" required>
+                                <select class="select2" name="designer_id" class="form-control" style="appearance: auto; padding-left: 10px;" required>
                                     <option value="" disabled selected>Pilih Designer</option>
                                     @foreach($designers as $designer)
                                         {{-- Otomatis pilih user yang login jika dia designer --}}
@@ -206,7 +206,7 @@
                         {{-- Dropdown Operator --}}
                         <div class="col-md-6 mb-3">
                             <div class="input-group input-group-outline @error('operator_id') is-invalid @enderror">
-                                <select name="operator_id" class="form-control" style="appearance: auto; padding-left: 10px;" required>
+                                <select class="select2" name="operator_id" class="form-control" style="appearance: auto; padding-left: 10px;" required>
                                     <option value="" disabled selected>Pilih Operator</option>
                                     @foreach($operators as $operator)
                                         <option value="{{ $operator->id }}" {{ old('operator_id') == $operator->id ? 'selected' : '' }}>

@@ -96,6 +96,19 @@
                 </a>
             </li>
             @endhasrole
+
+            @hasrole('manajemen|admin|operator indoor|operator outdoor|operator multi')
+            <li class="nav-item">
+                <a class="nav-link text-white {{
+                                request()->routeIs('spk.riwayat') ? 'active bg-gradient-primary' : ''
+                                }}" href="{{ route('spk.riwayat') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons-round opacity-10">manage_history</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Riwayat Produksi SPK</span>
+                </a>
+            </li>
+            @endhasrole
         </ul>
     </div>
 </aside>

@@ -89,9 +89,6 @@ class MSpkController extends Controller
             'jenis_order'     => 'required|in:outdoor,indoor,multi',
             'nama_pelanggan'  => 'required|string|max:255',
 
-            // Validasi Telepon: Wajib angka, min 10 digit, max 13 digit
-            'no_telp'         => 'required|numeric|digits_between:10,13',
-
             'nama_file'       => 'required|string',
             'ukuran_p'        => 'required|numeric|min:0',
             'ukuran_l'        => 'required|numeric|min:0',
@@ -102,10 +99,6 @@ class MSpkController extends Controller
             'designer_id'     => 'required|exists:users,id',
             'operator_id'     => 'required|exists:users,id',
         ], [
-            // Custom Error Messages (Agar User Paham)
-            'no_telp.required'       => 'Nomor telepon wajib diisi.',
-            'no_telp.numeric'        => 'Nomor telepon harus berupa angka.',
-            'no_telp.digits_between' => 'Nomor WhatsApp tidak valid (harus 10-13 digit).',
             'bahan_id.required'      => 'Silakan pilih bahan baku.',
             'designer_id.required'   => 'Silakan pilih designer.',
             'operator_id.required'   => 'Silakan pilih operator.',
@@ -138,13 +131,13 @@ class MSpkController extends Controller
             'cabang_id'       => Auth::user()->cabang_id, // Ambil otomatis dari user login
         ]);
 
-        return redirect()->route('designer.spk.index')->with('success', 'SPK Berhasil Dibuat!');
+        return redirect()->route('spk.index')->with('success', 'SPK Berhasil Dibuat!');
     }
 
     public function destroy(MSpk $spk)
     {
         $spk->delete();
-        return redirect()->route('designer.spk.index')->with('success', 'SPK Berhasil Dihapus!');
+        return redirect()->route('spk.index')->with('success', 'SPK Berhasil Dihapus!');
     }
 
     public function cetakSpk($id)
@@ -251,5 +244,39 @@ class MSpkController extends Controller
         $spk->save();
 
         return back()->with('success', 'Status produksi berhasil diubah menjadi Selesai!');
+    }
+
+    public function riwayat(Request $request)
+    {
+        $user = Auth::user();
+
+        // 1. Inisialisasi Query Awal
+        $query = MSpk::with(['bahan', 'designer', 'operator', 'cabang']);
+
+        // 2. Filter Cabang (Jika bukan pusat, hanya lihat cabang sendiri)
+        if ($user->cabang->jenis !== 'pusat') {
+            $query->where('cabang_id', $user->cabang_id);
+        }
+
+        // 3. Filter Status Produksi "DONE" (Selesai)
+        $query->where('status_produksi', 'done');
+
+        // 4. Logika Pencarian
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('no_spk', 'like', "%$search%")
+                    ->orWhere('nama_pelanggan', 'like', "%$search%");
+            });
+        }
+
+        // 5. Eksekusi Data (Pagination)
+        // Gunakan paginate() di akhir setelah semua filter diterapkan
+        $spks = $query->latest()->paginate(10);
+
+        return view('spk.operator.riwayatSpk', [
+            'title' => 'Riwayat Produksi Selesai',
+            'spks' => $spks
+        ]);
     }
 }
