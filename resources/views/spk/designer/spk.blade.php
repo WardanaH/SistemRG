@@ -7,7 +7,13 @@
 @if (session('success'))
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        Swal.fire({ icon: "success", title: "Berhasil!", text: "{{ session('success') }}", showConfirmButton: false, timer: 1500 });
+        Swal.fire({
+            icon: "success",
+            title: "Berhasil!",
+            text: "{{ session('success') }}",
+            showConfirmButton: false,
+            timer: 1500
+        });
     });
 </script>
 @endif
@@ -16,7 +22,12 @@
 @if ($errors->any())
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        Swal.fire({ icon: "error", title: "Gagal!", text: "Periksa kembali inputan Anda.", showConfirmButton: true });
+        Swal.fire({
+            icon: "error",
+            title: "Gagal!",
+            text: "Periksa kembali inputan Anda.",
+            showConfirmButton: true
+        });
     });
 </script>
 @endif
@@ -37,18 +48,12 @@
                     {{-- I. INFORMASI ORDER --}}
                     <p class="text-sm text-uppercase font-weight-bold mb-2">I. Informasi Order</p>
                     <div class="row">
-                        {{-- No SPK (Otomatis) --}}
                         <div class="col-md-4 mb-3">
                             <div class="input-group input-group-outline is-filled">
                                 <label class="form-label">No. SPK</label>
-                                @php
-                                    $kodeCabang = Auth::user()->cabang->kode ?? 'CBG-PUSAT';
-                                    $prefix = \Illuminate\Support\Str::after($kodeCabang, '-');
-                                    // Generate Random jika input kosong (saat load pertama)
-                                    $randomNumbers = mt_rand(100000, 999999);
-                                    $autoSpk = $prefix . '-' . $randomNumbers;
-                                @endphp
-                                <input type="text" name="no_spk" class="form-control" value="{{ $autoSpk }}" readonly>
+                                {{-- Kita tampilkan text ini agar user tau nomornya auto-generate --}}
+                                <input type="text" class="form-control" value="Generate Otomatis" readonly>
+                                {{-- Input hidden tidak diperlukan karena kita generate di controller --}}
                             </div>
                         </div>
 
@@ -96,14 +101,14 @@
 
                         {{-- Validasi No Telepon --}}
                         <div class="col-md-6 mb-3">
-                            <div class="input-group input-group-outline @error('no_telp') is-invalid @enderror">
+                            <div class="input-group input-group-outline is-filled">
                                 <label class="form-label">No. Telepon (WA)</label>
-                                <input type="number" name="no_telp" class="form-control" value="{{ old('no_telp') }}">
+                                <input type="text" name="no_telp" class="form-control" value="Di Isi Oleh Admin" readonly>
                             </div>
                             @error('no_telp')
-                                <div class="text-danger text-xs mt-1">
-                                    <i class="fa fa-exclamation-circle me-1"></i>{{ $message }}
-                                </div>
+                            <div class="text-danger text-xs mt-1">
+                                <i class="fa fa-exclamation-circle me-1"></i>{{ $message }}
+                            </div>
                             @enderror
                         </div>
                     </div>
@@ -145,9 +150,9 @@
                                     <select class="select2" name="bahan_id" class="form-control" style="appearance: auto; padding-left: 10px;" required>
                                         <option value="" disabled selected>Pilih Bahan</option>
                                         @foreach($bahans as $bahan)
-                                            <option value="{{ $bahan->id }}" {{ old('bahan_id') == $bahan->id ? 'selected' : '' }}>
-                                                {{ $bahan->nama_bahan }}
-                                            </option>
+                                        <option value="{{ $bahan->id }}" {{ old('bahan_id') == $bahan->id ? 'selected' : '' }}>
+                                            {{ $bahan->nama_bahan }}
+                                        </option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -164,10 +169,12 @@
 
                             {{-- Finishing --}}
                             <div class="col-md-4 mb-3">
-                                <div class="input-group input-group-outline">
-                                    <label class="form-label">Finishing</label>
-                                    <input type="text" name="finishing" class="form-control" value="{{ old('finishing') }}">
-                                </div>
+                                <select name="finishing" class="form-control select2" style="appearance: auto; padding-left: 10px;">
+                                    <option value="" disabled selected>Pilih Finishing (Opsional)</option>
+                                    @foreach($finishings as $fin)
+                                    <option value="{{ $fin->nama_finishing }}">{{ $fin->nama_finishing }}</option>
+                                    @endforeach
+                                </select>
                             </div>
                         </div>
 
@@ -192,11 +199,11 @@
                                 <select class="select2" name="designer_id" class="form-control" style="appearance: auto; padding-left: 10px;" required>
                                     <option value="" disabled selected>Pilih Designer</option>
                                     @foreach($designers as $designer)
-                                        {{-- Otomatis pilih user yang login jika dia designer --}}
-                                        <option value="{{ $designer->id }}"
-                                            {{ (old('designer_id') == $designer->id) || (Auth::id() == $designer->id) ? 'selected' : '' }}>
-                                            {{ $designer->nama }}
-                                        </option>
+                                    {{-- Otomatis pilih user yang login jika dia designer --}}
+                                    <option value="{{ $designer->id }}"
+                                        {{ (old('designer_id') == $designer->id) || (Auth::id() == $designer->id) ? 'selected' : '' }}>
+                                        {{ $designer->nama }}
+                                    </option>
                                     @endforeach
                                 </select>
                             </div>
@@ -209,9 +216,9 @@
                                 <select class="select2" name="operator_id" class="form-control" style="appearance: auto; padding-left: 10px;" required>
                                     <option value="" disabled selected>Pilih Operator</option>
                                     @foreach($operators as $operator)
-                                        <option value="{{ $operator->id }}" {{ old('operator_id') == $operator->id ? 'selected' : '' }}>
-                                            {{ $operator->nama }} ({{ $operator->roles->pluck('name')->implode(',')}})
-                                        </option>
+                                    <option value="{{ $operator->id }}" {{ old('operator_id') == $operator->id ? 'selected' : '' }}>
+                                        {{ $operator->nama }} ({{ $operator->roles->pluck('name')->implode(',')}})
+                                    </option>
                                     @endforeach
                                 </select>
                             </div>

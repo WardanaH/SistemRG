@@ -161,10 +161,14 @@
                                 <td class="align-middle text-center text-sm">
                                     @if($spk->status_produksi == 'pending')
                                     <span class="badge badge-sm bg-gradient-warning">Pending</span>
+                                    @elseif($spk->status_produksi == 'ripping')
+                                    <span class="badge badge-sm bg-gradient-info">Ripping</span>
                                     @elseif($spk->status_produksi == 'ongoing')
-                                    <span class="badge badge-sm bg-gradient-info">Proses</span>
+                                    <span class="badge badge-sm bg-gradient-info">Ongoing</span>
+                                    @elseif($spk->status_produksi == 'finishing')
+                                    <span class="badge badge-sm bg-gradient-info">Finishing</span>
                                     @elseif($spk->status_produksi == 'done')
-                                    <span class="badge badge-sm bg-gradient-success">Selesai</span>
+                                    <span class="badge badge-sm bg-gradient-success">Done</span>
                                     @endif
                                 </td>
 
@@ -173,17 +177,38 @@
                                     <div class="d-flex justify-content-end align-items-center gap-2">
 
                                         @hasrole('manajemen|admin')
+                                        {{-- Cek apakah status sudah ACC atau REJECT --}}
+                                        @php
+                                        $isFinal = in_array($spk->status_spk, ['acc', 'reject']);
+                                        @endphp
+
                                         {{-- TOMBOL 1: UPDATE STATUS (MODAL) --}}
                                         <button type="button"
-                                            class="badge bg-gradient-success border-0 text-white text-xs btn-modal-status"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#modalUpdateStatus"
+                                            {{-- 1. Ubah warna: Jika final jadi abu-abu, jika belum jadi hijau --}}
+                                            class="badge {{ $isFinal ? 'bg-secondary' : 'bg-gradient-success' }} border-0 text-white text-xs btn-modal-status"
+
+                                            {{-- 2. Matikan fungsi klik modal jika sudah final --}}
+                                            {{ $isFinal ? '' : 'data-bs-toggle=modal data-bs-target=#modalUpdateStatus' }}
+
+                                            {{-- 3. Tambahkan atribut disabled --}}
+                                            {{ $isFinal ? 'disabled' : '' }}
+
+                                            {{-- Data Attributes --}}
                                             data-id="{{ $spk->id }}"
                                             data-no="{{ $spk->no_spk }}"
                                             data-status="{{ $spk->status_spk }}"
                                             data-toggle="tooltip"
-                                            title="Update Status Approval">
-                                            <i class="material-icons text-xs position-relative" style="top: 1px;">verified</i> Status
+
+                                            {{-- 4. Ubah Tooltip agar user tau kenapa mati --}}
+                                            title="{{ $isFinal ? 'Status sudah final (' . strtoupper($spk->status_spk) . ')' : 'Update Status Approval' }}"
+
+                                            {{-- 5. Ubah kursor jadi not-allowed (dilarang) --}}
+                                            style="{{ $isFinal ? 'cursor: not-allowed; opacity: 0.7;' : 'top: 1px;' }}">
+
+                                            <i class="material-icons text-xs position-relative" style="top: 1px;">
+                                                {{ $isFinal ? 'lock' : 'verified' }}
+                                            </i>
+                                            Status
                                         </button>
                                         @endhasrole
 
@@ -193,10 +218,13 @@
                                         </a>
 
                                         {{-- TOMBOL 3: EDIT DATA --}}
+                                        @hasrole('manajemen|admin')
                                         <a href="{{ route('spk.edit', $spk->id) }}" class="badge bg-gradient-warning text-white text-xs" data-toggle="tooltip" title="Edit Data" style="text-decoration: none;">
                                             <i class="material-icons text-xs position-relative" style="top: 1px;">edit</i>
                                         </a>
+                                        @endhasrole
 
+                                        @hasrole('manajemen|admin')
                                         {{-- TOMBOL 4: HAPUS --}}
                                         <form action="{{ route('spk.destroy', $spk->id) }}" method="POST" class="d-inline delete-form m-0">
                                             @csrf @method('DELETE')
@@ -204,6 +232,8 @@
                                                 <i class="material-icons text-xs position-relative" style="top: 1px;">delete</i>
                                             </button>
                                         </form>
+                                        @endhasrole
+
                                     </div>
                                 </td>
                             </tr>

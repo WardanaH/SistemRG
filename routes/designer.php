@@ -18,10 +18,10 @@ Route::middleware('auth')->group(function () {
         ->middleware('role:manajemen|designer')
         ->name('spk.store');
     Route::get('/spk/{spk}/edit', [MSpkController::class, 'edit'])
-        ->middleware('role:manajemen|designer')
+        ->middleware('role:manajemen|admin')
         ->name('spk.edit');
-    Route::delete('/spk/{spk}', [MSpkController::class, 'update'])
-        ->middleware('role:manajemen|designer')
+    Route::put('/spk/{spk}', [MSpkController::class, 'update'])
+        ->middleware('role:manajemen|admin')
         ->name('spk.update');
     Route::delete('/spk/{spk}/delete', [MSpkController::class, 'destroy'])
         ->middleware('role:manajemen|designer')

@@ -100,8 +100,8 @@
 
                                 {{-- Kolom 6: Aksi --}}
                                 <td class="align-middle text-end pe-4">
-                                    <a href="{{ route('manajemen.spk.cetak-spk', $spk->id) }}" target="_blank" class="btn btn-link text-dark px-2 mb-0" title="Cetak Ulang SPK">
-                                        <i class="material-icons text-sm">print</i>
+                                    <a href="{{ route('manajemen.spk.cetak-spk', $spk->id) }}" target="_blank" class="badge bg-gradient-primary text-white text-xs" data-toggle="tooltip" title="Cetak SPK" style="text-decoration: none;">
+                                        <i class="material-icons text-xs position-relative" style="top: 1px;">print</i>
                                     </a>
                                 </td>
                             </tr>

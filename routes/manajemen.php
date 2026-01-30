@@ -1,10 +1,11 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\MCabangController;
 use App\Http\Controllers\ManajemenController;
 use App\Http\Controllers\MBahanBakuController;
-use App\Http\Controllers\MCabangController;
-use App\Http\Controllers\UserController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\MFinishingController;
 
 Route::middleware('auth')->group(function () {
     Route::get('/manajemen/dashboard', [ManajemenController::class, 'index'])->middleware('role:manajemen')->name('manajemen.dashboard');
@@ -26,4 +27,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/manajemen/bahanbaku/{bahanbaku}/edit', [MBahanBakuController::class, 'edit'])->middleware('role:manajemen')->name('manajemen.bahanbaku.edit');
     Route::post('/manajemen/bahanbaku/{bahanbaku}', [MBahanBakuController::class, 'update'])->middleware('role:manajemen')->name('manajemen.bahanbaku.update');
     Route::delete('/manajemen/bahanbaku/{bahanbaku}/delete', [MBahanBakuController::class, 'destroy'])->middleware('role:manajemen')->name('manajemen.bahanbaku.destroy');
+
+    Route::get('/finishing', [MFinishingController::class, 'index'])->middleware('role:manajemen')->name('manajemen.finishing');
+    Route::post('/finishing', [MFinishingController::class, 'store'])->middleware('role:manajemen')->name('manajemen.finishing.store');
+    Route::post('/finishing/{finishing}/update', [MFinishingController::class, 'update'])->middleware('role:manajemen')->name('manajemen.finishing.update');
+    Route::delete('/finishing/{finishing}/delete', [MFinishingController::class, 'destroy'])->middleware('role:manajemen')->name('manajemen.finishing.destroy');
 });

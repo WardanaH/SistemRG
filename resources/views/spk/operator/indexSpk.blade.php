@@ -7,7 +7,25 @@
 @if (session('success'))
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        Swal.fire({ icon: "success", title: "Berhasil!", text: "{{ session('success') }}", showConfirmButton: false, timer: 1500 });
+        Swal.fire({
+            icon: "success",
+            title: "Berhasil!",
+            text: "{{ session('success') }}",
+            showConfirmButton: false,
+            timer: 1500
+        });
+    });
+</script>
+@endif
+@if (session('error'))
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        Swal.fire({
+            icon: "error",
+            title: "Gagal!",
+            text: "{{ session('error') }}",
+            showConfirmButton: true
+        });
     });
 </script>
 @endif
@@ -16,7 +34,7 @@
     <div class="col-12">
         <div class="card my-4">
 
-            {{-- HEADER --}}
+            {{-- HEADER ORANGE (WARNING/ONGOING) --}}
             <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
                 <div class="bg-gradient-warning shadow-warning border-radius-lg pt-4 pb-3 d-flex justify-content-between align-items-center px-3">
                     <div class="d-flex align-items-center">
@@ -28,9 +46,17 @@
                         <form action="{{ route('spk.index') }}" method="GET">
                             <div class="bg-white rounded d-flex align-items-center px-2" style="height: 40px; min-width: 250px;">
                                 <i class="material-icons text-secondary text-sm">search</i>
-                                <input type="text" name="search" class="form-control border-0 ps-2" placeholder="Cari SPK..." value="{{ request('search') }}" style="box-shadow: none !important; height: 100%; background: transparent;">
+                                <input type="text"
+                                    name="search"
+                                    class="form-control border-0 ps-2"
+                                    placeholder="Cari SPK..."
+                                    value="{{ request('search') }}"
+                                    style="box-shadow: none !important; height: 100%; background: transparent;">
+
                                 @if(request('search'))
-                                    <a href="{{ route('spk.index') }}" class="text-danger d-flex align-items-center cursor-pointer"><i class="material-icons text-sm">close</i></a>
+                                <a href="{{ route('spk.index') }}" class="text-danger d-flex align-items-center cursor-pointer">
+                                    <i class="material-icons text-sm">close</i>
+                                </a>
                                 @endif
                             </div>
                         </form>
@@ -38,66 +64,110 @@
                 </div>
             </div>
 
-            {{-- BODY --}}
+            {{-- TABEL DATA --}}
             <div class="card-body px-0 pb-2">
                 <div class="table-responsive p-0">
                     <table class="table align-items-center mb-0">
                         <thead>
                             <tr>
-                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-3">No. SPK</th>
-                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Detail File</th>
-                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Bahan & Ukuran</th>
-                                <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Jenis</th>
-                                <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Finishing</th>
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-3">No. SPK / Tanggal</th>
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Pelanggan</th>
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Detail Produksi</th>
+                                <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Status</th>
+                                <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Catatan</th>
                                 <th class="text-secondary opacity-7 text-end pe-4">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse($spks as $spk)
                             <tr>
+                                {{-- Kolom 1: SPK --}}
                                 <td class="ps-3">
-                                    <div class="d-flex flex-column justify-content-center">
-                                        <h6 class="mb-0 text-sm">{{ $spk->no_spk }}</h6>
-                                        <p class="text-xs text-secondary mb-0">{{ $spk->nama_pelanggan }}</p>
+                                    <div class="d-flex px-2 py-1">
+                                        <div>
+                                            <div class="avatar avatar-sm me-3 border-radius-lg bg-gradient-warning d-flex align-items-center justify-content-center">
+                                                <i class="material-icons text-white text-sm">precision_manufacturing</i>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex flex-column justify-content-center">
+                                            <h6 class="mb-0 text-sm">{{ $spk->no_spk }}</h6>
+                                            <p class="text-xs text-secondary mb-0">
+                                                {{ \Carbon\Carbon::parse($spk->tanggal_spk)->format('d M Y') }}
+                                            </p>
+                                        </div>
                                     </div>
                                 </td>
+
+                                {{-- Kolom 2: Pelanggan --}}
                                 <td>
-                                    <p class="text-xs font-weight-bold mb-0">{{ $spk->nama_file }}</p>
-                                    <p class="text-xs text-secondary mb-0">Qty: {{ $spk->kuantitas }}</p>
+                                    <p class="text-xs font-weight-bold mb-0">{{ $spk->nama_pelanggan }}</p>
+                                    <p class="text-xs text-secondary mb-0">{{ $spk->no_telepon }}</p>
                                 </td>
+
+                                {{-- Kolom 3: Detail File & Bahan --}}
                                 <td>
-                                    <p class="text-xs font-weight-bold mb-0">{{ $spk->bahan->nama_bahan ?? '-' }}</p>
-                                    <p class="text-xs text-secondary mb-0">{{ $spk->ukuran_panjang }} x {{ $spk->ukuran_lebar }} cm</p>
+                                    <p class="text-xs font-weight-bold mb-0 text-truncate" style="max-width: 150px;">{{ $spk->nama_file }}</p>
+                                    <span class="text-xs text-secondary">
+                                        {{ $spk->bahan->nama ?? '-' }}
+                                        ({{ $spk->ukuran_panjang }}x{{ $spk->ukuran_lebar }})
+                                    </span>
+                                    <div class="text-xs text-secondary">Qty: <strong>{{ $spk->kuantitas }}</strong> | Fin: {{ $spk->finishing ?? '-' }}</div>
                                 </td>
+
+                                {{-- Kolom 4: Status Badge --}}
                                 <td class="align-middle text-center text-sm">
-                                    <span class="badge badge-sm bg-gradient-{{ $spk->jenis_order_spk == 'outdoor' ? 'success' : ($spk->jenis_order_spk == 'indoor' ? 'info' : 'warning') }}">
-                                        {{ ucfirst($spk->jenis_order_spk) }}
+                                    @php
+                                    $badges = [
+                                    'pending' => 'warning',
+                                    'ripping' => 'info',
+                                    'ongoing' => 'info',
+                                    'finishing' => 'info',
+                                    'done' => 'success'
+                                    ];
+                                    @endphp
+                                    <span class="badge badge-sm bg-gradient-{{ $badges[$spk->status_produksi] ?? 'secondary' }}">
+                                        {{ ucfirst($spk->status_produksi) }}
                                     </span>
                                 </td>
+
+                                {{-- Kolom 5: Catatan --}}
                                 <td class="align-middle text-center">
-                                    <span class="text-secondary text-xs font-weight-bold">{{ $spk->finishing ?? '-' }}</span>
+                                    <span class="text-secondary text-xs">
+                                        {{ Str::limit($spk->catatan_operator ?? '-') }}
+                                    </span>
                                 </td>
+
+                                {{-- Kolom 6: Aksi --}}
                                 <td class="align-middle text-end pe-4">
+                                    <div class="d-flex justify-content-end align-items-center gap-2">
 
-                                    {{-- TOMBOL LIHAT NOTA --}}
-                                    <a href="{{ route('manajemen.spk.cetak-spk', $spk->id) }}" target="_blank" class="btn btn-link text-dark px-2 mb-0" title="Lihat Detail">
-                                        <i class="material-icons text-sm">visibility</i>
-                                    </a>
+                                        {{-- Tombol Cetak --}}
+                                        <a href="{{ route('manajemen.spk.cetak-spk', $spk->id) }}" target="_blank" class="badge bg-gradient-primary text-white text-xs" data-toggle="tooltip" title="Cetak SPK" style="text-decoration: none;">
+                                            <i class="material-icons text-xs position-relative" style="top: 1px;">print</i>
+                                        </a>
 
-                                    {{-- TOMBOL SELESAI (TRIGGER MODAL) --}}
-                                    <button type="button"
-                                            class="btn btn-sm bg-gradient-success mb-0 btn-selesai"
+                                        {{-- Tombol Update Status --}}
+                                        <button type="button"
+                                            class="badge bg-gradient-info border-0 text-white text-xs btn-update-status"
                                             data-id="{{ $spk->id }}"
-                                            data-no="{{ $spk->no_spk }}">
-                                        <i class="material-icons text-sm me-1">check_circle</i> Selesai
-                                    </button>
+                                            data-no="{{ $spk->no_spk }}"
+                                            data-status="{{ $spk->status_produksi }}"
+                                            data-catatan="{{ $spk->catatan_operator }}"
+                                            data-toggle="tooltip"
+                                            title="Update Produksi">
+                                            <i class="material-icons text-xs position-relative" style="top: 1px;">edit_note</i> Status
+                                        </button>
 
+                                    </div>
                                 </td>
                             </tr>
                             @empty
                             <tr>
                                 <td colspan="6" class="text-center py-5">
-                                    <h6 class="text-secondary font-weight-normal">Tidak ada antrian produksi saat ini.</h6>
+                                    <div class="d-flex flex-column align-items-center justify-content-center">
+                                        <i class="material-icons text-secondary text-4xl mb-2">assignment_turned_in</i>
+                                        <h6 class="text-secondary font-weight-normal">Tidak ada antrian produksi saat ini.</h6>
+                                    </div>
                                 </td>
                             </tr>
                             @endforelse
@@ -113,24 +183,41 @@
     </div>
 </div>
 
-{{-- MODAL KONFIRMASI SELESAI --}}
-<form id="formSelesai" method="POST" action="">
+{{-- MODAL UPDATE STATUS PRODUKSI --}}
+<form id="formUpdateStatus" method="POST" action="">
     @csrf @method('PUT')
-    <div class="modal fade" id="modalSelesai" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal fade" id="modalUpdateStatus" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Konfirmasi Produksi Selesai</h5>
+                    <h5 class="modal-title font-weight-normal">Update Produksi: <span id="txtNoSpk" class="font-weight-bold"></span></h5>
                     <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                 </div>
-                <div class="modal-body text-center">
-                    <i class="material-icons text-success text-5xl mb-3">task_alt</i>
-                    <p>Apakah Anda yakin pesanan <strong><span id="txtNoSpk"></span></strong> sudah selesai dicetak/dikerjakan?</p>
-                    <p class="text-xs text-secondary">Status akan berubah menjadi 'Done' dan menghilang dari daftar ini.</p>
+
+                <div class="modal-body">
+                    {{-- Dropdown Status --}}
+                    <div class="input-group input-group-outline mb-4 is-filled">
+                        <label class="form-label">Status Produksi</label>
+                        <select name="status_produksi" id="selectStatusProduksi" class="form-control" style="appearance: auto; padding-left: 10px;">
+                            <option value="pending">Pending</option>
+                            <option value="ripping">Ripping (Persiapan)</option>
+                            <option value="ongoing">Ongoing (Cetak)</option>
+                            <option value="finishing">Finishing</option>
+                            <option value="done">Done (Selesai)</option>
+                        </select>
+                    </div>
+
+                    {{-- Textarea Catatan --}}
+                    <div class="input-group input-group-outline">
+                        <label class="form-label"></label>
+                        <textarea name="catatan_operator" id="txtCatatanOperator" class="form-control" rows="3"></textarea>
+                    </div>
+                    <small class="text-xs text-muted ms-1">*Catatan ini akan tersimpan di riwayat SPK.</small>
                 </div>
-                <div class="modal-footer justify-content-center">
+
+                <div class="modal-footer">
                     <button type="button" class="btn bg-gradient-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn bg-gradient-success">Ya, Selesai</button>
+                    <button type="submit" class="btn bg-gradient-success">Simpan Perubahan</button>
                 </div>
             </div>
         </div>
@@ -142,19 +229,38 @@
 @push('scripts')
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        const btns = document.querySelectorAll(".btn-selesai");
-        const modal = new bootstrap.Modal(document.getElementById('modalSelesai'));
-        const form = document.getElementById('formSelesai');
+        const btns = document.querySelectorAll(".btn-update-status");
+        const modal = new bootstrap.Modal(document.getElementById('modalUpdateStatus'));
+        const form = document.getElementById('formUpdateStatus');
+
         const txtNoSpk = document.getElementById('txtNoSpk');
+        const selectStatus = document.getElementById('selectStatusProduksi');
+        const txtCatatan = document.getElementById('txtCatatanOperator');
 
         btns.forEach(btn => {
             btn.addEventListener("click", function() {
+                // Ambil Data dari Atribut Tombol
                 let id = this.getAttribute('data-id');
                 let no = this.getAttribute('data-no');
+                let status = this.getAttribute('data-status');
+                let catatan = this.getAttribute('data-catatan');
 
+                // Isi Data ke Modal
                 txtNoSpk.innerText = no;
-                // Update action URL
-                let url = "{{ route('spk.selesai', ':id') }}";
+                selectStatus.value = status;
+                txtCatatan.value = catatan ? catatan : '';
+
+                // Handle Input Outline Animation (Material Dashboard)
+                // Agar label tidak menumpuk saat ada isi
+                if (catatan) {
+                    txtCatatan.parentElement.classList.add('is-filled');
+                } else {
+                    txtCatatan.parentElement.classList.remove('is-filled');
+                }
+
+                // Update Action URL
+                // Pastikan route ini ada di web.php
+                let url = "{{ route('spk.update-produksi', ':id') }}";
                 form.action = url.replace(':id', id);
 
                 modal.show();

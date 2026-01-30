@@ -30,10 +30,11 @@ return new class extends Migration
             // Relasi ke tabel m_bahan_bakus
             $table->enum('status_spk', ['pending', 'acc', 'rejected']);
             $table->text('alasan_pembatalan')->nullable();
-            $table->enum('status_produksi', ['pending', 'ongoing', 'done']);
+            $table->enum('status_produksi', ['pending', 'ripping', 'ongoing', 'finishing', 'done'])->default('pending');
             $table->integer('kuantitas');
             $table->string('finishing')->nullable(); // Tambahan: biasanya SPK butuh info finishing
             $table->text('keterangan')->nullable(); // Text lebih panjang & nullable
+            $table->text('catatan_operator')->nullable();
 
             // Pastikan tabel 'm_bahan_bakus' sudah ada sebelum migration ini dijalankan
             $table->foreignId('bahan_id')

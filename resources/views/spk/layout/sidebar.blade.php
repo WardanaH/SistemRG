@@ -56,6 +56,17 @@
                     <span class="nav-link-text ms-1">Manajemne Bahan Baku</span>
                 </a>
             </li>
+
+            <li class="nav-item">
+                <a class="nav-link text-white {{
+                    request()->routeIs('manajemen.finishing') ? 'active bg-gradient-primary' : ''
+                    }}" href="{{ route('manajemen.finishing') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons-round opacity-10">texture</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Manajemen Finishing</span>
+                </a>
+            </li>
             @endhasrole
 
             @hasrole('manajemen|designer|admin')

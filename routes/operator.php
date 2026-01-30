@@ -12,9 +12,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/produksi', [MSpkController::class, 'operatorIndex'])
         ->middleware('role:manajemen|operator indoor|operator outdoor|operator multi')
         ->name('spk.produksi');
-    Route::put('/produksi/{id}/selesai', [MSpkController::class, 'selesaiProduksi'])
+    Route::put('/produksi/{id}/update-status', [MSpkController::class, 'updateStatusProduksi'])
         ->middleware('role:manajemen|operator indoor|operator outdoor|operator multi')
-        ->name('spk.selesai');
+        ->name('spk.update-produksi');
     Route::get('/produksi/riwayat', [MSpkController::class, 'riwayat'])
         ->middleware('role:manajemen|admin|operator indoor|operator outdoor|operator multi')
         ->name('spk.riwayat');

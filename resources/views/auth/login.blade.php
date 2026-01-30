@@ -72,8 +72,15 @@
                                     @csrf
 
                                     <div class="input-group input-group-outline my-3">
-                                        <label class="form-label">Username</label>
-                                        <input type="text" name="username" class="form-control">
+                                        <select name="username" class="form-control" style="appearance: auto; padding: 10px;">
+                                            <option value="" selected disabled>-- Pilih User --</option>
+
+                                            @foreach ($users as $user)
+                                            <option value="{{ $user->username }}">
+                                                {{ $user->nama }} | {{ $user->username }}
+                                            </option>
+                                            @endforeach
+                                        </select>
                                     </div>
 
                                     <div class="input-group input-group-outline mb-3">
