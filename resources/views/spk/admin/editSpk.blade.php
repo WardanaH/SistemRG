@@ -168,7 +168,7 @@
                                 <select class="select2" name="operator_id" class="form-control" required>
                                     @foreach($operators as $operator)
                                         <option value="{{ $operator->id }}" {{ $spk->operator_id == $operator->id ? 'selected' : '' }}>
-                                            {{ $operator->nama }}
+                                            {{ $operator->nama }} ({{ $operator->roles->pluck('name')->implode(',') }})
                                         </option>
                                     @endforeach
                                 </select>

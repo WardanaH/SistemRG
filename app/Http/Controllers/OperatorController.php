@@ -13,6 +13,9 @@ class OperatorController extends Controller
         $operators = User::role(['operator outdoor', 'operator indoor', 'operator multi'])->with('cabang')->get();
         // dd($operators);
 
-        return view('spk.operator.index', compact('operators'));
+        return view('spk.operator.index', [
+            'title' => 'Dashboard Operator',
+            'operators' => $operators
+        ]);
     }
 }

@@ -8,51 +8,54 @@ use App\Models\User;
 use App\Models\MCabang;
 use App\Models\MBahanBaku;
 use App\Models\MFinishing;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Log;
 
 class MSpkController extends Controller
 {
-    public function buat()
+    public function buat() // Atau public function create()
     {
         $user = Auth::user();
 
         // Cek apakah user berada di Cabang Pusat
-        // Pastikan di database tabel m_cabangs kolom jenis isinya 'pusat'
         $isPusat = $user->cabang->jenis === 'pusat';
 
-        // 1. Ambil Bahan Baku (Hanya stok tersedia)
-        // Opsional: Jika bahan baku juga per cabang, tambahkan logika filter di sini juga
+        // 1. Ambil Bahan Baku (Disarankan filter stok > 0)
         $bahans = MBahanBaku::all();
 
         // 2. Ambil Finishing
         $finishings = MFinishing::all();
 
-        // 3. Ambil User dengan Role Designer
+        // 3. Ambil User Designer (Filter cabang jika bukan pusat)
         $designers = User::role('designer')
             ->when(!$isPusat, function ($query) use ($user) {
-                // Jika BUKAN pusat, filter berdasarkan cabang user login
                 return $query->where('cabang_id', $user->cabang_id);
             })
             ->get();
 
-        // 4. Ambil User dengan Role Operator (Indoor/Outdoor/Multi)
+        // 4. Ambil User Operator (Filter cabang jika bukan pusat)
         $operators = User::role(['operator indoor', 'operator outdoor', 'operator multi'])
             ->when(!$isPusat, function ($query) use ($user) {
-                // Jika BUKAN pusat, filter berdasarkan cabang user login
                 return $query->where('cabang_id', $user->cabang_id);
             })
             ->get();
 
+        // 5. [BARU] Ambil Data Cabang Lain (Untuk Opsi SPK Bantuan)
+        // Ambil semua cabang KECUALI cabang user saat ini
+        $cabangLain = MCabang::where('id', '!=', $user->cabang_id)->get();
+
         return view('spk.designer.spk', [
-            'user'      => $user,
-            'title'     => 'Buat SPK',
-            'bahans'    => $bahans,
+            'user'       => $user,
+            'title'      => 'Buat SPK',
+            'bahans'     => $bahans,
             'finishings' => $finishings,
-            'designers' => $designers,
-            'operators' => $operators
+            'designers'  => $designers,
+            'operators'  => $operators,
+            'cabangLain' => $cabangLain, // Kirim variabel ini ke View
         ]);
     }
 
@@ -89,8 +92,10 @@ class MSpkController extends Controller
 
     public function store(Request $request)
     {
-        // 1. VALIDASI (Hapus validasi 'no_spk' dari sini karena kita generate sendiri)
-        $validated = $request->validate([
+        $user = Auth::user();
+
+        // 1. RULE VALIDASI DASAR
+        $rules = [
             'tanggal'         => 'required',
             'jenis_order'     => 'required|in:outdoor,indoor,multi',
             'nama_pelanggan'  => 'required|string|max:255',
@@ -103,75 +108,98 @@ class MSpkController extends Controller
             'catatan'         => 'nullable|string',
             'designer_id'     => 'required|exists:users,id',
             'operator_id'     => 'required|exists:users,id',
+        ];
+
+        // 2. VALIDASI TAMBAHAN JIKA MODE BANTUAN AKTIF
+        if ($request->has('is_bantuan')) {
+            // Jika Bantuan: Asal Cabang WAJIB, No Telp WAJIB (karena order luar)
+            $rules['asal_cabang_id'] = 'required|exists:m_cabangs,id';
+            $rules['no_telp']        = 'required|numeric|digits_between:10,13';
+        } else {
+            // Jika Biasa: No Telp Boleh Kosong (Nanti diisi admin) atau string "Di Isi Oleh Admin"
+            $rules['no_telp']        = 'nullable';
+        }
+
+        $request->validate($rules, [
+            'asal_cabang_id.required' => 'Harap pilih asal cabang pengirim order.',
+            'no_telp.required'        => 'Untuk SPK Bantuan, nomor telepon pelanggan wajib diisi.',
         ]);
 
-        // 2. PROSES DATABASE TRANSACTION
-        // Kita bungkus semua logic generate nomor & save dalam transaction
+        // dd($request->all());
+
+        // 3. MULAI TRANSAKSI DATABASE
         try {
-            DB::transaction(function () use ($request) {
+            DB::transaction(function () use ($request, $user) {
 
-                $user = Auth::user();
-                $cabangId = $user->cabang_id;
+                // Ambil Kode Cabang User Login (Misal: CBG-BJM)
+                $cabangKode = $user->cabang->kode;
+                $basePrefix = Str::after($cabangKode, '-'); // Hasil: BJM
 
-                // Ambil Kode Cabang (Prefix)
-                // Misal: CBG-BJM -> Prefix: BJM
-                $cabang = MCabang::findOrFail($cabangId);
-                $fullKode = $cabang->kode;
-                $prefix = \Illuminate\Support\Str::after($fullKode, '-');
-
-                // --- LOGIKA GENERATE NOMOR URUT (RACE CONDITION PROOF) ---
-
-                // 1. Cari SPK terakhir dari cabang ini DENGAN LOCK
-                // lockForUpdate() akan menahan row ini sampai transaction selesai.
-                // Request lain yang mencoba baca akan menunggu antrian.
-                $lastSpk = MSpk::where('cabang_id', $cabangId)
-                    ->where('no_spk', 'LIKE', "$prefix-%") // Filter sesuai prefix cabang
-                    ->orderBy('id', 'desc')
-                    ->lockForUpdate() // KUNCI UTAMA: Locking baris terakhir
-                    ->first();
-
-                if ($lastSpk) {
-                    // Pecah string "BJM-000001" ambil angka belakangnya
-                    $lastNumber = (int) \Illuminate\Support\Str::afterLast($lastSpk->no_spk, '-');
-                    $nextNumber = $lastNumber + 1;
+                // Tentukan Prefix Akhir & Asal Cabang
+                if ($request->has('is_bantuan')) {
+                    $finalPrefix = 'B' . $basePrefix; // Hasil: BBJM
+                    $asalCabangId = $request->asal_cabang_id;
+                    $noTelp = $request->no_telp;
                 } else {
-                    // Jika belum ada data sama sekali
-                    $nextNumber = 1;
+                    $finalPrefix = $basePrefix; // Hasil: BJM
+                    $asalCabangId = null;
+                    // Jika inputnya text default, kita simpan null biar bersih di DB
+                    $noTelp = ($request->no_telp == 'Di Isi Oleh Admin') ? null : $request->no_telp;
                 }
 
-                // Format jadi 6 digit: 000001
-                $newNoSpk = $prefix . '-' . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+                // --- GENERATE NOMOR URUT (LOCKING) ---
+                // Cari nomor terakhir berdasarkan Cabang Pembuat & Pola Prefix
+                $lastSpk = MSpk::where('cabang_id', $user->cabang_id)
+                    ->where('no_spk', 'like', $finalPrefix . '-%') // Filter BJM- atau BBJM-
+                    ->lockForUpdate() // Kunci baris agar tidak tabrakan
+                    ->orderBy('id', 'desc')
+                    ->first();
+
+                $nextNumber = 1;
+                if ($lastSpk) {
+                    // Ambil angka di belakang strip terakhir
+                    $lastNumber = (int) Str::afterLast($lastSpk->no_spk, '-');
+                    $nextNumber = $lastNumber + 1;
+                }
+
+                // Format: PREFIX-000001 (Contoh: BJM-000001 atau BBJM-000001)
+                $newNoSpk = $finalPrefix . '-' . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
 
                 // --- FORMAT TANGGAL ---
                 try {
-                    $formattedDate = \Carbon\Carbon::createFromFormat('d-m-Y', $request->tanggal)->format('Y-m-d');
+                    $formattedDate = Carbon::createFromFormat('d-m-Y', $request->tanggal)->format('Y-m-d');
                 } catch (\Exception $e) {
                     $formattedDate = now()->format('Y-m-d');
                 }
 
                 // --- SIMPAN DATA ---
                 MSpk::create([
-                    'no_spk'          => $newNoSpk, // Nomor hasil generate
-                    'tanggal_spk'     => $formattedDate,
-                    'jenis_order_spk' => $request->jenis_order,
-                    'nama_pelanggan'  => $request->nama_pelanggan,
-                    'nama_file'       => $request->nama_file,
-                    'ukuran_panjang'  => $request->ukuran_p,
-                    'ukuran_lebar'    => $request->ukuran_l,
-                    'bahan_id'        => $request->bahan_id,
-                    'kuantitas'       => $request->qty,
-                    'finishing'       => $request->finishing,
-                    'keterangan'      => $request->catatan,
-                    'designer_id'     => $request->designer_id,
-                    'operator_id'     => $request->operator_id,
-                    'cabang_id'       => $cabangId,
+                    'no_spk'             => $newNoSpk,
+                    'tanggal_spk'        => $formattedDate,
+                    'jenis_order_spk'    => $request->jenis_order,
+                    'nama_pelanggan'     => $request->nama_pelanggan,
+                    'no_telepon'         => $noTelp,
+                    'nama_file'          => $request->nama_file,
+                    'ukuran_panjang'     => $request->ukuran_p,
+                    'ukuran_lebar'       => $request->ukuran_l,
+                    'bahan_id'           => $request->bahan_id,
+                    'kuantitas'          => $request->qty,
+                    'finishing'          => $request->finishing,
+                    'keterangan'         => $request->catatan,
+                    'designer_id'        => $request->designer_id,
+                    'operator_id'        => $request->operator_id,
+                    'cabang_id'          => $user->cabang_id, // Cabang tempat pembuatan (Produksi)
+
+                    // Kolom Baru untuk Bantuan
+                    'is_bantuan'         => $request->has('is_bantuan'),
+                    'asal_cabang_id'     => $asalCabangId,
                 ]);
             });
 
             return redirect()->route('spk.index')->with('success', 'SPK Berhasil Dibuat!');
         } catch (\Exception $e) {
-            // Jika terjadi error (misal deadlock), kembalikan ke form
-            return back()->with('error', 'Gagal membuat SPK. Silakan coba lagi. Error: ' . $e->getMessage())->withInput();
+            Log::error('Gagal membuat SPK: ' . $e->getMessage());
+            return back()->with('error', 'Gagal membuat SPK: ' . $e->getMessage())->withInput();
         }
     }
 
@@ -209,30 +237,22 @@ class MSpkController extends Controller
     {
         $spk = MSpk::findOrFail($id);
 
-        // Validasi
-        $validated = $request->validate([
+        // Validasi Update (Nomor SPK & Tipe Bantuan tidak boleh diubah untuk menjaga integritas)
+        $request->validate([
             'nama_pelanggan' => 'required|string|max:255',
-            // No Telp sekarang bisa diedit, wajib angka 10-13 digit
-            'no_telp'        => 'required|numeric|digits_between:10,13',
+            'no_telp'        => 'nullable|numeric|digits_between:10,13',
             'nama_file'      => 'required|string',
             'ukuran_p'       => 'required|numeric|min:0',
             'ukuran_l'       => 'required|numeric|min:0',
             'bahan_id'       => 'required|exists:m_bahan_bakus,id',
             'qty'            => 'required|integer|min:1',
-            'finishing'      => 'nullable|string',
-            'catatan'        => 'nullable|string',
             'designer_id'    => 'required|exists:users,id',
             'operator_id'    => 'required|exists:users,id',
-            'jenis_order'    => 'required|in:outdoor,indoor,multi',
-        ], [
-            'no_telp.required' => 'Nomor telepon wajib diisi.',
-            'no_telp.digits_between' => 'Nomor telepon tidak valid (10-13 digit).',
         ]);
 
-        // Update Data
         $spk->update([
             'nama_pelanggan'  => $request->nama_pelanggan,
-            'no_telepon'      => $request->no_telp, // Update No Telepon
+            'no_telepon'      => $request->no_telp, // Di sini Admin bisa update no telp
             'nama_file'       => $request->nama_file,
             'ukuran_panjang'  => $request->ukuran_p,
             'ukuran_lebar'    => $request->ukuran_l,
@@ -243,6 +263,9 @@ class MSpkController extends Controller
             'designer_id'     => $request->designer_id,
             'operator_id'     => $request->operator_id,
             'jenis_order_spk' => $request->jenis_order,
+
+            // Asal Cabang bisa diupdate jika perlu, tapi is_bantuan & no_spk sebaiknya jangan
+            'asal_cabang_id'  => $request->has('is_bantuan') ? $request->asal_cabang_id : null,
         ]);
 
         return redirect()->route('spk.index')->with('success', 'Data SPK berhasil diperbarui!');
@@ -285,53 +308,42 @@ class MSpkController extends Controller
     {
         $user = Auth::user();
 
-        // 1. Query Dasar: Ambil SPK beserta relasinya
+        // 1. Query Dasar
         $query = MSpk::with(['bahan', 'designer', 'operator', 'cabang']);
 
-        // 2. Filter Wajib: Cabang, Status SPK (ACC), Status Produksi (Ongoing)
+        // 2. FILTER CABANG (Penting: Gunakan cabang_produksi_id agar SPK Bantuan muncul)
         if ($user->cabang->jenis !== 'pusat') {
+            // Operator hanya melihat pekerjaan yang dilimpahkan ke cabangnya
+            // (Baik order lokal maupun bantuan dari luar)
             $query->where('cabang_id', $user->cabang_id);
         }
 
+        // 3. FILTER STATUS (Gunakan whereIn agar RAPI dan tidak bocor)
         $query->where('status_spk', 'acc')
-            ->where('status_produksi', 'pending')
-            ->orWhere('status_produksi', 'ripping')
-            ->orWhere('status_produksi', 'ongoing')
-            ->orWhere('status_produksi', 'finishing');
-        // dd($query);
+            ->whereIn('status_produksi', ['pending', 'ripping', 'ongoing', 'finishing']);
 
-        // 3. Filter Berdasarkan Role Operator
-        // Logika: Jika user punya role 'operator indoor', tampilkan hanya order 'indoor', dst.
-        // Kita gunakan grouping (where function) untuk antisipasi jika user punya multiple role
+        // 4. FILTER ROLE & JENIS ORDER (Grouping Wajib)
         $query->where(function (Builder $q) use ($user) {
-            $hasFilter = false;
+
+            // Kumpulkan jenis order yang boleh dilihat user ini
+            $allowedTypes = [];
 
             if ($user->hasRole('operator indoor')) {
-                $q->orWhere('jenis_order_spk', 'indoor');
-                $hasFilter = true;
+                $allowedTypes[] = 'indoor';
             }
-
             if ($user->hasRole('operator outdoor')) {
-                $q->orWhere('jenis_order_spk', 'outdoor');
-                $hasFilter = true;
+                $allowedTypes[] = 'outdoor';
             }
-
             if ($user->hasRole('operator multi')) {
-                $q->orWhere('jenis_order_spk', 'multi');
-                $hasFilter = true;
+                $allowedTypes[] = 'multi';
             }
 
-            // Fallback: Jika user ditugaskan secara spesifik (by ID) meskipun jenisnya beda
-            $q->orWhere('operator_id', $user->id);
-
-            // Jika tidak punya role spesifik di atas (misal admin ngetest), tampilkan semua/kosongkan
-            if (!$hasFilter && !$user->hasRole('admin')) {
-                // Opsional: cegah akses atau tampilkan kosong
-                // $q->whereRaw('1 = 0');
-            }
+            // Logika: Tampilkan jika Jenis Order sesuai Role ATAU dia ditunjuk langsung (by ID)
+            $q->whereIn('jenis_order_spk', $allowedTypes)
+                ->orWhere('operator_id', $user->id);
         });
 
-        // 4. Pencarian
+        // 5. PENCARIAN
         if ($request->has('search') && $request->search != '') {
             $search = $request->search;
             $query->where(function ($q) use ($search) {

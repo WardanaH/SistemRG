@@ -36,6 +36,10 @@ return new class extends Migration
             $table->text('keterangan')->nullable(); // Text lebih panjang & nullable
             $table->text('catatan_operator')->nullable();
 
+            // Bantuan
+            $table->boolean('is_bantuan')->default(false);
+            $table->foreignId('asal_cabang_id')->nullable()->constrained('m_cabangs'); // Nullable karena kalau order biasa ini kosong
+
             // Pastikan tabel 'm_bahan_bakus' sudah ada sebelum migration ini dijalankan
             $table->foreignId('bahan_id')
                 ->constrained('m_bahan_bakus')
