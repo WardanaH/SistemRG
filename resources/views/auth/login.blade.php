@@ -22,6 +22,49 @@
 
     <!-- CSS -->
     <link id="pagestyle" href="{{ asset('assets/css/material-dashboard.css?v=3.0.0') }}" rel="stylesheet" />
+
+    <!-- Select2 -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+    <style>
+        /* ===============================
+    SELECT2 GLOBAL - MATERIAL LOOK
+    ================================ */
+
+        .select2-container {
+            width: 100% !important;
+        }
+
+        .select2-container--default .select2-selection--single {
+            height: 40px;
+            border-radius: 0.4rem;
+            /* border: 1px solid #1a73e8; */
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            background-color: #fff;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            padding-left: 0;
+            color: #344767;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 45px;
+        }
+
+        /* focus */
+        .select2-container--open .select2-selection--single {
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 0.15rem rgba(26, 115, 232, 0.25);
+        }
+
+        .select2-dropdown {
+            border-radius: 0.75rem !important;
+            border: 1px solid #1a73e8 !important;
+        }
+    </style>
 </head>
 
 <body class="bg-gray-200">
@@ -72,7 +115,7 @@
                                     @csrf
 
                                     <div class="input-group input-group-outline my-3">
-                                        <select name="username" class="form-control" style="appearance: auto; padding: 10px;">
+                                        <select class="select2" name="username" class="form-control" style="appearance: auto; padding: 10px;">
                                             <option value="" selected disabled>-- Pilih User --</option>
 
                                             @foreach ($users as $user)
@@ -159,6 +202,20 @@
     </script>
 
     <script src="{{ asset('assets/js/material-dashboard.min.js?v=3.0.0') }}"></script>
+
+    <!-- select 2-->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+        $(function() {
+            $('.select2').select2({
+                width: '100%',
+                placeholder: 'Pilih data',
+                allowClear: true
+            });
+        });
+    </script>
 </body>
 
 </html>

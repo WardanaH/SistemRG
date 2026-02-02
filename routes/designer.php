@@ -1,8 +1,9 @@
 <?php
 
-use App\Http\Controllers\DesignerController;
-use App\Http\Controllers\MSpkController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\MSpkController;
+use App\Http\Controllers\DesignerController;
+use App\Http\Controllers\MSpkBantuanController;
 
 Route::middleware('auth')->group(function () {
     Route::get('/designer/dashboard', [DesignerController::class, 'index'])
