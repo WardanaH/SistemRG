@@ -36,7 +36,7 @@
             padding: 8px 12px;
             display: flex;
             align-items: center;
-            background-color: #fff;
+            background-color: transparent;
         }
 
         .select2-container--default .select2-selection--single .select2-selection__rendered {

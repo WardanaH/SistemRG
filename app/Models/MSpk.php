@@ -32,4 +32,11 @@ class MSpk extends Model
     {
         return $this->belongsTo(MCabang::class, 'cabang_id', 'id');
     }
+
+
+    // Relasi ke Cabang asal (Setiap SPK memiliki 1 Cabang asal di baris ini)
+    public function cabangAsal()
+    {
+        return $this->belongsTo(MCabang::class, 'asal_cabang_id', 'id');
+    }
 }

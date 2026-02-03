@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MSpkController;
 use App\Http\Controllers\OperatorController;
+use App\Http\Controllers\SpkBantuanController;
 
 Route::middleware('auth')->group(function () {
     Route::get('/operator/dashboard', [OperatorController::class, 'index'])
@@ -18,4 +19,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/produksi/riwayat', [MSpkController::class, 'riwayat'])
         ->middleware('role:manajemen|admin|operator indoor|operator outdoor|operator multi')
         ->name('spk.riwayat');
+
+    Route::get('/produksi-bantuan', [SpkBantuanController::class, 'operatorIndex'])
+        ->middleware('role:manajemen|operator indoor|operator outdoor|operator multi')
+        ->name('spk-bantuan.produksi');
+    Route::get('/produksi-bantuan/riwayat', [SpkBantuanController::class, 'riwayat'])
+        ->middleware('role:manajemen|admin|operator indoor|operator outdoor|operator multi')
+        ->name('spk-bantuan.riwayat');
 });

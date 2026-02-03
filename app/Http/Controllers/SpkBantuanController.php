@@ -2,32 +2,50 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\MSpk;
-use App\Models\MBahanBaku;
-use App\Models\MCabang;
-use App\Models\MFinishing;
-use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Carbon\Carbon;
+use App\Models\MSpk;
+use App\Models\User;
+use App\Models\MCabang;
+use App\Models\MBahanBaku;
+use App\Models\MFinishing;
+use Illuminate\Support\Str;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 
 class SpkBantuanController extends Controller
 {
     // MENAMPILKAN DAFTAR SPK BANTUAN SAJA
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
 
-        $spks = MSpk::with(['asalCabang', 'designer', 'operator', 'bahan'])
-            ->where('cabang_id', $user->cabang_id) // Data di cabang ini
-            ->where('is_bantuan', true) // HANYA YANG BANTUAN
-            ->latest()
-            ->paginate(10);
+        // Mulai Query dengan Eager Loading agar hemat query database
+        $query = MSpk::with(['bahan', 'designer', 'operator', 'cabang', 'cabangAsal'])
+            ->where('is_bantuan', true);
 
-        return view('spk.desginer.indexSpkBantuan', [
-            'title' => 'Manajemen SPK Bantuan (Eksternal)',
+        // 1. Logika Filter Cabang
+        // Jika user BUKAN dari pusat, filter hanya SPK cabangnya sendiri
+        if ($user->cabang->jenis !== 'pusat') {
+            $query->where('cabang_id', $user->cabang_id);
+        }
+
+        // 2. Logika Pencarian (No SPK atau Nama Pelanggan)
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('no_spk', 'like', "%$search%")
+                    ->orWhere('nama_pelanggan', 'like', "%$search%");
+            });
+        }
+
+        // 3. Ambil data (Paginate 10 per halaman) & urutkan terbaru
+        $spks = $query->latest()->paginate(10);
+        // dd($spks->get());
+
+        return view('spk.designer.indexSpkBantuan', [
+            'title' => 'Manajemen SPK',
             'spks' => $spks
         ]);
     }
@@ -38,7 +56,9 @@ class SpkBantuanController extends Controller
         $user = Auth::user();
 
         // Ambil Cabang Lain (Pengirim)
-        $cabangLain = MCabang::where('id', '!=', $user->cabang_id)->get();
+        $cabangLain = MCabang::where('id', '!=', $user->cabang_id)
+            ->where('jenis', '!=', 'pusat')
+            ->get();
         $bahans = MBahanBaku::all();
         $finishings = MFinishing::all();
 
@@ -80,10 +100,10 @@ class SpkBantuanController extends Controller
 
                 // Generate Nomor
                 $lastSpk = MSpk::where('cabang_id', $user->cabang_id)
-                               ->where('no_spk', 'like', $finalPrefix . '-%')
-                               ->lockForUpdate()
-                               ->orderBy('id', 'desc')
-                               ->first();
+                    ->where('no_spk', 'like', $finalPrefix . '-%')
+                    ->lockForUpdate()
+                    ->orderBy('id', 'desc')
+                    ->first();
 
                 $nextNumber = $lastSpk ? ((int) Str::afterLast($lastSpk->no_spk, '-') + 1) : 1;
                 $newNoSpk = $finalPrefix . '-' . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
@@ -113,9 +133,109 @@ class SpkBantuanController extends Controller
                 ]);
             });
 
-            return redirect()->route('spk-bantuan')->with('success', 'SPK Bantuan Berhasil Dibuat!');
+            return redirect()->route('spk-bantuan.index')->with('success', 'SPK Bantuan Berhasil Dibuat!');
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage())->withInput();
         }
+    }
+
+    public function riwayat(Request $request)
+    {
+        $user = Auth::user();
+
+        // 1. Inisialisasi Query Awal
+        $query = MSpk::with(['bahan', 'designer', 'operator', 'cabang'])
+            ->where('is_bantuan', true);
+
+        // 2. Filter Cabang (Jika bukan pusat, hanya lihat cabang sendiri)
+        if ($user->cabang->jenis !== 'pusat') {
+            $query->where('cabang_id', $user->cabang_id);
+        }
+
+        // 3. Filter Status Produksi "DONE" (Selesai)
+        $query->where('status_produksi', 'done');
+
+        // 4. Logika Pencarian
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('no_spk', 'like', "%$search%")
+                    ->orWhere('nama_pelanggan', 'like', "%$search%");
+            });
+        }
+
+        // 5. Eksekusi Data (Pagination)
+        // Gunakan paginate() di akhir setelah semua filter diterapkan
+        $spks = $query->latest()->paginate(10);
+
+        return view('spk.operator.riwayatSpk', [
+            'title' => 'Riwayat Produksi Selesai',
+            'spks' => $spks
+        ]);
+    }
+
+    public function operatorIndex(Request $request)
+    {
+        $user = Auth::user();
+
+        // 1. Query Dasar
+        $query = MSpk::with(['bahan', 'designer', 'operator', 'cabang']);
+
+        // 2. FILTER CABANG (Penting: Gunakan cabang_produksi_id agar SPK Bantuan muncul)
+        if ($user->cabang->jenis !== 'pusat') {
+            // Operator hanya melihat pekerjaan yang dilimpahkan ke cabangnya
+            // (Baik order lokal maupun bantuan dari luar)
+            $query->where('cabang_id', $user->cabang_id);
+        }
+
+        // 3. FILTER STATUS (Gunakan whereIn agar RAPI dan tidak bocor)
+        $query->where('status_spk', 'acc')
+            ->whereIn('status_produksi', ['pending', 'ripping', 'ongoing', 'finishing'])
+            ->where('is_bantuan', true);
+
+        // 4. FILTER ROLE & JENIS ORDER (Grouping Wajib)
+        $query->where(function (Builder $q) use ($user) {
+
+            // Kumpulkan jenis order yang boleh dilihat user ini
+            $allowedTypes = [];
+
+            if ($user->hasRole('operator indoor')) {
+                $allowedTypes[] = 'indoor';
+            }
+            if ($user->hasRole('operator outdoor')) {
+                $allowedTypes[] = 'outdoor';
+            }
+            if ($user->hasRole('operator multi')) {
+                $allowedTypes[] = 'multi';
+            }
+
+            // Logika: Tampilkan jika Jenis Order sesuai Role ATAU dia ditunjuk langsung (by ID)
+            $q->whereIn('jenis_order_spk', $allowedTypes)
+                ->orWhere('operator_id', $user->id);
+        });
+
+        // 5. PENCARIAN
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('no_spk', 'like', "%$search%")
+                    ->orWhere('nama_pelanggan', 'like', "%$search%");
+            });
+        }
+
+        $spks = $query->latest()->paginate(10);
+
+        return view('spk.operator.indexSpk', [
+            'title' => 'Produksi SPK',
+            'spks' => $spks
+        ]);
+    }
+
+    public function cetakSpkBantuan($id)
+    {
+        // Hanya ambil data SPK dan relasinya
+        $spk = MSpk::with(['bahan', 'designer', 'operator', 'cabang', 'cabangAsal'])->findOrFail($id);
+
+        return view('spk.nota_spk.notabantuan', compact('spk'));
     }
 }
