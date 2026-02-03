@@ -30,29 +30,28 @@
             <div class="card my-4">
                 <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
                     <div class="bg-gradient-primary shadow-primary border-radius-lg pt-4 pb-3">
-                        <h6 class="text-white text-capitalize ps-3">
-                            Data Barang Cabang ({{ $cabang->nama }})
+                        <h6 class="text-white ps-3">
+                            Data Barang Gudang Cabang ({{ $cabang->nama }})
                         </h6>
                     </div>
                 </div>
 
                 <div class="card-body px-0 pb-2">
-                    <div class="table-responsive p-0">
+                    <div class="table-responsive">
                         <table class="table align-items-center mb-0">
                             <thead>
                                 <tr>
                                     <th>No</th>
                                     <th>Nama</th>
                                     <th>Satuan</th>
-                                    <th>Harga</th>
-                                    <th>Stok Cabang</th>
+                                    <th>Stok</th>
                                     <th class="text-center">Status</th>
                                     <th class="text-center">Aksi</th>
                                 </tr>
                             </thead>
 
                             <tbody>
-                                @forelse($datas as $index => $item)
+                                @forelse($datas as $i => $item)
                                     @php
                                         $persen = $item->batas_stok > 0
                                             ? ($item->stok_cabang / $item->batas_stok) * 100
@@ -67,29 +66,28 @@
                                         } elseif ($persen <= 50) {
                                             $status = 'Cukup';
                                             $badge = 'bg-gradient-info';
-                                        } elseif ($persen >= 80) {
-                                            $status = 'Banyak';
-                                            $badge = 'bg-gradient-success';
                                         } else {
-                                            $status = 'Normal';
-                                            $badge = 'bg-gradient-secondary';
+                                            $status = 'Aman';
+                                            $badge = 'bg-gradient-success';
                                         }
+
+                                        $stokFormat = fmod($item->stok_cabang, 1) == 0
+                                            ? number_format($item->stok_cabang, 0, ',', '.')
+                                            : number_format($item->stok_cabang, 2, ',', '.');
                                     @endphp
 
                                     <tr>
-                                        <td>{{ $index+1 }}</td>
-                                        <td class="font-weight-bold">{{ $item->nama_bahan }}</td>
+                                        <td>{{ $i+1 }}</td>
+                                        <td class="fw-bold">{{ $item->nama_bahan }}</td>
                                         <td>{{ $item->satuan }}</td>
-                                        <td>Rp {{ number_format($item->harga,0,',','.') }}</td>
-                                        <td>{{ $item->stok_cabang }}</td>
+                                        <td>{{ $stokFormat }}</td>
 
                                         <td class="text-center">
-                                            <span class="badge badge-sm {{ $badge }}">{{ $status }}</span>
+                                            <span class="badge {{ $badge }}">{{ $status }}</span>
                                         </td>
 
                                         <td class="text-center">
-                                            <button type="button"
-                                                class="btn btn-link text-info px-2"
+                                            <button class="btn btn-link text-info px-2"
                                                 onclick="editStok(
                                                     {{ $item->id }},
                                                     '{{ $item->nama_bahan }}',
@@ -99,10 +97,9 @@
                                             </button>
                                         </td>
                                     </tr>
-
                                 @empty
                                     <tr>
-                                        <td colspan="7" class="text-center text-muted py-4">
+                                        <td colspan="6" class="text-center text-muted py-4">
                                             Belum ada data barang
                                         </td>
                                     </tr>
@@ -117,13 +114,14 @@
     </div>
 </div>
 
-<!-- MODAL EDIT STOK CABANG -->
+{{-- =====================
+MODAL EDIT STOK
+===================== --}}
 <div class="modal fade" id="modalEditStok" tabindex="-1">
   <div class="modal-dialog modal-md modal-dialog-centered">
     <div class="modal-content">
       <form method="POST" id="formEditStok">
-        @csrf
-        @method('PUT')
+        @csrf @method('PUT')
 
         <div class="modal-header">
           <h5 class="modal-title">Update Stok Cabang</h5>
@@ -131,55 +129,29 @@
         </div>
 
         <div class="modal-body">
-          <div class="row">
-            <div class="col-12 mb-3">
-              <label>Nama Barang</label>
-              <input type="text" id="edit_nama" class="form-control" readonly>
-            </div>
+          <label>Nama Barang</label>
+          <input type="text" id="edit_nama" class="form-control mb-3" readonly>
 
-            <div class="col-12 mb-3">
-              <label>Stok Cabang</label>
-              <input type="number" name="stok" id="edit_stok" class="form-control" required>
-            </div>
-          </div>
+          <label>Stok</label>
+          <input type="number" step="0.01" name="stok" id="edit_stok" class="form-control" required>
         </div>
 
         <div class="modal-footer">
           <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-          <button class="btn bg-gradient-primary">Simpan Perubahan</button>
+          <button class="btn bg-gradient-primary">Simpan</button>
         </div>
       </form>
     </div>
   </div>
 </div>
 
-{{-- =====================
-SWEETALERT HAPUS
-===================== --}}
 <script>
 function editStok(id, nama, stok) {
-    document.getElementById('edit_nama').value = nama;
-    document.getElementById('edit_stok').value = stok;
-
-    document.getElementById('formEditStok')
-        .action = '/gudang-cabang/barang/update/' + id;
-
-    new bootstrap.Modal(document.getElementById('modalEditStok')).show();
+    edit_nama.value = nama;
+    edit_stok.value = stok;
+    formEditStok.action = '/gudang-cabang/barang/update/' + id;
+    new bootstrap.Modal(modalEditStok).show();
 }
 </script>
-
-<style>
-.table-responsive {
-    overflow-x: auto;
-}
-
-.table td,
-.table th,
-.btn {
-    position: relative;
-    z-index: 20 !important;
-    pointer-events: auto !important;
-}
-</style>
 
 @endsection

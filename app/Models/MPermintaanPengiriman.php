@@ -25,4 +25,10 @@ class MPermintaanPengiriman extends Model
     {
         return $this->belongsTo(MCabang::class, 'cabang_id');
     }
+
+    public function pengirimans()
+    {
+        return $this->hasMany(MPengiriman::class, 'permintaan_id');
+    }
+
 }

@@ -50,6 +50,18 @@ Route::middleware(['auth', 'role:inventory utama'])
         Route::delete('/pengiriman-pusat/delete/{id}', [GudangPusatController::class, 'pengirimanDestroy'])
             ->name('pengiriman.pusat.destroy');
 
+Route::get(
+    '/pengiriman/{id}/edit-data',
+    [GudangPusatController::class, 'pengirimanEditData']
+)->name('pengiriman.pusat.editData');
+
+Route::put(
+    '/pengiriman/{id}/update',
+    [GudangPusatController::class, 'pengirimanUpdate']
+)->name('pengiriman.pusat.update');
+
+
+
         // laporan
         Route::get('/laporan-pengiriman', [GudangPusatController::class, 'laporanIndex'])
             ->name('laporan.pengiriman.index');
@@ -60,12 +72,8 @@ Route::middleware(['auth', 'role:inventory utama'])
         Route::get('/laporan-pengiriman/{bulan}/{tahun}/download', [GudangPusatController::class, 'laporanDownload'])
             ->name('laporan.pengiriman.download');
 
-Route::get(
-    '/laporan/pengiriman/excel/{bulan}/{tahun}',
-    [GudangPusatController::class, 'laporanExcel']
-)->name('laporan.pengiriman.excel');
-
-
+        Route::get('/laporan/pengiriman/excel/{bulan}/{tahun}',[GudangPusatController::class, 'laporanExcel']
+        )->name('laporan.pengiriman.excel');
 
         // =====================
         // PERMINTAAN CABANG

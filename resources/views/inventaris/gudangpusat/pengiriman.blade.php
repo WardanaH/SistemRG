@@ -48,7 +48,7 @@
     TABEL ATAS : PERMINTAAN CABANG
     ====================================================== --}}
     <div class="card mb-4">
-        <div class="card-header bg-gradient-warning text-white">
+        <div class="card-header bg-gradient-success text-white">
             <h6 class="mb-0">Daftar Permintaan Pengiriman Cabang</h6>
         </div>
 
@@ -73,23 +73,30 @@
                             <td>{{ $p->cabang->nama }}</td>
                             <td>{{ \Carbon\Carbon::parse($p->tanggal_permintaan)->format('d M Y') }}</td>
                             <td>
-                                <span class="badge
-                                    {{ $p->status == 'Menunggu' ? 'bg-warning' : 'bg-success' }}">
-                                    {{ $p->status }}
-                                </span>
-                            </td>
-                            <td class="text-center">
-                                @if($p->status === 'Menunggu')
-                                <button class="btn btn-sm btn-primary btn-proses"
-                                    data-id="{{ $p->id }}"
-                                    data-kode="{{ $p->kode_permintaan }}"
-                                    data-cabang="{{ $p->cabang->nama }}">
-                                    Proses
-                                </button>
-                                @else
-                                <span class="text-muted">Selesai</span>
+                                @if($p->status == 'Menunggu')
+                                    <span class="badge bg-warning">Menunggu</span>
+                                @elseif($p->status == 'Diproses')
+                                    <span class="badge bg-primary">Diproses</span>
+                                @elseif($p->status == 'Selesai')
+                                    Selesai
                                 @endif
                             </td>
+
+                            <td class="text-center">
+                                @if($p->status === 'Menunggu')
+                                    <button class="btn btn-sm btn-primary btn-proses"
+                                        data-id="{{ $p->id }}"
+                                        data-kode="{{ $p->kode_permintaan }}"
+                                        data-cabang="{{ $p->cabang->nama }}">
+                                        Proses
+                                    </button>
+                                @elseif($p->status === 'Diproses')
+                                    <span class="text-muted">Sedang Diproses</span>
+                                @elseif($p->status === 'Selesai')
+                                    <span class="text-muted">Selesai</span>
+                                @endif
+                            </td>
+
                         </tr>
                     @empty
                         <tr>
@@ -157,30 +164,35 @@
 
                             <td>
                             @if($item->status_pengiriman === 'Dikemas')
-                            <form method="POST"
-                                action="{{ route('pengiriman.pusat.status', $item->id) }}"
-                                class="form-status">
-                                @csrf
-                                @method('PUT')
+                                <form method="POST"
+                                    action="{{ route('pengiriman.pusat.status', $item->id) }}"
+                                    class="form-status">
+                                    @csrf
+                                    @method('PUT')
 
-                                <select name="status_pengiriman"
-                                        class="form-select form-select-sm select-status"
-                                        data-kode="{{ $item->kode_pengiriman }}">
-                                    <option value="Dikemas" selected>Dikemas</option>
-                                    <option value="Dikirim">Dikirim</option>
-                                </select>
-                            </form>
-                            @else
-                                <span class="badge bg-success">Dikirim</span>
+                                    <select name="status_pengiriman"
+                                            class="form-select form-select-sm select-status"
+                                            data-kode="{{ $item->kode_pengiriman }}">
+                                        <option value="Dikemas" selected>Dikemas</option>
+                                        <option value="Dikirim">Dikirim</option>
+                                    </select>
+                                </form>
+
+                            @elseif($item->status_pengiriman === 'Dikirim')
+                                <span class="badge bg-primary">Dikirim</span>
+
+                            @elseif($item->status_pengiriman === 'Diterima')
+                                <span class="badge bg-success">Diterima</span>
                             @endif
                             </td>
 
                             <td class="text-center">
                             @if($item->status_pengiriman === 'Dikemas')
-                                <a href="#"
-                                class="btn btn-sm btn-warning">
+                            <a href="#"
+                            class="btn btn-sm btn-warning btn-edit"
+                            data-id="{{ $item->id }}">
                                 <i class="material-icons">edit</i>
-                                </a>
+                            </a>
 
                                 <form action="{{ route('pengiriman.pusat.destroy', $item->id) }}"
                                     method="POST"
@@ -310,6 +322,58 @@ MODAL PROSES PERMINTAAN
     </div>
   </div>
 </div>
+{{-- =====================
+MODAL EDIT PENGIRIMAN (PERBAIKAN)
+===================== --}}
+<div class="modal fade" id="modalEdit">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+
+            <form id="formEdit" method="POST">
+                @csrf
+                @method('PUT')
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Pengiriman</h5>
+                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <p><b>Kode Pengiriman:</b> <span id="edit_kode"></span></p>
+                    <p><b>Cabang Tujuan:</b> <span id="edit_cabang"></span></p>
+
+                    <table class="table table-bordered mt-3">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="50">✔</th>
+                                <th>Nama Barang</th>
+                                <th>Jumlah</th>
+                                <th>Satuan</th>
+                                <th>Stok</th>
+                            </tr>
+                        </thead>
+                        <tbody id="editListBarang">
+                            <tr><td colspan="5" class="text-center text-muted">Memuat data...</td></tr>
+                        </tbody>
+                    </table>
+
+                    <div class="mt-3">
+                        <label>Catatan Gudang</label>
+                        <textarea name="catatan" class="form-control" placeholder="Catatan jika ada barang tidak dikirim"></textarea>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-success">Simpan Perubahan</button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
 
 @endsection
 
@@ -372,17 +436,22 @@ $(document).on('click', '.btn-proses', function () {
         method: "GET",
         success: function (res) {
 
+
             res.forEach((item, index) => {
+
+                let disabled = item.stok <= 0 ? 'disabled' : 'checked';
+                let rowClass = item.stok <= 0 ? 'text-muted' : '';
+
                 $('#listBarang').append(`
-                  <tr>
+                <tr class="${rowClass}">
                     <td class="text-center">
-                      <input type="checkbox"
+                    <input type="checkbox"
                         name="barang[${index}][checked]"
-                        checked>
-                      <input type="hidden"
+                        ${disabled}>
+                    <input type="hidden"
                         name="barang[${index}][gudang_barang_id]"
                         value="${item.gudang_barang_id}">
-                      <input type="hidden"
+                    <input type="hidden"
                         name="barang[${index}][jumlah]"
                         value="${item.jumlah}">
                     </td>
@@ -390,7 +459,7 @@ $(document).on('click', '.btn-proses', function () {
                     <td>${item.jumlah}</td>
                     <td>${item.satuan}</td>
                     <td>${item.stok}</td>
-                  </tr>
+                </tr>
                 `);
             });
 
@@ -455,6 +524,59 @@ $(document).ready(function () {
         });
     });
 
+});
+</script>
+<script>
+$(document).on('click', '.btn-edit', function () {
+
+    let id = $(this).data('id');
+
+    $('#editListBarang').html('<tr><td colspan="5" class="text-center text-muted">Memuat data...</td></tr>');
+    $('#formEdit').attr('action', "{{ url('gudang-pusat/pengiriman') }}/" + id + "/update");
+
+    $.get("{{ url('gudang-pusat/pengiriman') }}/" + id + "/edit-data", function(res) {
+
+        $('#edit_kode').text(res.kode);
+        $('#edit_cabang').text(res.cabang || '-');
+
+        let html = '';
+        res.detail.forEach((item, i) => {
+            html += `
+                <tr>
+                    <td class="text-center">
+                        <input type="checkbox" name="barang[${i}][checked]" checked>
+                        <input type="hidden" name="barang[${i}][gudang_barang_id]" value="${item.gudang_barang_id}">
+                    </td>
+                    <td>${item.nama_barang}</td>
+                    <td>${item.jumlah}</td>
+                    <td>${item.satuan}</td>
+                    <td>${item.stok}</td>
+                </tr>
+            `;
+        });
+
+        $('#editListBarang').html(html);
+
+        new bootstrap.Modal(document.getElementById('modalEdit')).show();
+    });
+});
+
+// Konfirmasi submit edit
+$('#formEdit').on('submit', function (e) {
+    e.preventDefault();
+    let form = this;
+
+    Swal.fire({
+        title: 'Simpan Perubahan?',
+        text: 'Jumlah dan status barang akan diperbarui.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Simpan'
+    }).then((res) => {
+        if (res.isConfirmed) {
+            form.submit();
+        }
+    });
 });
 </script>
 

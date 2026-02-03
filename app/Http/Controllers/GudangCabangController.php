@@ -118,59 +118,65 @@ class GudangCabangController extends Controller
     /**
      * 🔹 Terima barang dari pengiriman
      */
-    public function terimaPengiriman(Request $request, $id)
-    {
-        $user = Auth::user();
-        $cabang = MCabang::findOrFail($user->cabang_id);
+public function terimaPengiriman(Request $request, $id)
+{
+    $user = Auth::user();
+    $cabang = MCabang::findOrFail($user->cabang_id);
 
-        $pengiriman = MPengiriman::findOrFail($id);
+    $pengiriman = MPengiriman::findOrFail($id);
 
-        if ($pengiriman->cabang_tujuan_id != $cabang->id) {
-            return back()->with('error', 'Pengiriman tidak ditujukan ke cabang Anda.');
-        }
-
-        if ($pengiriman->status_pengiriman != 'Dikirim') {
-            return back()->with('error', 'Pengiriman hanya bisa diterima jika statusnya Dikirim.');
-        }
-
-        // ✔️ Aman untuk array maupun json string
-        $items = $pengiriman->keterangan;
-
-        if (is_string($items)) {
-            $items = json_decode($items, true);
-        }
-
-        if (!is_array($items)) {
-            $items = [];
-        }
-
-        foreach ($items as $item) {
-
-            // ✔️ Pastikan ada gudang_barang_id dan jumlah
-            if (!isset($item['gudang_barang_id']) || !isset($item['jumlah'])) {
-                continue;
-            }
-
-            $jumlah = (float) str_replace(',', '.', $item['jumlah']);
-
-            MCabangBarang::updateOrCreate(
-                [
-                    'cabang_id'        => $cabang->id,
-                    'gudang_barang_id' => $item['gudang_barang_id']
-                ],
-                [
-                    'stok' => \DB::raw("COALESCE(stok,0) + {$jumlah}")
-                ]
-            );
-
-        }
-
-        $pengiriman->status_pengiriman = 'Diterima';
-        $pengiriman->tanggal_diterima = now();
-        $pengiriman->save();
-
-        return back()->with('success', 'Pengiriman berhasil diterima dan stok cabang terupdate.');
+    if ($pengiriman->cabang_tujuan_id != $cabang->id) {
+        return back()->with('error', 'Pengiriman tidak ditujukan ke cabang Anda.');
     }
+
+    if ($pengiriman->status_pengiriman != 'Dikirim') {
+        return back()->with('error', 'Pengiriman hanya bisa diterima jika statusnya Dikirim.');
+    }
+
+    // Ambil keterangan barang
+    $items = $pengiriman->keterangan;
+
+    if (is_string($items)) {
+        $items = json_decode($items, true);
+    }
+
+    if (!is_array($items)) {
+        $items = [];
+    }
+
+    foreach ($items as $item) {
+        // Pastikan ada gudang_barang_id dan jumlah
+        if (!isset($item['gudang_barang_id']) || !isset($item['jumlah'])) {
+            continue;
+        }
+
+        $jumlah = (float) str_replace(',', '.', $item['jumlah']);
+
+        // Ambil record cabang barang, atau buat baru jika belum ada
+        $cabangBarang = MCabangBarang::firstOrNew([
+            'cabang_id'        => $cabang->id,
+            'gudang_barang_id' => $item['gudang_barang_id']
+        ]);
+
+        // Update stok manual
+        $cabangBarang->stok = ($cabangBarang->stok ?? 0) + $jumlah;
+        $cabangBarang->save();
+    }
+
+    // Update status pengiriman
+    $pengiriman->status_pengiriman = 'Diterima';
+    $pengiriman->tanggal_diterima = now();
+    $pengiriman->save();
+    // 🔥 FIX: paksa permintaan jadi selesai
+if ($pengiriman->permintaan_id) {
+    MPermintaanPengiriman::where('id', $pengiriman->permintaan_id)
+        ->update(['status' => 'Selesai']);
+}
+
+
+    return back()->with('success', 'Pengiriman berhasil diterima dan stok cabang terupdate.');
+}
+
 
     public function laporanIndex()
     {
@@ -298,6 +304,9 @@ public function laporanDownload($bulan, $tahun)
         return view('inventaris.gudangcabang.permintaanpengiriman', [
             'barangs' => MGudangBarang::orderBy('nama_bahan')->get(),
             'datas'   => MPermintaanPengiriman::where('cabang_id', $user->cabang_id)
+                            ->whereDoesntHave('pengirimans', function ($q) {
+                                $q->where('status_pengiriman', 'Diterima');
+                            })
                             ->latest()
                             ->get()
         ]);

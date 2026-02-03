@@ -29,7 +29,7 @@
         <div class="col-12">
             <div class="card my-4">
                 <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
-                    <div class="bg-gradient-warning shadow-warning border-radius-lg pt-4 pb-3">
+                    <div class="bg-gradient-success shadow-success border-radius-lg pt-4 pb-3">
                         <h6 class="text-white text-capitalize ps-3">
                             Permintaan Pengiriman Barang ke Gudang Pusat
                         </h6>
@@ -75,7 +75,7 @@
                                         name="barang[0][jumlah]"
                                         class="form-control border border-2 border-grey"
                                         inputmode="decimal"
-                                        placeholder="contoh: 1,5"
+                                        {{-- placeholder="contoh: 1,5" --}}
                                         required>
                                 </div>
 
@@ -112,7 +112,7 @@
                         </div>
 
                         <div class="text-end">
-                            <button class="btn bg-gradient-warning mb-0">
+                            <button class="btn bg-gradient-success mb-0">
                                 <i class="material-icons text-sm">send</i>
                                 &nbsp;Kirim Permintaan
                             </button>
@@ -152,9 +152,26 @@
                                     <td>{{ $row->kode_permintaan }}</td>
                                     <td>{{ \Carbon\Carbon::parse($row->tanggal_permintaan)->format('d M Y') }}</td>
                                     <td class="text-center">
-                                        <span class="badge bg-warning">
-                                            {{ $row->status }}
-                                        </span>
+                                        @if ($row->status === 'Menunggu')
+                                            <span class="badge bg-warning">
+                                                {{ $row->status }}
+                                            </span>
+
+                                        @elseif ($row->status === 'Diproses')
+                                            <span class="badge bg-primary">
+                                                {{ $row->status }}
+                                            </span>
+
+                                        @elseif ($row->status === 'Selesai')
+                                            <span class="text-secondary">
+                                                {{ $row->status }}
+                                            </span>
+
+                                        @else
+                                            <span class="text-muted">
+                                                {{ $row->status }}
+                                            </span>
+                                        @endif
                                     </td>
                                 </tr>
                                 @empty

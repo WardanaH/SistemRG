@@ -98,6 +98,55 @@
     .card-header .bg-gradient-primary:has(h6:contains("Data")) {
         background: linear-gradient(195deg, #42a5f5 0%, #1e88e5 100%) !important;
     }
+    
+    /* border luar tabel */
+    .table {
+        border-collapse: separate !important;
+        border-spacing: 0;
+        border: 1px solid #e0e0e0;
+        border-radius: 0.75rem;
+        overflow: hidden;
+        background-color: #fff;
+    }
+
+    /* header */
+    .table thead th {
+        background-color: #f8f9fa;
+        color: #344767;
+        font-weight: 600;
+        border-bottom: 1px solid #e0e0e0;
+        border-right: 1px solid #e0e0e0;
+        white-space: nowrap;
+    }
+
+    /* isi tabel */
+    .table tbody td {
+        border-bottom: 1px solid #e0e0e0;
+        border-right: 1px solid #e0e0e0;
+        color: #495057;
+        vertical-align: middle;
+    }
+
+    /* hapus border kanan terakhir */
+    .table thead th:last-child,
+    .table tbody td:last-child {
+        border-right: none;
+    }
+
+    /* hapus border bawah baris terakhir */
+    .table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* hover */
+    .table-hover tbody tr:hover {
+        background-color: rgba(66, 165, 245, 0.06);
+    }
+
+    /* responsive fix */
+    .table-responsive {
+        border-radius: 0.75rem;
+    }
     </style>
 
 </head>
