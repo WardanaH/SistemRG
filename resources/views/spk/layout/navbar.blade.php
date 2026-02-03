@@ -19,10 +19,34 @@
 
             <ul class="navbar-nav justify-content-end">
 
+                @hasrole('admin')
+                <li class="nav-item dropdown pe-3 d-flex align-items-center position-relative">
+                    <a href="javascript:;" class="nav-link text-body p-0" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="material-icons-round opacity-10" style="font-size: 1.2rem;">notifications</i>
+
+                        <span id="badge-notif" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none; font-size: 0.6rem;">
+                            0
+                        </span>
+                    </a>
+
+                    <ul class="dropdown-menu dropdown-menu-end px-2 py-3 me-sm-n4" aria-labelledby="dropdownMenuButton">
+                        <li class="mb-2">
+                            <a class="dropdown-item border-radius-md" href="{{ route('spk.index') }}">
+                                <div class="d-flex py-1">
+                                    <div class="d-flex flex-column justify-content-center">
+                                        <h6 class="text-sm font-weight-normal mb-1">
+                                            <span class="font-weight-bold">Cek Halaman SPK</span> untuk detail
+                                        </h6>
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+                @endhasrole
+
                 <li class="nav-item d-flex align-items-center">
-                    <a href="{{ route('auth.logout') }}"
-                        onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
-                        class="nav-link text-body font-weight-bold px-0">
+                    <a href="javascript:;" onclick="confirmLogout(event)" class="nav-link text-body font-weight-bold px-0">
                         <i class="fa fa-user me-sm-1"></i>
                         <span class="d-sm-inline d-none">Log Out</span>
                     </a>

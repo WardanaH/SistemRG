@@ -112,7 +112,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-        // 1. AKTIFKAN LOGGING (PENTING BUAT DEBUG)
+        // 1. AKTIFKAN LOGGING
         Pusher.logToConsole = true;
 
         // 2. Inisialisasi Pusher
@@ -121,31 +121,47 @@
             encrypted: true
         });
 
-        // Cek di Console Browser nanti, harusnya config key & cluster tidak ada spasi
+        // Cek Config di Console
         console.log("Config Pusher:", {
             key: '{{ config("broadcasting.connections.pusher.key") }}',
             cluster: '{{ config("broadcasting.connections.pusher.options.cluster") }}'
         });
 
+        // Status Admin
         const isAdmin = {{ Auth::check() && Auth::user() -> hasRole('admin') ? 'true' : 'false' }};
         console.log("Status Admin:", isAdmin);
 
         var channel = pusher.subscribe('channel-admin');
 
-        // Binding Event
+        // 3. Binding Event (Menangani Notifikasi Masuk)
         channel.bind('spk-dibuat', function(data) {
 
-            console.log("EVENT DITERIMA:", data); // Harus muncul jika koneksi sukses
+            console.log("EVENT DITERIMA:", data);
 
             if (isAdmin) {
+                // A. Update Angka di Lonceng Navbar
+                updateBadgeNavbar();
+
+                // B. Mainkan Suara (File Custom Kamu)
                 playNotificationSound();
+
+                // C. Tampilkan SweetAlert (Auto Close 5 Detik)
                 Swal.fire({
                     title: 'SPK Baru Masuk!',
-                    text: data.pesan + ' (No: ' + data.no_spk + ')',
+                    html: `<p>${data.pesan}</p><small>No: <b>${data.no_spk}</b></small>`,
                     icon: 'info',
+                    position: 'top-end', // Tampil di pojok kanan atas
+                    showConfirmButton: true,
+                    confirmButtonText: 'Lihat',
                     showCancelButton: true,
-                    confirmButtonText: 'Lihat SPK',
-                    cancelButtonText: 'Tutup'
+                    cancelButtonText: 'Tutup',
+                    timer: 5000, // Menutup otomatis dalam 5000ms (5 detik)
+                    timerProgressBar: true, // Ada bar progres berjalan
+                    didOpen: (toast) => {
+                        // Jika mouse diarahkan ke notif, waktu berhenti (biar bisa dibaca)
+                        toast.onmouseenter = Swal.stopTimer;
+                        toast.onmouseleave = Swal.resumeTimer;
+                    }
                 }).then((result) => {
                     if (result.isConfirmed) {
                         window.location.href = "{{ url('/spk') }}?search=" + data.no_spk;
@@ -154,10 +170,47 @@
             }
         });
 
+        // 4. Fungsi Menambah Angka Badge Lonceng
+        function updateBadgeNavbar() {
+            let badge = document.getElementById('badge-notif');
+            if (badge) {
+                // Ambil angka sekarang, ubah ke integer, tambah 1
+                let currentCount = parseInt(badge.innerText) || 0;
+                badge.innerText = currentCount + 1;
+
+                // Tampilkan badge (karena defaultnya display:none)
+                badge.style.display = 'inline-block';
+            }
+        }
+
+        // 5. Fungsi Audio (SESUAI PERMINTAAN: File tidak diubah)
         function playNotificationSound() {
             let audio = new Audio('{{ asset("assets/sound/notif_spk.mp3") }}');
             audio.play().catch(function(error) {
                 console.log("Audio error: " + error);
+            });
+        }
+    </script>
+
+    <script>
+        function confirmLogout(event) {
+            event.preventDefault(); // Mencegah link bekerja langsung
+
+            Swal.fire({
+                title: 'Yakin ingin keluar?',
+                text: "Sesi Anda akan diakhiri.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya, Keluar!',
+                cancelButtonText: 'Batal',
+                reverseButtons: true // Tombol Batal di kiri, Ya di kanan (opsional)
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Jika user klik "Ya", submit form logout
+                    document.getElementById('logout-form').submit();
+                }
             });
         }
     </script>
