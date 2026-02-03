@@ -194,7 +194,7 @@ class GudangPusatController extends Controller
 
         $pengiriman->status_pengiriman = $request->status_pengiriman;
         $pengiriman->save();
-        
+
         if ($request->status_pengiriman === 'Diterima') {
             MPermintaanPengiriman::where('id', $pengiriman->permintaan_id)
                 ->update(['status' => 'Selesai']);
@@ -206,33 +206,32 @@ class GudangPusatController extends Controller
 
     }
 
-private function updateStatusPermintaan($permintaanId)
-{
-    if (!$permintaanId) return;
+    private function updateStatusPermintaan($permintaanId)
+    {
+        if (!$permintaanId) return;
 
-    $permintaan = MPermintaanPengiriman::find($permintaanId);
-    if (!$permintaan) return;
+        $permintaan = MPermintaanPengiriman::find($permintaanId);
+        if (!$permintaan) return;
 
-    $totalPengiriman = MPengiriman::where('permintaan_id', $permintaan->id)->count();
+        $totalPengiriman = MPengiriman::where('permintaan_id', $permintaan->id)->count();
 
-    $totalDiterima = MPengiriman::where('permintaan_id', $permintaan->id)
-        ->where('status_pengiriman', 'Diterima')
-        ->count();
+        $totalDiterima = MPengiriman::where('permintaan_id', $permintaan->id)
+            ->where('status_pengiriman', 'Diterima')
+            ->count();
 
-    if ($totalPengiriman === 0) {
-        // SEMUA pengiriman dihapus
-        $permintaan->status = 'Menunggu';
-    } elseif ($totalPengiriman === $totalDiterima) {
-        // Semua sudah diterima cabang
-        $permintaan->status = 'Selesai';
-    } else {
-        // Masih ada proses
-        $permintaan->status = 'Diproses';
+        if ($totalPengiriman === 0) {
+            // SEMUA pengiriman dihapus
+            $permintaan->status = 'Menunggu';
+        } elseif ($totalPengiriman === $totalDiterima) {
+            // Semua sudah diterima cabang
+            $permintaan->status = 'Selesai';
+        } else {
+            // Masih ada proses
+            $permintaan->status = 'Diproses';
+        }
+
+        $permintaan->save();
     }
-
-    $permintaan->save();
-}
-
 
     public function pengirimanEditData($id)
     {
@@ -331,9 +330,7 @@ private function updateStatusPermintaan($permintaanId)
             $permintaanId = $pengiriman->permintaan_id;
             $pengiriman->delete();
             $this->updateStatusPermintaan($permintaanId);
-
-            // Update status permintaan
-            $this->updateStatusPermintaan($permintaanId);
+            // $this->updateStatusPermintaan($permintaanId);
 
             DB::commit();
             return back()->with('success', 'Pengiriman berhasil dibatalkan');
@@ -347,7 +344,7 @@ private function updateStatusPermintaan($permintaanId)
     public function permintaanIndex()
     {
         $permintaan = MPermintaanPengiriman::with('cabang')
-                        ->orderByDesc('created_at') // terbaru di atas
+                        ->orderByDesc('created_at')
                         ->get();
 
         $pengiriman = MPengiriman::with(['cabang', 'permintaan'])
@@ -467,72 +464,72 @@ private function updateStatusPermintaan($permintaanId)
         return response()->json($result);
     }
 
-public function permintaanProses(Request $request)
-{
-    $request->validate([
-        'permintaan_id' => 'required|exists:permintaan_pengirimans,id',
-        'barang'        => 'required|array'
-    ]);
-
-    DB::beginTransaction();
-    try {
-        $permintaan = MPermintaanPengiriman::findOrFail($request->permintaan_id);
-
-        $barangDikirim = [];
-        $jumlahDiproses = 0;
-
-        foreach ($request->barang as $item) {
-            if (!isset($item['checked'], $item['gudang_barang_id'], $item['jumlah'])) continue;
-
-            $barang = MGudangBarang::find($item['gudang_barang_id']);
-            if (!$barang) continue;
-
-            $jumlahBarang = (float) str_replace(',', '.', $item['jumlah']);
-            if ($jumlahBarang <= 0) continue;
-            if ($barang->stok < $jumlahBarang) {
-                throw new \Exception('Stok '.$barang->nama_bahan.' tidak mencukupi');
-            }
-
-            $barang->stok -= $jumlahBarang;
-            $barang->save();
-
-            $barangDikirim[] = [
-                'gudang_barang_id' => $barang->id,
-                'nama_barang'      => $barang->nama_bahan,
-                'jumlah'           => $jumlahBarang,
-                'satuan'           => $barang->satuan,
-            ];
-
-            $jumlahDiproses++;
-        }
-
-        if ($jumlahDiproses === 0) {
-            return back()->with('error', 'Tidak ada barang yang dikirim');
-        }
-
-        $statusKelengkapan = $jumlahDiproses === count($permintaan->detail_barang) ? 'Lengkap' : 'Tidak Lengkap';
-
-        MPengiriman::create([
-            'kode_pengiriman'     => 'KRM-' . now()->format('Ymd') . '-' . strtoupper(Str::random(4)),
-            'permintaan_id'       => $permintaan->id,
-            'cabang_tujuan_id'    => $permintaan->cabang_id,
-            'tanggal_pengiriman' => now(),
-            'status_pengiriman'  => 'Dikemas',
-            'status_kelengkapan' => $statusKelengkapan,
-            'keterangan'         => $barangDikirim,
-            'catatan_gudang'     => $request->catatan
+    public function permintaanProses(Request $request)
+    {
+        $request->validate([
+            'permintaan_id' => 'required|exists:permintaan_pengirimans,id',
+            'barang'        => 'required|array'
         ]);
 
-        // update status permintaan
-        $this->updateStatusPermintaan($permintaan->id);
+        DB::beginTransaction();
+        try {
+            $permintaan = MPermintaanPengiriman::findOrFail($request->permintaan_id);
 
-        DB::commit();
-        return back()->with('success', 'Permintaan berhasil diproses');
-    } catch (\Exception $e) {
-        DB::rollBack();
-        return back()->with('error', $e->getMessage());
+            $barangDikirim = [];
+            $jumlahDiproses = 0;
+
+            foreach ($request->barang as $item) {
+                if (!isset($item['checked'], $item['gudang_barang_id'], $item['jumlah'])) continue;
+
+                $barang = MGudangBarang::find($item['gudang_barang_id']);
+                if (!$barang) continue;
+
+                $jumlahBarang = (float) str_replace(',', '.', $item['jumlah']);
+                if ($jumlahBarang <= 0) continue;
+                if ($barang->stok < $jumlahBarang) {
+                    throw new \Exception('Stok '.$barang->nama_bahan.' tidak mencukupi');
+                }
+
+                $barang->stok -= $jumlahBarang;
+                $barang->save();
+
+                $barangDikirim[] = [
+                    'gudang_barang_id' => $barang->id,
+                    'nama_barang'      => $barang->nama_bahan,
+                    'jumlah'           => $jumlahBarang,
+                    'satuan'           => $barang->satuan,
+                ];
+
+                $jumlahDiproses++;
+            }
+
+            if ($jumlahDiproses === 0) {
+                return back()->with('error', 'Tidak ada barang yang dikirim');
+            }
+
+            $statusKelengkapan = $jumlahDiproses === count($permintaan->detail_barang) ? 'Lengkap' : 'Tidak Lengkap';
+
+            MPengiriman::create([
+                'kode_pengiriman'     => 'KRM-' . now()->format('Ymd') . '-' . strtoupper(Str::random(4)),
+                'permintaan_id'       => $permintaan->id,
+                'cabang_tujuan_id'    => $permintaan->cabang_id,
+                'tanggal_pengiriman' => now(),
+                'status_pengiriman'  => 'Dikemas',
+                'status_kelengkapan' => $statusKelengkapan,
+                'keterangan'         => $barangDikirim,
+                'catatan_gudang'     => $request->catatan
+            ]);
+
+            // update status permintaan
+            $this->updateStatusPermintaan($permintaan->id);
+
+            DB::commit();
+            return back()->with('success', 'Permintaan berhasil diproses');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', $e->getMessage());
+        }
     }
-}
 
 //3. LAPORAN CATATAN PENGIRIMAN PERBULAN
     public function laporanIndex()
@@ -704,4 +701,25 @@ public function permintaanProses(Request $request)
             'laporan_pengiriman_'.$bulan.'_'.$tahun.'.xlsx'
         );
     }
+
+// 4. NOTIFIKASI
+public function getHeaderNotifications()
+{
+    return MPermintaanPengiriman::with('cabang')
+        ->where('status', 'Menunggu')
+        ->where('created_at', '>=', Carbon::now()->subDays(3))
+        ->orderByDesc('created_at')
+        ->take(5)
+        ->get();
+}
+
+// MARK AS READ
+public function markAsRead($id)
+{
+    MPermintaanPengiriman::where('id', $id)
+        ->update(['read_at' => now()]);
+
+    return response()->json(['success' => true]);
+}
+
 }

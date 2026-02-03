@@ -14,11 +14,13 @@ class MPermintaanPengiriman extends Model
         'tanggal_permintaan',
         'status',
         'detail_barang',
-        'catatan'
+        'catatan',
+        'read_at'
     ];
 
     protected $casts = [
-        'detail_barang' => 'array'
+        'detail_barang' => 'array',
+        'read_at' => 'datetime'
     ];
 
     public function cabang()
@@ -29,6 +31,11 @@ class MPermintaanPengiriman extends Model
     public function pengirimans()
     {
         return $this->hasMany(MPengiriman::class, 'permintaan_id');
+    }
+
+    public function isUnread()
+    {
+        return is_null($this->read_at);
     }
 
 }

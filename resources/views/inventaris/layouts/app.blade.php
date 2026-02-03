@@ -12,6 +12,8 @@
     <link href="{{ asset('assets/css/nucleo-svg.css') }}" rel="stylesheet">
     <script src="https://kit.fontawesome.com/42d5adcbca.js" crossorigin="anonymous"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
 
     <!-- CSS -->
     <link href="{{ asset('assets/css/material-dashboard.css?v=3.0.0') }}" rel="stylesheet">
@@ -98,7 +100,7 @@
     .card-header .bg-gradient-primary:has(h6:contains("Data")) {
         background: linear-gradient(195deg, #42a5f5 0%, #1e88e5 100%) !important;
     }
-    
+
     /* border luar tabel */
     .table {
         border-collapse: separate !important;
@@ -200,6 +202,8 @@ $(function () {
     });
 });
 </script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 
 @stack('scripts')

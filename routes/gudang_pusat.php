@@ -50,17 +50,11 @@ Route::middleware(['auth', 'role:inventory utama'])
         Route::delete('/pengiriman-pusat/delete/{id}', [GudangPusatController::class, 'pengirimanDestroy'])
             ->name('pengiriman.pusat.destroy');
 
-Route::get(
-    '/pengiriman/{id}/edit-data',
-    [GudangPusatController::class, 'pengirimanEditData']
-)->name('pengiriman.pusat.editData');
+        Route::get('/pengiriman/{id}/edit-data',[GudangPusatController::class, 'pengirimanEditData'])
+            ->name('pengiriman.pusat.editData');
 
-Route::put(
-    '/pengiriman/{id}/update',
-    [GudangPusatController::class, 'pengirimanUpdate']
-)->name('pengiriman.pusat.update');
-
-
+        Route::put('/pengiriman/{id}/update',[GudangPusatController::class, 'pengirimanUpdate'])
+            ->name('pengiriman.pusat.update');
 
         // laporan
         Route::get('/laporan-pengiriman', [GudangPusatController::class, 'laporanIndex'])
@@ -86,6 +80,11 @@ Route::put(
 
         Route::post('/permintaan/proses',[GudangPusatController::class, 'permintaanProses']
             )->name('permintaan.pusat.proses');
+
+        //notif
+        Route::post('/permintaan/{id}/read',[GudangPusatController::class, 'markAsRead'])
+            ->name('permintaan.pusat.read');
+
     });
 
 //logout

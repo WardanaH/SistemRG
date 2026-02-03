@@ -49,9 +49,13 @@ Route::middleware(['auth', 'role:inventory cabang'])
 
         Route::get('/laporan/{bulan}/{tahun}/download', [GudangCabangController::class, 'laporanDownload'])
             ->name('laporan.download');
-Route::get('/laporan/{bulan}/{tahun}/excel',
-    [GudangCabangController::class, 'laporanExcel']
-)->name('laporan.excel');
+
+        Route::get('/laporan/{bulan}/{tahun}/excel',[GudangCabangController::class, 'laporanExcel'])
+            ->name('laporan.excel');
+
+        //notif
+        Route::post('/notif/read/{id}', [GudangCabangController::class, 'markNotifRead'])
+            ->name('notif.read');
 
 // ==============================
 // PERMINTAAN PENGIRIMAN

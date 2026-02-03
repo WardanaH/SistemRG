@@ -17,13 +17,15 @@ class MPengiriman extends Model
         'status_kelengkapan',
         'tanggal_diterima',
         'keterangan',
-        'catatan_gudang'
+        'catatan_gudang',
+        'read_at'
     ];
 
     protected $casts = [
         'keterangan' => 'array',
         'tanggal_pengiriman' => 'date',
-        'tanggal_diterima' => 'date'
+        'tanggal_diterima' => 'date',
+        'read_at' => 'datetime'
     ];
 
     // =====================
