@@ -60,39 +60,26 @@ Route::middleware(['auth', 'role:inventory utama'])
         Route::get('/laporan-pengiriman/{bulan}/{tahun}/download', [GudangPusatController::class, 'laporanDownload'])
             ->name('laporan.pengiriman.download');
 
-// =====================
-// PERMINTAAN CABANG
-// =====================
-Route::get('/permintaan', [GudangPusatController::class, 'permintaanIndex'])
-    ->name('permintaan.pusat.index');
-
 Route::get(
-  '/permintaan/{id}/detail',
-  [GudangPusatController::class, 'permintaanDetail']
-)->name('permintaan.pusat.detail');
-
-
-Route::post(
-  '/permintaan/proses',
-  [GudangPusatController::class, 'permintaanProses']
-)->name('permintaan.pusat.proses');
+    '/laporan/pengiriman/excel/{bulan}/{tahun}',
+    [GudangPusatController::class, 'laporanExcel']
+)->name('laporan.pengiriman.excel');
 
 
 
-// Route::post('/permintaan/{id}/kirim', [GudangPusatController::class, 'permintaanKirim'])
-//     ->name('permintaan.pusat.kirim');
+        // =====================
+        // PERMINTAAN CABANG
+        // =====================
+        Route::get('/permintaan', [GudangPusatController::class, 'permintaanIndex'])
+            ->name('permintaan.pusat.index');
 
-// Route::post('/permintaan/proses',
-//     [PermintaanController::class, 'simpanProses']
-// )->name('permintaan.pusat.simpan');
+        Route::get('/permintaan/{id}/detail',[GudangPusatController::class, 'permintaanDetail']
+            )->name('permintaan.pusat.detail');
 
-
+        Route::post('/permintaan/proses',[GudangPusatController::class, 'permintaanProses']
+            )->name('permintaan.pusat.proses');
     });
 
 //logout
-Route::post('/logout', function () {
-    Auth::logout();
-    request()->session()->invalidate();
-    request()->session()->regenerateToken();
-    return redirect('/login');
-})->name('logout');
+Route::post('/logout', function () {Auth::logout();request()->session()->invalidate();request()->session()->regenerateToken();
+    return redirect('/login');})->name('logout');

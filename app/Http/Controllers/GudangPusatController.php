@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Exports\LaporanPengirimanExport;
+use Maatwebsite\Excel\Facades\Excel;
 use App\Models\MGudangBarang;
 use App\Models\MPengiriman;
 use App\Models\MCabang;
@@ -569,5 +571,63 @@ public function laporanDownload($bulan, $tahun)
 
     return $pdf->download('laporan_pengiriman_'.$bulan.'_'.$tahun.'.pdf');
 }
+
+
+public function laporanExcel($bulan, $tahun)
+{
+    $pengiriman = MPengiriman::with('cabangTujuan')
+        ->whereMonth('tanggal_pengiriman', $bulan)
+        ->whereYear('tanggal_pengiriman', $tahun)
+        ->orderBy('tanggal_pengiriman')
+        ->get();
+
+    $semuaBarang = MGudangBarang::all();
+
+    $semuaCabang = $pengiriman
+        ->pluck('cabangTujuan')
+        ->unique('id')
+        ->values();
+
+    // ===== REKAP (SAMA PERSIS DENGAN DETAIL & PDF) =====
+    $rekap = [];
+
+    foreach ($semuaBarang as $barang) {
+        foreach ($semuaCabang as $cabang) {
+            $rekap[$barang->id]['barang'] = $barang->nama_bahan;
+            $rekap[$barang->id]['satuan'] = $barang->satuan;
+            $rekap[$barang->id]['cabang'][$cabang->id] = 0;
+        }
+        $rekap[$barang->id]['total'] = 0;
+    }
+
+    foreach ($pengiriman as $kirim) {
+        $detail = is_string($kirim->keterangan)
+            ? json_decode($kirim->keterangan, true)
+            : $kirim->keterangan;
+
+        foreach ($detail ?? [] as $d) {
+            $idBarang = $d['gudang_barang_id'];
+            $jumlah   = (float) $d['jumlah'];
+
+            if (!isset($rekap[$idBarang])) continue;
+
+            $rekap[$idBarang]['cabang'][$kirim->cabang_tujuan_id] += $jumlah;
+            $rekap[$idBarang]['total'] += $jumlah;
+        }
+    }
+
+    return Excel::download(
+        new LaporanPengirimanExport(
+            $pengiriman,
+            $rekap,
+            $semuaCabang,
+            $bulan,
+            $tahun
+        ),
+        'laporan_pengiriman_'.$bulan.'_'.$tahun.'.xlsx'
+    );
+}
+
+
 
 }

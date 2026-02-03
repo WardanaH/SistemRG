@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\GudangCabangLaporanExport;
 use App\Models\MCabangBarang;
 use App\Models\MGudangBarang;
 use App\Models\MCabang;
@@ -343,5 +345,50 @@ public function laporanDownload($bulan, $tahun)
 
         return back()->with('success', 'Permintaan pengiriman berhasil dibuat');
     }
+public function laporanExcel($bulan, $tahun)
+{
+    $user = Auth::user();
+    $cabang = MCabang::findOrFail($user->cabang_id);
+
+    $pengiriman = MPengiriman::where('cabang_tujuan_id', $cabang->id)
+        ->where('status_pengiriman', 'Diterima')
+        ->whereMonth('tanggal_diterima', $bulan)
+        ->whereYear('tanggal_diterima', $tahun)
+        ->orderBy('tanggal_diterima')
+        ->get();
+
+    $semuaBarang = MGudangBarang::all();
+
+    $rekap = [];
+    foreach ($semuaBarang as $barang) {
+        $rekap[$barang->id] = [
+            'barang' => $barang->nama_bahan,
+            'satuan' => $barang->satuan,
+            'total'  => 0
+        ];
+    }
+
+    foreach ($pengiriman as $item) {
+        $detail = is_string($item->keterangan)
+            ? json_decode($item->keterangan, true)
+            : $item->keterangan;
+
+        foreach ($detail ?? [] as $d) {
+            $rekap[$d['gudang_barang_id']]['total']
+                += (float) $d['jumlah'];
+        }
+    }
+
+    return Excel::download(
+        new GudangCabangLaporanExport(
+            $pengiriman,
+            $rekap,
+            $bulan,
+            $tahun,
+            $cabang
+        ),
+        'laporan_penerimaan_'.$cabang->nama.'_'.$bulan.'_'.$tahun.'.xlsx'
+    );
+}
 
 }

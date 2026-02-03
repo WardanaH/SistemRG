@@ -49,6 +49,9 @@ Route::middleware(['auth', 'role:inventory cabang'])
 
         Route::get('/laporan/{bulan}/{tahun}/download', [GudangCabangController::class, 'laporanDownload'])
             ->name('laporan.download');
+Route::get('/laporan/{bulan}/{tahun}/excel',
+    [GudangCabangController::class, 'laporanExcel']
+)->name('laporan.excel');
 
 // ==============================
 // PERMINTAAN PENGIRIMAN

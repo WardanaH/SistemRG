@@ -119,57 +119,66 @@
 
                         </table>
                     </div>
-<hr>
-<h5 class="mt-4"><b>Rekap Total Pengiriman Per Barang</b></h5>
+                    <hr>
+                    <h5 class="mt-4"><b>Rekap Total Pengiriman Per Barang</b></h5>
 
-<div class="table-responsive">
-<table class="table table-bordered">
-    <thead class="bg-light text-center">
-    <tr>
-        <th>Nama Barang</th>
-        <th>Satuan</th>
-        @foreach($semuaCabang as $cabang)
-            <th>{{ $cabang->nama }}</th>
-        @endforeach
-        <th>Total</th>
-    </tr>
-    </thead>
-    <tbody>
-        @foreach($rekap as $row)
-        <tr>
-            <td>{{ $row['barang'] }}</td>
-            <td class="text-center">{{ $row['satuan'] }}</td>
+                    <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="bg-light text-center">
+                        <tr>
+                            <th>Nama Barang</th>
+                            <th>Satuan</th>
+                            @foreach($semuaCabang as $cabang)
+                                <th>{{ $cabang->nama }}</th>
+                            @endforeach
+                            <th>Total</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($rekap as $row)
+                            <tr>
+                                <td>{{ $row['barang'] }}</td>
+                                <td class="text-center">{{ $row['satuan'] }}</td>
 
-            @foreach($semuaCabang as $cabang)
-                <td class="text-center">
-                    {{ $row['cabang'][$cabang->id] ?? 0 }}
-                </td>
-            @endforeach
+                                @foreach($semuaCabang as $cabang)
+                                    <td class="text-center">
+                                        {{ $row['cabang'][$cabang->id] ?? 0 }}
+                                    </td>
+                                @endforeach
 
-            <td class="text-center fw-bold">
-                {{ $row['total'] }}
-            </td>
-        </tr>
-        @endforeach
-    </tbody>
-</table>
-</div>
+                                <td class="text-center fw-bold">
+                                    {{ $row['total'] }}
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                    </div>
 
 
                     {{-- TOMBOL DOWNLOAD --}}
-                    <div class="mt-4 d-flex justify-content-between">
+                    <div class="mt-4 d-flex justify-content-between align-items-center">
                         <a href="{{ route('laporan.pengiriman.index') }}"
-                           class="btn btn-secondary">
+                        class="btn btn-secondary">
                             Kembali
                         </a>
 
-                        <a href="{{ route('laporan.pengiriman.download', [$bulan, $tahun]) }}"
-                        class="btn bg-gradient-success">
-                            <i class="material-icons text-sm">download</i>
-                            Download PDF
-                        </a>
-                    </div>
+                        <div class="d-flex gap-3">
+                            {{-- EXCEL --}}
+                            <a href="{{ route('laporan.pengiriman.excel', [$bulan, $tahun]) }}"
+                            class="btn btn-success px-2 py-1"
+                            title="Download Excel">
+                                <i class="material-icons fs-1">table_view</i>
+                            </a>
 
+                            {{-- PDF --}}
+                            <a href="{{ route('laporan.pengiriman.download', [$bulan, $tahun]) }}"
+                            class="btn btn-danger px-2 py-1"
+                            title="Download PDF">
+                                <i class="material-icons fs-1">picture_as_pdf</i>
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
 

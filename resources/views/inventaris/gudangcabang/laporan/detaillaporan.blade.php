@@ -131,11 +131,22 @@
 
                     <div class="mt-4 d-flex justify-content-between">
                         <a href="{{ route('gudangcabang.laporan.index') }}" class="btn btn-secondary">Kembali</a>
-                        <a href="{{ route('gudangcabang.laporan.download', [$bulan, $tahun]) }}"
-                           class="btn bg-gradient-success">
-                            <i class="material-icons text-sm">download</i>
-                            Download PDF
-                        </a>
+<div class="d-flex gap-3">
+    {{-- EXCEL --}}
+    <a href="{{ route('gudangcabang.laporan.excel', [$bulan, $tahun]) }}"
+       class="btn btn-success px-2 py-1"
+       title="Download Excel">
+        <i class="material-icons fs-1">table_view</i>
+    </a>
+
+    {{-- PDF --}}
+    <a href="{{ route('gudangcabang.laporan.download', [$bulan, $tahun]) }}"
+       class="btn btn-danger px-2 py-1"
+       title="Download PDF">
+        <i class="material-icons fs-1">picture_as_pdf</i>
+    </a>
+</div>
+
                     </div>
 
                 </div>
