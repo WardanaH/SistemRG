@@ -17,6 +17,10 @@ class MCabangBarang extends Model
         'stok',
     ];
 
+    protected $casts = [
+        'stok' => 'float',
+    ];
+
     /**
      * Relasi ke Cabang
      */

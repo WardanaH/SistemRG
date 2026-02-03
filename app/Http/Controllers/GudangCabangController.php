@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use App\Models\MCabangBarang;
 use App\Models\MGudangBarang;
 use App\Models\MCabang;
 use App\Models\MPengiriman;
+use App\Models\MPermintaanPengiriman;
 use Illuminate\Support\Facades\Auth;
 use PDF;
 
@@ -47,8 +49,10 @@ class GudangCabangController extends Controller
         $cabang = MCabang::findOrFail($user->cabang_id);
 
         $request->validate([
-            'stok' => 'required|numeric|min:0'
+            'stok' => 'required'
         ]);
+
+        $stok = (float) str_replace(',', '.', $request->stok);
 
         $gudangBarang = MGudangBarang::findOrFail($id);
 
@@ -58,7 +62,7 @@ class GudangCabangController extends Controller
                 'gudang_barang_id'=> $gudangBarang->id
             ],
             [
-                'stok' => $request->stok
+                'stok' => $stok
             ]
         );
 
@@ -145,15 +149,18 @@ class GudangCabangController extends Controller
                 continue;
             }
 
+            $jumlah = (float) str_replace(',', '.', $item['jumlah']);
+
             MCabangBarang::updateOrCreate(
                 [
-                    'cabang_id'       => $cabang->id,
-                    'gudang_barang_id'=> $item['gudang_barang_id']
+                    'cabang_id'        => $cabang->id,
+                    'gudang_barang_id' => $item['gudang_barang_id']
                 ],
                 [
-                    'stok' => \DB::raw("COALESCE(stok,0) + {$item['jumlah']}")
+                    'stok' => \DB::raw("COALESCE(stok,0) + {$jumlah}")
                 ]
             );
+
         }
 
         $pengiriman->status_pengiriman = 'Diterima';
@@ -187,46 +194,154 @@ class GudangCabangController extends Controller
         ]);
     }
 
-    public function laporanDetail($bulan, $tahun)
+public function laporanDetail($bulan, $tahun)
+{
+    $user = Auth::user();
+    $cabang = MCabang::findOrFail($user->cabang_id);
+
+    $pengiriman = MPengiriman::where('cabang_tujuan_id', $cabang->id)
+        ->where('status_pengiriman', 'Diterima')
+        ->whereMonth('tanggal_diterima', $bulan)
+        ->whereYear('tanggal_diterima', $tahun)
+        ->orderBy('tanggal_diterima')
+        ->get();
+
+    // 🔹 semua barang (biar yg nol tetap tampil)
+    $semuaBarang = MGudangBarang::all();
+
+    // 🔹 inisialisasi rekap
+    $rekap = [];
+    foreach ($semuaBarang as $barang) {
+        $rekap[$barang->id] = [
+            'barang' => $barang->nama_bahan,
+            'satuan' => $barang->satuan,
+            'total'  => 0
+        ];
+    }
+
+    // 🔹 hitung total diterima
+    foreach ($pengiriman as $item) {
+        $detail = is_string($item->keterangan)
+            ? json_decode($item->keterangan, true)
+            : $item->keterangan;
+
+        foreach ($detail ?? [] as $d) {
+            $rekap[$d['gudang_barang_id']]['total']
+                += (float) $d['jumlah'];
+        }
+    }
+
+    return view('inventaris.gudangcabang.laporan.detaillaporan', [
+        'title'      => 'Detail Laporan Penerimaan - ' . $cabang->nama,
+        'pengiriman' => $pengiriman,
+        'bulan'      => $bulan,
+        'tahun'      => $tahun,
+        'rekap'      => $rekap,
+        'cabang'     => $cabang
+    ]);
+}
+
+public function laporanDownload($bulan, $tahun)
+{
+    $user = Auth::user();
+    $cabang = MCabang::findOrFail($user->cabang_id);
+
+    $pengiriman = MPengiriman::where('cabang_tujuan_id', $cabang->id)
+        ->where('status_pengiriman', 'Diterima')
+        ->whereMonth('tanggal_diterima', $bulan)
+        ->whereYear('tanggal_diterima', $tahun)
+        ->orderBy('tanggal_diterima')
+        ->get();
+
+    $semuaBarang = MGudangBarang::all();
+
+    $rekap = [];
+    foreach ($semuaBarang as $barang) {
+        $rekap[$barang->id] = [
+            'barang' => $barang->nama_bahan,
+            'satuan' => $barang->satuan,
+            'total'  => 0
+        ];
+    }
+
+    foreach ($pengiriman as $item) {
+        $detail = is_string($item->keterangan)
+            ? json_decode($item->keterangan, true)
+            : $item->keterangan;
+
+        foreach ($detail ?? [] as $d) {
+            $rekap[$d['gudang_barang_id']]['total']
+                += (float) $d['jumlah'];
+        }
+    }
+
+    $pdf = PDF::loadView('inventaris.gudangcabang.laporan.laporan_pdf', [
+        'pengiriman' => $pengiriman,
+        'bulan'      => $bulan,
+        'tahun'      => $tahun,
+        'cabang'     => $cabang,
+        'rekap'      => $rekap
+    ]);
+
+    return $pdf->download(
+        'laporan_penerimaan_'.$cabang->nama.'_'.$bulan.'_'.$tahun.'.pdf'
+    );
+}
+
+
+    public function permintaan()
     {
         $user = Auth::user();
-        $cabang = MCabang::findOrFail($user->cabang_id);
 
-        $pengiriman = MPengiriman::where('cabang_tujuan_id', $cabang->id)
-            ->where('status_pengiriman', 'Diterima')
-            ->whereMonth('tanggal_diterima', $bulan)
-            ->whereYear('tanggal_diterima', $tahun)
-            ->orderBy('tanggal_diterima')
-            ->get();
-
-        return view('inventaris.gudangcabang.laporan.detaillaporan', [
-            'title' => 'Detail Laporan Penerimaan - ' . $cabang->nama,
-            'pengiriman' => $pengiriman,
-            'bulan' => $bulan,
-            'tahun' => $tahun
+        return view('inventaris.gudangcabang.permintaanpengiriman', [
+            'barangs' => MGudangBarang::orderBy('nama_bahan')->get(),
+            'datas'   => MPermintaanPengiriman::where('cabang_id', $user->cabang_id)
+                            ->latest()
+                            ->get()
         ]);
     }
 
-    public function laporanDownload($bulan, $tahun)
+    public function permintaanStore(Request $request)
     {
-        $user = Auth::user();
-        $cabang = MCabang::findOrFail($user->cabang_id);
-
-        $pengiriman = MPengiriman::where('cabang_tujuan_id', $cabang->id)
-            ->where('status_pengiriman', 'Diterima')
-            ->whereMonth('tanggal_diterima', $bulan)
-            ->whereYear('tanggal_diterima', $tahun)
-            ->orderBy('tanggal_diterima')
-            ->get();
-
-        $pdf = PDF::loadView('inventaris.gudangcabang.laporan.laporan_pdf', [
-            'pengiriman' => $pengiriman,
-            'bulan' => $bulan,
-            'tahun' => $tahun,
-            'cabang' => $cabang
+        $request->validate([
+            'tanggal_permintaan' => 'required|date',
+            'barang'             => 'required|array'
         ]);
 
-        return $pdf->download('laporan_penerimaan_'.$cabang->nama.'_'.$bulan.'_'.$tahun.'.pdf');
+        $detailBarang = [];
+
+        foreach ($request->barang as $item) {
+
+            if (!isset($item['gudang_barang_id']) || !isset($item['jumlah'])) {
+                continue;
+            }
+
+            $barang = MGudangBarang::find($item['gudang_barang_id']);
+
+            if (!$barang) continue;
+
+            $jumlah = (float) str_replace(',', '.', $item['jumlah']);
+
+            $detailBarang[] = [
+                'gudang_barang_id' => $barang->id,
+                'nama_barang'     => $barang->nama_bahan,
+                'jumlah'          => $jumlah,
+                'satuan'          => $barang->satuan,
+                'keterangan'      => $item['keterangan'] ?? null
+            ];
+
+        }
+
+        MPermintaanPengiriman::create([
+            'kode_permintaan'    => 'REQ-' . date('Ymd') . '-' . strtoupper(Str::random(4)),
+            'cabang_id'          => Auth::user()->cabang_id,
+            'tanggal_permintaan' => $request->tanggal_permintaan,
+            'status'             => 'Menunggu',
+            'detail_barang'      => $detailBarang,
+            'catatan'            => $request->catatan
+        ]);
+
+        return back()->with('success', 'Permintaan pengiriman berhasil dibuat');
     }
 
 }

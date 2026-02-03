@@ -50,5 +50,14 @@ Route::middleware(['auth', 'role:inventory cabang'])
         Route::get('/laporan/{bulan}/{tahun}/download', [GudangCabangController::class, 'laporanDownload'])
             ->name('laporan.download');
 
+// ==============================
+// PERMINTAAN PENGIRIMAN
+// ==============================
+
+Route::get('/permintaan-pengiriman', [GudangCabangController::class, 'permintaan'])
+    ->name('permintaan.index');
+
+Route::post('/permintaan-pengiriman/store', [GudangCabangController::class, 'permintaanStore'])
+    ->name('permintaan.store');
 
     });

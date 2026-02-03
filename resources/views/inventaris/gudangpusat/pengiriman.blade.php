@@ -3,10 +3,12 @@
 @section('title', 'Pengiriman Barang')
 
 @section('content')
+
 <div class="container-fluid py-4">
+    <h4 class="mb-3">Permintaan Pengiriman Barang</h4>
 
     {{-- =====================
-    SWEETALERT NOTIFIKASI
+    SWEETALERT
     ===================== --}}
     @if(session('success'))
     <script>
@@ -35,433 +37,302 @@
     @endif
 
     {{-- =====================
-    FORM TAMBAH PENGIRIMAN (ATAS)
+    INFO
     ===================== --}}
-    <div class="row">
-        <div class="col-12">
-            <div class="card my-4">
-                <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
-                    <div class="bg-gradient-success shadow-success border-radius-lg pt-4 pb-3">
-                        <h6 class="text-white text-capitalize ps-3">
-                            Tambah Pengiriman Barang
-                        </h6>
-                    </div>
-                </div>
+    {{-- <div class="alert alert-info text-white">
+        <i class="material-icons text-sm">info</i>
+        Proses pengiriman dilakukan berdasarkan <b>permintaan barang dari cabang</b>.
+    </div> --}}
 
-                <div class="card-body">
-                    <form action="{{ route('pengiriman.pusat.store') }}" method="POST">
-                        @csrf
+    {{-- ======================================================
+    TABEL ATAS : PERMINTAAN CABANG
+    ====================================================== --}}
+    <div class="card mb-4">
+        <div class="card-header bg-gradient-warning text-white">
+            <h6 class="mb-0">Daftar Permintaan Pengiriman Cabang</h6>
+        </div>
 
-                        {{-- =====================
-                        CABANG & TANGGAL (1x PER PENGIRIMAN)
-                        ===================== --}}
-                        <div class="row mb-4">
-
-                            <div class="col-md-6">
-                                <label class="form-label">Kirim ke Cabang</label>
-                                <select name="cabang_tujuan_id"
-                                        class="form-control select2"
-                                        required>
-                                    <option value="">Pilih Cabang</option>
-                                    @foreach($cabangs as $cabang)
-                                        <option value="{{ $cabang->id }}">
-                                            {{ $cabang->nama }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label">Tanggal Kirim</label>
-                                <input type="date"
-                                    name="tanggal_pengiriman"
-                                    class="form-control border border-2 border-grey"
-                                    required>
-                            </div>
-
-                        </div>
-
-                        {{-- =====================
-                        DAFTAR BARANG (BISA BANYAK)
-                        ===================== --}}
-                        <div id="barang-wrapper">
-
-                            <div class="row barang-item mb-3">
-                                <div class="col-md-4">
-                                    <label class="form-label">Nama Barang</label>
-                                    <select name="barang[0][gudang_barang_id]"
-                                            class="form-control select2"
-                                            required>
-                                        <option value="">Pilih Barang</option>
-                                        @foreach($barangs as $barang)
-                                            <option value="{{ $barang->id }}">
-                                                {{ $barang->nama_bahan }} (Stok: {{ $barang->stok }})
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-                                <div class="col-md-2">
-                                    <label class="form-label">Jumlah</label>
-                                    <input type="number"
-                                        name="barang[0][jumlah]"
-                                        class="form-control border border-2 border-grey"
-                                        min="1"
-                                        required>
-                                </div>
-
-                                <div class="col-md-4">
-                                    <label class="form-label">Keterangan (opsional)</label>
-                                    <input type="text"
-                                        name="barang[0][keterangan]"
-                                        class="form-control border border-2 border-grey"
-                                        >
-                                </div>
-
-                                <div class="col-md-2 d-flex align-items-end">
-                                    <button type="button"
-                                            class="btn btn-danger btn-remove-barang d-none">
-                                        Hapus
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <button type="button"
-                                id="btnTambahBarang"
-                                class="btn btn-outline-primary mb-3">
-                            + Tambah Barang
-                        </button>
-
-                        {{-- =====================
-                        SUBMIT
-                        ===================== --}}
-                        <div class="text-end mt-3">
-                            <button class="btn bg-gradient-success mb-0">
-                                <i class="material-icons text-sm">local_shipping</i>
-                                &nbsp;Simpan Pengiriman
-                            </button>
-                        </div>
-
-                    </form>
-                </div>
+        <div class="card-body px-0 pb-2">
+            <div class="table-responsive p-0">
+                <table class="table align-items-center mb-0">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Kode Permintaan</th>
+                            <th>Cabang</th>
+                            <th>Tanggal</th>
+                            <th>Status</th>
+                            <th class="text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @forelse($permintaan as $i => $p)
+                        <tr>
+                            <td>{{ $i + 1 }}</td>
+                            <td class="fw-bold">{{ $p->kode_permintaan }}</td>
+                            <td>{{ $p->cabang->nama }}</td>
+                            <td>{{ \Carbon\Carbon::parse($p->tanggal_permintaan)->format('d M Y') }}</td>
+                            <td>
+                                <span class="badge
+                                    {{ $p->status == 'Menunggu' ? 'bg-warning' : 'bg-success' }}">
+                                    {{ $p->status }}
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                @if($p->status === 'Menunggu')
+                                <button class="btn btn-sm btn-primary btn-proses"
+                                    data-id="{{ $p->id }}"
+                                    data-kode="{{ $p->kode_permintaan }}"
+                                    data-cabang="{{ $p->cabang->nama }}">
+                                    Proses
+                                </button>
+                                @else
+                                <span class="text-muted">Selesai</span>
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                Tidak ada permintaan cabang
+                            </td>
+                        </tr>
+                    @endforelse
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 
+    {{-- ======================================================
+    TABEL BAWAH : DATA PENGIRIMAN
+    ====================================================== --}}
+    <div class="card my-4">
+        <div class="card-header bg-gradient-primary text-white">
+            <h6 class="mb-0">Data Pengiriman Barang</h6>
+        </div>
 
-    {{-- =====================
-    TABEL DATA PENGIRIMAN
-    ===================== --}}
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card my-4">
-                <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
-                    <div class="bg-gradient-primary shadow-primary border-radius-lg pt-4 pb-3">
-                        <h6 class="text-white text-capitalize ps-3">
-                            Data Pengiriman Barang
-                        </h6>
-                    </div>
+        <div class="card-body px-0 pb-2">
+            <div class="table-responsive p-0">
+
+                <table class="table align-items-center mb-0">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Kode</th>
+                            <th>Cabang Tujuan</th>
+                            <th>Barang</th>
+                            <th>Tanggal Kirim</th>
+                            <th>Status</th>
+                            <th class="text-center">Aksi</th>
+                            <th>Kelengkapan</th>
+                            <th class="text-center">Detail</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                    @forelse($pengiriman as $index => $item)
+                        @php
+                            $detail = $item->keterangan ?? [];
+                        @endphp
+                        <tr>
+                            <td>{{ ($pengiriman->currentPage()-1) * $pengiriman->perPage() + $index + 1 }}</td>
+
+                            <td class="fw-bold">{{ $item->kode_pengiriman }}</td>
+
+                            <td>{{ $item->cabang->nama ?? '-' }}</td>
+
+                            <td>
+                                {{ collect($detail)->pluck('nama_barang')->take(2)->implode(', ') }}
+                                @if(count($detail) > 2)
+                                    <span class="text-muted">, ...</span>
+                                @endif
+                            </td>
+
+                            <td>
+                                {{ $item->tanggal_pengiriman
+                                    ? $item->tanggal_pengiriman->format('d M Y')
+                                    : '-' }}
+                            </td>
+
+                            <td>
+                            @if($item->status_pengiriman === 'Dikemas')
+                            <form method="POST"
+                                action="{{ route('pengiriman.pusat.status', $item->id) }}"
+                                class="form-status">
+                                @csrf
+                                @method('PUT')
+
+                                <select name="status_pengiriman"
+                                        class="form-select form-select-sm select-status"
+                                        data-kode="{{ $item->kode_pengiriman }}">
+                                    <option value="Dikemas" selected>Dikemas</option>
+                                    <option value="Dikirim">Dikirim</option>
+                                </select>
+                            </form>
+                            @else
+                                <span class="badge bg-success">Dikirim</span>
+                            @endif
+                            </td>
+
+                            <td class="text-center">
+                            @if($item->status_pengiriman === 'Dikemas')
+                                <a href="#"
+                                class="btn btn-sm btn-warning">
+                                <i class="material-icons">edit</i>
+                                </a>
+
+                                <form action="{{ route('pengiriman.pusat.destroy', $item->id) }}"
+                                    method="POST"
+                                    class="d-inline form-delete">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button class="btn btn-sm btn-danger">
+                                        <i class="material-icons">delete</i>
+                                    </button>
+                                </form>
+                            @else
+                                <span class="text-muted">Terkunci</span>
+                            @endif
+                            </td>
+
+                            <td>
+                                <span class="badge
+                                    {{ $item->status_kelengkapan == 'Lengkap'
+                                        ? 'bg-success'
+                                        : 'bg-warning' }}">
+                                    {{ $item->status_kelengkapan ?? '-' }}
+                                </span>
+                            </td>
+
+                            <td class="text-center">
+                                <button type="button"
+                                    class="btn btn-link text-primary btn-detail"
+                                    data-detail='@json($detail)'
+                                    data-kode="{{ $item->kode_pengiriman }}"
+                                    data-cabang="{{ $item->cabang->nama }}">
+                                    <i class="material-icons-round">receipt_long</i>
+                                </button>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-4">
+                                Belum ada data pengiriman
+                            </td>
+                        </tr>
+                    @endforelse
+                    </tbody>
+                </table>
+
+                <div class="d-flex justify-content-end mt-3 px-3">
+                    {{ $pengiriman->links('pagination::bootstrap-5') }}
                 </div>
 
-                <div class="card-body px-0 pb-2">
-                    <div class="table-responsive p-0">
-                        <table class="table align-items-center mb-0">
-                            <thead>
-                                <tr>
-                                    <th>No</th>
-                                    <th>Nama Barang</th>
-                                    <th>Jumlah</th>
-                                    <th>Satuan</th>
-                                    <th>Cabang Tujuan</th>
-                                    <th>Tanggal Kirim</th>
-                                    <th class="text-center">Status</th>
-                                    <th>Tanggal Diterima</th>
-                                    <th class="text-center">Detail</th>
-                                    <th class="text-center">Aksi</th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                            @forelse($pengiriman as $index => $item)
-                            @php
-                                $detail = $item->keterangan ?? null;
-                            @endphp
-
-                                <tr>
-                                    <td>{{ ($pengiriman->currentPage()-1) * $pengiriman->perPage() + $index + 1 }}</td>
-                                    <!--barang-->
-                                    <td class="fw-bold">
-                                    @if($detail)
-                                        {{ collect($detail)->pluck('nama_barang')->take(2)->implode(', ') }}
-                                        @if(count($detail) > 2), ... @endif
-                                    @else
-                                        {{ $item->barang->nama_bahan ?? '-' }}
-                                    @endif
-                                    </td>
-                                    <!-- jumlah -->
-                                    <td>
-                                    @if($detail)
-                                        {{ collect($detail)->pluck('jumlah')->take(2)->implode(', ') }}
-                                        @if(count($detail) > 2), ... @endif
-                                    @else
-                                        {{ $item->jumlah ?? '-' }}
-                                    @endif
-                                    </td>
-                                    <!-- satuan-->
-                                    <td>
-                                    @if($detail)
-                                        {{ collect($detail)->pluck('satuan')->take(2)->implode(', ') }}
-                                        @if(count($detail) > 2), ... @endif
-                                    @else
-                                        {{ $item->barang->satuan ?? '-' }}
-                                    @endif
-                                    </td>
-
-                                    <td>{{ $item->cabangTujuan->nama ?? '-' }}</td>
-                                    <td>{{ \Carbon\Carbon::parse($item->tanggal_pengiriman)->format('d M Y') }}</td>
-
-                                    <td class="text-center">
-
-                                        @if($item->status_pengiriman === 'Diterima')
-                                            <span class="badge bg-gradient-success">Diterima</span>
-
-                                        @elseif($item->status_pengiriman === 'Dikirim')
-                                            <span class="badge bg-gradient-info">Dikirim</span>
-
-                                        @else
-                                            {{-- HANYA SAAT DIKEMAS --}}
-                                            <form action="{{ route('pengiriman.pusat.status', $item->id) }}"
-                                                method="POST"
-                                                class="form-update-status d-inline">
-                                                @csrf
-                                                @method('PUT')
-
-                                                <select name="status_pengiriman"
-                                                        class="form-control select2-status"
-                                                        data-current="Dikemas"
-                                                        style="width:120px">
-                                                    <option value="Dikemas" selected>Dikemas</option>
-                                                    <option value="Dikirim">Dikirim</option>
-                                                </select>
-                                            </form>
-                                        @endif
-
-                                    </td>
-
-
-                                    <td>
-                                        {{ $item->tanggal_diterima
-                                            ? \Carbon\Carbon::parse($item->tanggal_diterima)->format('d M Y')
-                                            : '-' }}
-                                    </td>
-                                    <td class="text-center">
-                                        <button type="button"
-                                            class="btn btn-link text-primary btn-detail"
-                                            data-detail='@json($detail)'
-                                            data-kode="{{ $item->kode_pengiriman }}"
-                                            data-cabang="{{ $item->cabangTujuan->nama }}"
-                                            data-tanggal="{{ $item->tanggal_pengiriman }}">
-                                            <i class="material-icons-round">receipt_long</i>
-                                        </button>
-                                    </td>
-
-
-                                    <td class="text-center">
-                                        <form action="{{ route('pengiriman.pusat.destroy', $item->id) }}"
-                                              method="POST"
-                                              class="form-hapus d-inline">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="button" class="btn btn-link text-danger px-2 btn-hapus">
-                                                <i class="material-icons-round">delete</i>
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="9" class="text-center text-muted py-4">
-                                        Belum ada data pengiriman
-                                    </td>
-                                </tr>
-                            @endforelse
-                            </tbody>
-
-                        </table>
-                        <div class="d-flex justify-content-end mt-3">
-                            {{ $pengiriman->links('pagination::bootstrap-5') }}
-                        </div>
-                    </div>
-                </div>
             </div>
+        </div>
+    </div>
+
+</div>
+
+{{-- =====================
+MODAL DETAIL
+===================== --}}
+<div class="modal fade" id="modalDetail">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Detail Pengiriman</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <div id="notaContent"></div>
+            </div>
+
         </div>
     </div>
 </div>
-<div class="modal fade" id="modalDetail">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
+{{-- =====================
+MODAL PROSES PERMINTAAN
+===================== --}}
+<div class="modal fade" id="modalProses">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
     <div class="modal-content">
 
-      <div class="modal-header">
-        <h5 class="modal-title">Detail Pengiriman</h5>
-        <button class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
+      <form method="POST" action="{{ route('permintaan.pusat.proses') }}">
+        @csrf
 
-      <div class="modal-body">
-        <div id="notaContent"></div>
-      </div>
+        <input type="hidden" name="permintaan_id" id="permintaan_id">
+
+        <div class="modal-header">
+          <h5 class="modal-title">Proses Permintaan Pengiriman</h5>
+          <button class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+
+          <p><b>Kode:</b> <span id="kode_permintaan"></span></p>
+          <p><b>Cabang:</b> <span id="nama_cabang"></span></p>
+
+          <table class="table table-bordered mt-3">
+            <thead class="table-light">
+              <tr>
+                <th width="50">✔</th>
+                <th>Nama Barang</th>
+                <th>Jumlah</th>
+                <th>Satuan</th>
+                <th>Stok</th>
+              </tr>
+            </thead>
+            <tbody id="listBarang">
+              {{-- diisi JS --}}
+            </tbody>
+          </table>
+
+          <div class="mt-3">
+            <label>Catatan Gudang</label>
+            <textarea name="catatan"
+              class="form-control"
+              placeholder="Catatan jika ada barang tidak dikirim"></textarea>
+          </div>
+
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-success">Simpan & Kemas</button>
+        </div>
+
+      </form>
 
     </div>
   </div>
 </div>
 
 @endsection
+
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-document.querySelectorAll('.btn-hapus').forEach(function(btn) {
-    btn.addEventListener('click', function () {
-
-        let form = btn.closest('form');
-
-        Swal.fire({
-            title: 'Yakin hapus?',
-            text: 'Data pengiriman akan dihapus permanen',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Ya, Hapus',
-            cancelButtonText: 'Batal'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                form.submit();
-            }
-        });
-
-    });
-});
-</script>
-
-<script>
-$(document).ready(function () {
-
-    // SELECT2 STATUS
-    $('.select2-status').select2({
-        minimumResultsForSearch: Infinity,
-        width: 'resolve'
-    });
-
-    // SWEETALERT KONFIRMASI UPDATE STATUS
-    $('.select2-status').on('change', function () {
-
-        let select = $(this);
-        let form   = select.closest('form');
-        let lama   = select.data('current');
-        let baru   = select.val();
-
-        Swal.fire({
-            title: 'Ubah Status?',
-            text: `Dari "${lama}" ke "${baru}"`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Ya, Ubah',
-            cancelButtonText: 'Batal'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                form.submit();
-            } else {
-                // rollback ke status lama
-                select.val(lama).trigger('change.select2');
-            }
-        });
-    });
-
-});
-</script>
-<script>
-let indexBarang = 1;
-
-$('#btnTambahBarang').on('click', function () {
-
-    let html = `
-    <div class="row barang-item mb-3">
-        <div class="col-md-4">
-            <select name="barang[${indexBarang}][gudang_barang_id]"
-                    class="form-control select2"
-                    required>
-                <option value="">Pilih Barang</option>
-                @foreach($barangs as $barang)
-                    <option value="{{ $barang->id }}">
-                        {{ $barang->nama_bahan }} (Stok: {{ $barang->stok }})
-                    </option>
-                @endforeach
-            </select>
-        </div>
-
-        <div class="col-md-2">
-            <input type="number"
-                name="barang[${indexBarang}][jumlah]"
-                class="form-control border border-2 border-grey"
-                min="1"
-                required>
-        </div>
-
-        <div class="col-md-4">
-            <input type="text"
-                name="barang[${indexBarang}][keterangan]"
-                class="form-control border border-2 border-grey"
-                placeholder="Keterangan (opsional)">
-        </div>
-
-        <div class="col-md-2 d-flex align-items-end">
-            <button type="button"
-                    class="btn btn-danger btn-remove-barang">
-                Hapus
-            </button>
-        </div>
-    </div>
-    `;
-
-    $('#barang-wrapper').append(html);
-    $('.select2').select2();
-    indexBarang++;
-});
-
-// hapus baris
-$(document).on('click', '.btn-remove-barang', function () {
-    $(this).closest('.barang-item').remove();
-});
-</script>
-<script>
 $(document).on('click', '.btn-detail', function () {
 
     let detail = $(this).data('detail');
-
-    if (!detail || detail.length === 0) {
-        Swal.fire({
-            icon: 'info',
-            title: 'Tidak ada detail',
-            text: 'Pengiriman ini dibuat sebelum fitur multi-barang'
-        });
-        return;
-    }
-
     let kode = $(this).data('kode');
     let cabang = $(this).data('cabang');
-    let tanggal = $(this).data('tanggal');
 
     let html = `
-        <p><b>Kode:</b> ${kode}</p>
-        <p><b>Cabang:</b> ${cabang}</p>
-        <p><b>Tanggal:</b> ${tanggal}</p>
-        <table class="table table-bordered">
+        <p><b>Kode Pengiriman:</b> ${kode}</p>
+        <p><b>Cabang Tujuan:</b> ${cabang}</p>
+        <table class="table table-bordered mt-3">
             <thead>
                 <tr>
                     <th>No</th>
                     <th>Barang</th>
-                    <th>Qty</th>
+                    <th>Jumlah</th>
                     <th>Satuan</th>
-                    <th>Keterangan</th>
                 </tr>
             </thead>
             <tbody>
@@ -474,7 +345,6 @@ $(document).on('click', '.btn-detail', function () {
                 <td>${d.nama_barang}</td>
                 <td>${d.jumlah}</td>
                 <td>${d.satuan}</td>
-                <td>${d.keterangan ?? '-'}</td>
             </tr>
         `;
     });
@@ -482,9 +352,110 @@ $(document).on('click', '.btn-detail', function () {
     html += `</tbody></table>`;
 
     $('#notaContent').html(html);
-
-    let modal = new bootstrap.Modal(document.getElementById('modalDetail'));
-    modal.show();
+    new bootstrap.Modal(document.getElementById('modalDetail')).show();
 });
 </script>
+<script>
+$(document).on('click', '.btn-proses', function () {
+
+    let id = $(this).data('id');
+    let kode = $(this).data('kode');
+    let cabang = $(this).data('cabang');
+
+    $('#permintaan_id').val(id);
+    $('#kode_permintaan').text(kode);
+    $('#nama_cabang').text(cabang);
+    $('#listBarang').html('');
+
+    $.ajax({
+        url: "{{ url('gudang-pusat/permintaan') }}/" + id + "/detail",
+        method: "GET",
+        success: function (res) {
+
+            res.forEach((item, index) => {
+                $('#listBarang').append(`
+                  <tr>
+                    <td class="text-center">
+                      <input type="checkbox"
+                        name="barang[${index}][checked]"
+                        checked>
+                      <input type="hidden"
+                        name="barang[${index}][gudang_barang_id]"
+                        value="${item.gudang_barang_id}">
+                      <input type="hidden"
+                        name="barang[${index}][jumlah]"
+                        value="${item.jumlah}">
+                    </td>
+                    <td>${item.nama_barang}</td>
+                    <td>${item.jumlah}</td>
+                    <td>${item.satuan}</td>
+                    <td>${item.stok}</td>
+                  </tr>
+                `);
+            });
+
+            new bootstrap.Modal(
+                document.getElementById('modalProses')
+            ).show();
+        },
+        error: function (xhr) {
+            console.error(xhr.responseText);
+            alert('Gagal mengambil detail permintaan');
+        }
+    });
+});
+</script>
+<script>
+$(document).ready(function () {
+
+    $('.select-status').select2({
+        minimumResultsForSearch: Infinity,
+        width: '100%'
+    });
+
+    $('.select-status').on('change', function () {
+        let select = $(this);
+        let form = select.closest('form');
+        let status = select.val();
+        let kode = select.data('kode');
+
+        if (status === 'Dikirim') {
+            Swal.fire({
+                title: 'Kirim Barang?',
+                text: 'Status akan diubah menjadi DIKIRIM dan tidak bisa dikembalikan.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, Kirim',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                } else {
+                    select.val('Dikemas').trigger('change.select2');
+                }
+            });
+        }
+    });
+
+    $('.form-delete').on('submit', function (e) {
+        e.preventDefault();
+        let form = this;
+
+        Swal.fire({
+            title: 'Hapus Pengiriman?',
+            text: 'Data akan dihapus dan stok tidak dikurangi.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Hapus',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+    });
+
+});
+</script>
+
 @endpush

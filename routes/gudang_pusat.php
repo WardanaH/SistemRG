@@ -60,6 +60,32 @@ Route::middleware(['auth', 'role:inventory utama'])
         Route::get('/laporan-pengiriman/{bulan}/{tahun}/download', [GudangPusatController::class, 'laporanDownload'])
             ->name('laporan.pengiriman.download');
 
+// =====================
+// PERMINTAAN CABANG
+// =====================
+Route::get('/permintaan', [GudangPusatController::class, 'permintaanIndex'])
+    ->name('permintaan.pusat.index');
+
+Route::get(
+  '/permintaan/{id}/detail',
+  [GudangPusatController::class, 'permintaanDetail']
+)->name('permintaan.pusat.detail');
+
+
+Route::post(
+  '/permintaan/proses',
+  [GudangPusatController::class, 'permintaanProses']
+)->name('permintaan.pusat.proses');
+
+
+
+// Route::post('/permintaan/{id}/kirim', [GudangPusatController::class, 'permintaanKirim'])
+//     ->name('permintaan.pusat.kirim');
+
+// Route::post('/permintaan/proses',
+//     [PermintaanController::class, 'simpanProses']
+// )->name('permintaan.pusat.simpan');
+
 
     });
 

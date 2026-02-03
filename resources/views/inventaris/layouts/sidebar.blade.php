@@ -20,6 +20,8 @@
         $pageTitle = 'Penerimaan Barang';
     } elseif (request()->routeIs('gudangcabang.laporan*')) {
         $pageTitle = 'Laporan Penerimaan';
+    } elseif (request()->routeIs('gudangcabang.permintaan*')) {
+        $pageTitle = 'Permintaan Pengiriman';
     } else {
         $pageTitle = 'Gudang Pusat';
     }
@@ -97,10 +99,23 @@
             </li>
             @endhasrole
 
+            @hasrole('inventory cabang')
+            {{-- =====================
+            PERMINTAAN PENGIRIMAN (HANYA UNTUK CABANG)
+            ===================== --}}
+            <li class="nav-item">
+                <a class="nav-link text-white {{ request()->routeIs('gudangcabang.permintaan*') ? 'active bg-gradient-primary' : '' }}"
+                href="{{ route('gudangcabang.permintaan.index') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons-round opacity-10">send</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Permintaan Pengiriman</span>
+                </a>
+            </li>
+
             {{-- =====================
             PENERIMAAN BARANG (HANYA UNTUK CABANG)
             ===================== --}}
-            @hasrole('inventory cabang')
             <li class="nav-item">
                 <a class="nav-link text-white {{ request()->routeIs('gudangcabang.penerimaan*') ? 'active bg-gradient-primary' : '' }}"
                    href="{{ route('gudangcabang.penerimaan') }}">
@@ -138,6 +153,7 @@
                     <span class="nav-link-text ms-1">Pengiriman</span>
                 </a>
             </li>
+
 
             {{-- =====================
             LAPORAN PENGIRIMAN (HANYA UNTUK GUDANG PUSAT)

@@ -119,6 +119,42 @@
 
                         </table>
                     </div>
+<hr>
+<h5 class="mt-4"><b>Rekap Total Pengiriman Per Barang</b></h5>
+
+<div class="table-responsive">
+<table class="table table-bordered">
+    <thead class="bg-light text-center">
+    <tr>
+        <th>Nama Barang</th>
+        <th>Satuan</th>
+        @foreach($semuaCabang as $cabang)
+            <th>{{ $cabang->nama }}</th>
+        @endforeach
+        <th>Total</th>
+    </tr>
+    </thead>
+    <tbody>
+        @foreach($rekap as $row)
+        <tr>
+            <td>{{ $row['barang'] }}</td>
+            <td class="text-center">{{ $row['satuan'] }}</td>
+
+            @foreach($semuaCabang as $cabang)
+                <td class="text-center">
+                    {{ $row['cabang'][$cabang->id] ?? 0 }}
+                </td>
+            @endforeach
+
+            <td class="text-center fw-bold">
+                {{ $row['total'] }}
+            </td>
+        </tr>
+        @endforeach
+    </tbody>
+</table>
+</div>
+
 
                     {{-- TOMBOL DOWNLOAD --}}
                     <div class="mt-4 d-flex justify-content-between">

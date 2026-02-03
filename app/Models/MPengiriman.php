@@ -10,22 +10,34 @@ class MPengiriman extends Model
 
     protected $fillable = [
         'kode_pengiriman',
-        'gudang_barang_id',
+        'permintaan_id',
         'cabang_tujuan_id',
-        'jumlah',
         'tanggal_pengiriman',
         'status_pengiriman',
+        'status_kelengkapan',
         'tanggal_diterima',
-        'keterangan'
+        'keterangan',
+        'catatan_gudang'
     ];
 
     protected $casts = [
         'keterangan' => 'array',
+        'tanggal_pengiriman' => 'date',
+        'tanggal_diterima' => 'date'
     ];
 
-    public function barang()
+    // =====================
+    // RELASI
+    // =====================
+
+    public function permintaan()
     {
-        return $this->belongsTo(MGudangBarang::class, 'gudang_barang_id');
+        return $this->belongsTo(MPermintaanPengiriman::class, 'permintaan_id');
+    }
+
+    public function cabang()
+    {
+        return $this->belongsTo(MCabang::class, 'cabang_tujuan_id');
     }
 
     public function cabangTujuan()

@@ -103,5 +103,40 @@
             @endforeach
         </tbody>
     </table>
+    <br><br>
+
+    <h4 style="text-align:center">Rekap Total Pengiriman Per Barang</h4>
+
+    <table class="table">
+        <thead>
+            <tr style="text-align:center">
+                <th>Nama Barang</th>
+                <th>Satuan</th>
+                @foreach($semuaCabang as $cabang)
+                    <th>{{ $cabang->nama }}</th>
+                @endforeach
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($rekap as $row)
+            <tr>
+                <td>{{ $row['barang'] }}</td>
+                <td style="text-align:center">{{ $row['satuan'] }}</td>
+
+                @foreach($semuaCabang as $cabang)
+                    <td style="text-align:center">
+                        {{ $row['cabang'][$cabang->id] ?? 0 }}
+                    </td>
+                @endforeach
+
+                <td style="text-align:center; font-weight:bold">
+                    {{ $row['total'] }}
+                </td>
+            </tr>
+            @endforeach
+        </tbody>
+    </table>
+
 </body>
 </html>

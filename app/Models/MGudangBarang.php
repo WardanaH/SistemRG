@@ -11,11 +11,16 @@ class MGudangBarang extends Model
     protected $fillable = [
         'kategori_id',
         'nama_bahan',
-        'harga',
+        // 'harga',
         'satuan',
         'stok',
         'batas_stok',
         'keterangan',
+    ];
+
+        protected $casts = [
+        'stok' => 'float',
+        'batas_stok' => 'float',
     ];
 }
 

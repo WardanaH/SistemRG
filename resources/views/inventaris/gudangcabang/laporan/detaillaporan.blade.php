@@ -104,6 +104,29 @@
                                 @endforelse
                             </tbody>
                         </table>
+                        <hr>
+                            <h5 class="mt-4"><b>Rekap Total Penerimaan Barang</b></h5>
+
+                            <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead class="bg-light text-center">
+                                <tr>
+                                    <th>Nama Barang</th>
+                                    <th>Satuan</th>
+                                    <th>Total Diterima</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($rekap as $row)
+                                    <tr>
+                                        <td>{{ $row['barang'] }}</td>
+                                        <td class="text-center">{{ $row['satuan'] }}</td>
+                                        <td class="text-center fw-bold">{{ $row['total'] }}</td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                            </div>
                     </div>
 
                     <div class="mt-4 d-flex justify-content-between">

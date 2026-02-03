@@ -66,6 +66,7 @@
                                     <th>Tanggal Kirim</th>
                                     <th class="text-center">Status</th>
                                     <th>Tanggal Diterima</th>
+                                    <th class="text-center">Kelengkapan</th>
                                     <th class="text-center">Detail</th>
                                     <th class="text-center">Aksi</th>
                                 </tr>
@@ -106,6 +107,14 @@
                                             {{ $r->tanggal_diterima
                                                 ? \Carbon\Carbon::parse($r->tanggal_diterima)->format('d M Y')
                                                 : '-' }}
+                                        </td>
+                                        
+                                        <td class="text-center">
+                                            @if($r->status_kelengkapan === 'Lengkap')
+                                                <span class="badge bg-success">LENGKAP</span>
+                                            @else
+                                                <span class="badge bg-warning">TIDAK LENGKAP</span>
+                                            @endif
                                         </td>
 
                                         <td class="text-center">
