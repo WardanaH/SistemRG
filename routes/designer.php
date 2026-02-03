@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MSpkController;
 use App\Http\Controllers\DesignerController;
-use App\Http\Controllers\MSpkBantuanController;
+use App\Http\Controllers\SpkBantuanController;
 
 Route::middleware('auth')->group(function () {
     Route::get('/designer/dashboard', [DesignerController::class, 'index'])
@@ -34,4 +34,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/manajemen/spk/cetak-spk/{id}', [MSpkController::class, 'cetakSpk'])
         ->middleware('role:manajemen|designer|admin|operator indoor|operator outdoor|operator multi')
         ->name('manajemen.spk.cetak-spk');
+
+    Route::get('/spk-bantuan', [SpkBantuanController::class, 'index'])->name('spk-bantuan.index');
+    Route::get('/spk-bantuan/buat', [SpkBantuanController::class, 'create'])->name('spk-bantuan');
+    Route::post('/spk-bantuan', [SpkBantuanController::class, 'store'])->name('spk-bantuan.store');
+    Route::get('/spk-bantuan/cetak/{id}', [SpkBantuanController::class, 'cetakSpkBantuan'])->name('spk-bantuan.cetak-spk-bantuan');
 });

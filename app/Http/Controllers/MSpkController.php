@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Log;
+use App\Events\NotifikasiSpkBaru;
 
 class MSpkController extends Controller
 {
@@ -64,7 +65,8 @@ class MSpkController extends Controller
         $user = Auth::user();
 
         // Mulai Query dengan Eager Loading agar hemat query database
-        $query = MSpk::with(['bahan', 'designer', 'operator', 'cabang']);
+        $query = MSpk::with(['bahan', 'designer', 'operator', 'cabang'])
+            ->where('is_bantuan', false);
 
         // 1. Logika Filter Cabang
         // Jika user BUKAN dari pusat, filter hanya SPK cabangnya sendiri
@@ -194,6 +196,10 @@ class MSpkController extends Controller
                     'is_bantuan'         => $request->has('is_bantuan'),
                     'asal_cabang_id'     => $asalCabangId,
                 ]);
+
+                event(new NotifikasiSpkBaru($newNoSpk, 'Reguler', Auth::user()->nama));
+
+                return redirect()->route('spk.index')->with('success', 'SPK Berhasil Dibuat!');
             });
 
             return redirect()->route('spk.index')->with('success', 'SPK Berhasil Dibuat!');
@@ -268,7 +274,11 @@ class MSpkController extends Controller
             'asal_cabang_id'  => $request->has('is_bantuan') ? $request->asal_cabang_id : null,
         ]);
 
-        return redirect()->route('spk.index')->with('success', 'Data SPK berhasil diperbarui!');
+        if ($spk->is_bantuan == '1') {
+            return redirect()->route('spk-bantuan.index')->with('success', 'Data SPK bantuan berhasil diperbarui!');
+        } else {
+            return redirect()->route('spk.index')->with('success', 'Data SPK berhasil diperbarui!');
+        }
     }
 
     public function destroy(MSpk $spk)
@@ -320,7 +330,8 @@ class MSpkController extends Controller
 
         // 3. FILTER STATUS (Gunakan whereIn agar RAPI dan tidak bocor)
         $query->where('status_spk', 'acc')
-            ->whereIn('status_produksi', ['pending', 'ripping', 'ongoing', 'finishing']);
+            ->whereIn('status_produksi', ['pending', 'ripping', 'ongoing', 'finishing'])
+            ->where('is_bantuan', false);
 
         // 4. FILTER ROLE & JENIS ORDER (Grouping Wajib)
         $query->where(function (Builder $q) use ($user) {
@@ -387,7 +398,8 @@ class MSpkController extends Controller
         $user = Auth::user();
 
         // 1. Inisialisasi Query Awal
-        $query = MSpk::with(['bahan', 'designer', 'operator', 'cabang']);
+        $query = MSpk::with(['bahan', 'designer', 'operator', 'cabang'])
+            ->where('is_bantuan', false);
 
         // 2. Filter Cabang (Jika bukan pusat, hanya lihat cabang sendiri)
         if ($user->cabang->jenis !== 'pusat') {

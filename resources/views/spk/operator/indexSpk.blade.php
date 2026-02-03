@@ -38,7 +38,7 @@
             <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
                 <div class="bg-gradient-warning shadow-warning border-radius-lg pt-4 pb-3 d-flex justify-content-between align-items-center px-3">
                     <div class="d-flex align-items-center">
-                        <h6 class="text-white text-capitalize mb-0">Antrian Produksi (Ongoing)</h6>
+                        <h6 class="text-white text-capitalize mb-0">Antrian Produksi Bantuan (Ongoing)</h6>
                     </div>
 
                     {{-- SEARCH BAR --}}

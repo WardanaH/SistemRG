@@ -18,7 +18,6 @@
 </script>
 @endif
 
-{{-- Tampilkan Error Validasi Global (Opsional) --}}
 @if ($errors->any())
 <script>
     document.addEventListener("DOMContentLoaded", function() {
@@ -36,28 +35,46 @@
     <div class="col-12">
         <div class="card my-4">
             <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
-                <div class="bg-gradient-primary shadow-primary border-radius-lg pt-4 pb-3">
-                    <h6 class="text-white text-capitalize ps-3">Form Input SPK (Surat Perintah Kerja)</h6>
+                {{-- Gunakan Dark untuk membedakan visual sedikit bahwa ini menu Bantuan, tapi layout tetap sama --}}
+                <div class="bg-gradient-dark shadow-dark border-radius-lg pt-4 pb-3">
+                    <h6 class="text-white text-capitalize ps-3">Input SPK Bantuan (Eksternal)</h6>
                 </div>
             </div>
 
             <div class="card-body">
-                <form action="{{ route('spk.store') }}" method="POST">
+                <form action="{{ route('spk-bantuan.store') }}" method="POST">
                     @csrf
 
-                    {{-- I. INFORMASI ORDER --}}
+                    {{-- KHUSUS SPK BANTUAN: INPUT ASAL CABANG --}}
+                    <div class="alert alert-secondary text-white text-sm mb-3" role="alert">
+                        <strong>Info:</strong> SPK ini untuk order dari cabang lain. Nomor SPK akan berawalan <strong>'B'</strong>.
+                    </div>
+                    <p class="text-sm text-uppercase font-weight-bold mb-2">Asal Cabang Peminta Bantuan</p>
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="input-group input-group-outline is-filled">
+                                <select name="asal_cabang_id" class="form-control select2" style="appearance: auto; padding-left: 10px;" required>
+                                    <option value="" disabled selected>-- Pilih Cabang Pengirim --</option>
+                                    @foreach($cabangLain as $cb)
+                                    <option value="{{ $cb->id }}" {{ old('asal_cabang_id') == $cb->id ? 'selected' : '' }}>
+                                        {{ $cb->nama }}
+                                    </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- I. INFORMASI ORDER (Susunan Sama persis dengan SPK Biasa) --}}
                     <p class="text-sm text-uppercase font-weight-bold mb-2">I. Informasi Order</p>
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <div class="input-group input-group-outline is-filled">
                                 <label class="form-label">No. SPK</label>
-                                {{-- Kita tampilkan text ini agar user tau nomornya auto-generate --}}
-                                <input type="text" class="form-control" value="Generate Otomatis" readonly>
-                                {{-- Input hidden tidak diperlukan karena kita generate di controller --}}
+                                <input type="text" class="form-control" value="Generate Otomatis (Format BBJM...)" readonly>
                             </div>
                         </div>
 
-                        {{-- Tanggal (Hari Ini) --}}
                         <div class="col-md-4 mb-3">
                             <div class="input-group input-group-outline is-filled">
                                 <label class="form-label">Tanggal</label>
@@ -65,7 +82,6 @@
                             </div>
                         </div>
 
-                        {{-- Jenis Order --}}
                         <div class="col-md-4 mb-3">
                             <label class="form-label mb-1 ms-1 text-xs text-secondary">Jenis Order:</label>
                             <div class="d-flex align-items-center gap-3">
@@ -88,7 +104,7 @@
 
                     <hr class="horizontal dark my-2">
 
-                    {{-- II. DATA PELANGGAN --}}
+                    {{-- II. DATA PELANGGAN (Susunan Sama persis) --}}
                     <p class="text-sm text-uppercase font-weight-bold mb-2">II. Data Pelanggan</p>
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -99,13 +115,13 @@
                             @error('nama_pelanggan') <small class="text-danger text-xs">{{ $message }}</small> @enderror
                         </div>
 
-                        {{-- Validasi No Telepon --}}
+                        {{-- PERBEDAAN: No Telp di sini WAJIB dan BISA DIEDIT --}}
                         <div class="col-md-6 mb-3">
-                            <div class="input-group input-group-outline is-filled">
+                            <div class="input-group input-group-outline @error('no_telepon') is-invalid @enderror">
                                 <label class="form-label">No. Telepon (WA)</label>
-                                <input type="text" name="no_telp" class="form-control" value="Di Isi Oleh Admin" readonly>
+                                <input type="number" name="no_telepon" class="form-control" value="{{ old('no_telepon') }}" required>
                             </div>
-                            @error('no_telp')
+                            @error('no_telepon')
                             <div class="text-danger text-xs mt-1">
                                 <i class="fa fa-exclamation-circle me-1"></i>{{ $message }}
                             </div>
@@ -115,7 +131,7 @@
 
                     <hr class="horizontal dark my-2">
 
-                    {{-- III. DETAIL PESANAN --}}
+                    {{-- III. DETAIL PESANAN (Susunan Sama persis) --}}
                     <p class="text-sm text-uppercase font-weight-bold mb-2">III. Detail Pesanan</p>
                     <div class="border p-3 border-radius-lg mb-3">
                         <div class="row">
@@ -190,24 +206,16 @@
 
                     <hr class="horizontal dark my-2">
 
-                    {{-- IV. PENANGGUNG JAWAB --}}
+                    {{-- IV. PENANGGUNG JAWAB (Susunan Sama persis) --}}
                     <p class="text-sm text-uppercase font-weight-bold mb-2">IV. Penanggung Jawab</p>
                     <div class="row">
-                        {{-- Dropdown Designer --}}
+                        {{-- Designer otomatis terisi user login, tapi kita tampilkan dropdown readonly agar sama --}}
                         <div class="col-md-6 mb-3">
-                            <div class="input-group input-group-outline @error('designer_id') is-invalid @enderror">
-                                <select class="select2" name="designer_id" class="form-control" style="appearance: auto; padding-left: 10px;" required>
-                                    <option value="" disabled selected>Pilih Designer</option>
-                                    @foreach($designers as $designer)
-                                    {{-- Otomatis pilih user yang login jika dia designer --}}
-                                    <option value="{{ $designer->id }}"
-                                        {{ (old('designer_id') == $designer->id) || (Auth::id() == $designer->id) ? 'selected' : '' }}>
-                                        {{ $designer->nama }}
-                                    </option>
-                                    @endforeach
-                                </select>
+                            <div class="input-group input-group-outline is-filled">
+                                <label class="form-label">Designer (Anda)</label>
+                                <input type="text" class="form-control" value="{{ Auth::user()->nama }}" readonly>
+                                <input type="hidden" name="designer_id" value="{{ Auth::id() }}">
                             </div>
-                            @error('designer_id') <small class="text-danger text-xs">{{ $message }}</small> @enderror
                         </div>
 
                         {{-- Dropdown Operator --}}
@@ -228,8 +236,8 @@
 
                     <div class="row mt-4">
                         <div class="col-12 text-end">
-                            <button type="submit" class="btn bg-gradient-primary">
-                                <i class="material-icons text-sm">print</i>&nbsp;&nbsp;Buat & Cetak SPK
+                            <button type="submit" class="btn bg-gradient-dark">
+                                <i class="material-icons text-sm">save</i>&nbsp;&nbsp;Simpan SPK Bantuan
                             </button>
                         </div>
                     </div>

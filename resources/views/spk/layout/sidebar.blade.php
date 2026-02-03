@@ -22,6 +22,7 @@
                     <span class="nav-link-text ms-1">Dashboard</span>
                 </a>
             </li>
+            <hr>
 
             @hasrole('manajemen')
             <li class="nav-item">
@@ -80,6 +81,16 @@
                     <span class="nav-link-text ms-1">Manajemen SPK</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link text-white {{
+                                request()->routeIs('spk-bantuan.index') ? 'active bg-gradient-primary' : ''
+                                }}" href="{{ route('spk-bantuan.index') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons-round opacity-10">book</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Manajemen SPK Bantuan</span>
+                </a>
+            </li>
             @endhasrole
 
             @hasrole('manajemen|designer')
@@ -93,6 +104,16 @@
                     <span class="nav-link-text ms-1">Buat SPK</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link text-white {{
+                    request()->routeIs('spk-bantuan') ? 'active bg-gradient-primary' : ''
+                    }}" href="{{ route('spk-bantuan') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons-round opacity-10">work</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Buat SPK Bantuan</span>
+                </a>
+            </li>
             @endhasrole
 
             @hasrole('manajemen|operator indoor|operator outdoor|operator multi')
@@ -103,7 +124,17 @@
                     <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
                         <i class="material-icons-round opacity-10">precision_manufacturing</i>
                     </div>
-                    <span class="nav-link-text ms-1">SPK Produksi</span>
+                    <span class="nav-link-text ms-1">Produksi SPK</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-white {{
+                                request()->routeIs('spk-bantuan.produksi') ? 'active bg-gradient-primary' : ''
+                                }}" href="{{ route('spk-bantuan.produksi') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons-round opacity-10">precision_manufacturing</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Produksi SPK Bantuan</span>
                 </a>
             </li>
             @endhasrole
@@ -119,7 +150,18 @@
                     <span class="nav-link-text ms-1">Riwayat Produksi SPK</span>
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link text-white {{
+                                request()->routeIs('spk-bantuan.riwayat') ? 'active bg-gradient-primary' : ''
+                                }}" href="{{ route('spk-bantuan.riwayat') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons-round opacity-10">manage_history</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Riwayat Produksi SPKB</span>
+                </a>
+            </li>
             @endhasrole
         </ul>
     </div>
+    <hr>
 </aside>
