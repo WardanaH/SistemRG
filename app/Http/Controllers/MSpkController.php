@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Log;
+use App\Events\NotifikasiSpkBaru;
 
 class MSpkController extends Controller
 {
@@ -195,6 +196,10 @@ class MSpkController extends Controller
                     'is_bantuan'         => $request->has('is_bantuan'),
                     'asal_cabang_id'     => $asalCabangId,
                 ]);
+
+                event(new NotifikasiSpkBaru($newNoSpk, 'Reguler', Auth::user()->nama));
+
+                return redirect()->route('spk.index')->with('success', 'SPK Berhasil Dibuat!');
             });
 
             return redirect()->route('spk.index')->with('success', 'SPK Berhasil Dibuat!');

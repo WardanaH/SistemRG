@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Contracts\Database\Eloquent\Builder;
+use App\Events\NotifikasiSpkBaru;
 
 class SpkBantuanController extends Controller
 {
@@ -131,6 +132,10 @@ class SpkBantuanController extends Controller
                     'designer_id' => $user->id, // Designer yang login
                     'operator_id' => $request->operator_id,
                 ]);
+
+                event(new NotifikasiSpkBaru($newNoSpk, 'Bantuan', Auth::user()->nama));
+
+                return redirect()->route('spk-bantuan.index')->with('success', 'SPK Bantuan Berhasil Dibuat!');
             });
 
             return redirect()->route('spk-bantuan.index')->with('success', 'SPK Bantuan Berhasil Dibuat!');

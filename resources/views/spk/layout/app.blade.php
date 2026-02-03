@@ -59,6 +59,8 @@
             border: 1px solid #1a73e8 !important;
         }
     </style>
+
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
 </head>
 
 <body class="g-sidenav-show bg-gray-200">
@@ -105,6 +107,59 @@
                 allowClear: true
             });
         });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        // 1. AKTIFKAN LOGGING (PENTING BUAT DEBUG)
+        Pusher.logToConsole = true;
+
+        // 2. Inisialisasi Pusher
+        var pusher = new Pusher('{{ config("broadcasting.connections.pusher.key") }}', {
+            cluster: '{{ config("broadcasting.connections.pusher.options.cluster") }}',
+            encrypted: true
+        });
+
+        // Cek di Console Browser nanti, harusnya config key & cluster tidak ada spasi
+        console.log("Config Pusher:", {
+            key: '{{ config("broadcasting.connections.pusher.key") }}',
+            cluster: '{{ config("broadcasting.connections.pusher.options.cluster") }}'
+        });
+
+        const isAdmin = {{ Auth::check() && Auth::user() -> hasRole('admin') ? 'true' : 'false' }};
+        console.log("Status Admin:", isAdmin);
+
+        var channel = pusher.subscribe('channel-admin');
+
+        // Binding Event
+        channel.bind('spk-dibuat', function(data) {
+
+            console.log("EVENT DITERIMA:", data); // Harus muncul jika koneksi sukses
+
+            if (isAdmin) {
+                playNotificationSound();
+                Swal.fire({
+                    title: 'SPK Baru Masuk!',
+                    text: data.pesan + ' (No: ' + data.no_spk + ')',
+                    icon: 'info',
+                    showCancelButton: true,
+                    confirmButtonText: 'Lihat SPK',
+                    cancelButtonText: 'Tutup'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = "{{ url('/spk') }}?search=" + data.no_spk;
+                    }
+                });
+            }
+        });
+
+        function playNotificationSound() {
+            let audio = new Audio('{{ asset("assets/sound/notif_spk.mp3") }}');
+            audio.play().catch(function(error) {
+                console.log("Audio error: " + error);
+            });
+        }
     </script>
 
     @stack('scripts')
