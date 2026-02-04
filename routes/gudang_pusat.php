@@ -18,7 +18,7 @@ Route::middleware(['auth', 'role:inventory utama'])
 
         //dashboard
         Route::get('/dashboard', function () {
-        return view('inventaris.gudangpusat.dashboard');
+            return view('inventaris.gudangpusat.dashboard');
         })->name('gudangpusat.dashboard');
 
         // barang
@@ -50,10 +50,10 @@ Route::middleware(['auth', 'role:inventory utama'])
         Route::delete('/pengiriman-pusat/delete/{id}', [GudangPusatController::class, 'pengirimanDestroy'])
             ->name('pengiriman.pusat.destroy');
 
-        Route::get('/pengiriman/{id}/edit-data',[GudangPusatController::class, 'pengirimanEditData'])
+        Route::get('/pengiriman/{id}/edit-data', [GudangPusatController::class, 'pengirimanEditData'])
             ->name('pengiriman.pusat.editData');
 
-        Route::put('/pengiriman/{id}/update',[GudangPusatController::class, 'pengirimanUpdate'])
+        Route::put('/pengiriman/{id}/update', [GudangPusatController::class, 'pengirimanUpdate'])
             ->name('pengiriman.pusat.update');
 
         // laporan
@@ -66,7 +66,9 @@ Route::middleware(['auth', 'role:inventory utama'])
         Route::get('/laporan-pengiriman/{bulan}/{tahun}/download', [GudangPusatController::class, 'laporanDownload'])
             ->name('laporan.pengiriman.download');
 
-        Route::get('/laporan/pengiriman/excel/{bulan}/{tahun}',[GudangPusatController::class, 'laporanExcel']
+        Route::get(
+            '/laporan/pengiriman/excel/{bulan}/{tahun}',
+            [GudangPusatController::class, 'laporanExcel']
         )->name('laporan.pengiriman.excel');
 
         // =====================
@@ -75,18 +77,17 @@ Route::middleware(['auth', 'role:inventory utama'])
         Route::get('/permintaan', [GudangPusatController::class, 'permintaanIndex'])
             ->name('permintaan.pusat.index');
 
-        Route::get('/permintaan/{id}/detail',[GudangPusatController::class, 'permintaanDetail']
-            )->name('permintaan.pusat.detail');
+        Route::get(
+            '/permintaan/{id}/detail',
+            [GudangPusatController::class, 'permintaanDetail']
+        )->name('permintaan.pusat.detail');
 
-        Route::post('/permintaan/proses',[GudangPusatController::class, 'permintaanProses']
-            )->name('permintaan.pusat.proses');
+        Route::post(
+            '/permintaan/proses',
+            [GudangPusatController::class, 'permintaanProses']
+        )->name('permintaan.pusat.proses');
 
         //notif
-        Route::post('/permintaan/{id}/read',[GudangPusatController::class, 'markAsRead'])
+        Route::post('/permintaan/{id}/read', [GudangPusatController::class, 'markAsRead'])
             ->name('permintaan.pusat.read');
-
     });
-
-//logout
-Route::post('/logout', function () {Auth::logout();request()->session()->invalidate();request()->session()->regenerateToken();
-    return redirect('/login');})->name('logout');
