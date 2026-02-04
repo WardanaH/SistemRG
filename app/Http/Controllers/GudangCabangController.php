@@ -484,4 +484,117 @@ class GudangCabangController extends Controller
             compact('inventaris')
         );
     }
+
+// 7. DASHBOARD
+
+
+public function dashboard()
+{
+    $today = Carbon::today();
+    $cabangId = Auth::user()->cabang_id;
+
+    // =========================
+    // KOTAK ATAS
+    // =========================
+
+    $pengirimanMasukHariIni = MPengiriman::where('cabang_tujuan_id', $cabangId)
+        ->where('status_pengiriman', 'Dikirim')
+        ->whereDate('created_at', $today)
+        ->count();
+
+    $pengirimanDiterimaHariIni = MPengiriman::where('cabang_tujuan_id', $cabangId)
+        ->where('status_pengiriman', 'Diterima')
+        ->whereDate('tanggal_diterima', $today)
+        ->count();
+
+    $totalBarangMasukHariIni = 0;
+
+    $pengirimanHariIni = MPengiriman::where('cabang_tujuan_id', $cabangId)
+        ->where('status_pengiriman', 'Diterima')
+        ->whereDate('tanggal_diterima', $today)
+        ->get();
+
+    foreach ($pengirimanHariIni as $p) {
+        foreach ($p->keterangan ?? [] as $item) {
+            $totalBarangMasukHariIni += (int) ($item['jumlah'] ?? 0);
+        }
+    }
+
+    $totalJenisBarang = MCabangBarang::where('cabang_id', $cabangId)->count();
+
+    // =========================
+    // GRAFIK 7 HARI (SAMA KAYAK PUSAT)
+    // =========================
+
+    $labels7Hari = [];
+    $grafikPengirimanMasuk = [];
+    $grafikPengirimanDiterima = [];
+    $grafikBarangMasuk = [];
+
+    for ($i = 6; $i >= 0; $i--) {
+        $date = Carbon::today()->subDays($i);
+
+        // label (contoh: 29 Jan)
+        $labels7Hari[] = $date->format('d M');
+
+        // grafik 1: pengiriman dikirim
+        $grafikPengirimanMasuk[] = MPengiriman::where('cabang_tujuan_id', $cabangId)
+            ->where('status_pengiriman', 'Dikirim')
+            ->whereDate('created_at', $date)
+            ->count();
+
+        // grafik 2: pengiriman diterima
+        $grafikPengirimanDiterima[] = MPengiriman::where('cabang_tujuan_id', $cabangId)
+            ->where('status_pengiriman', 'Diterima')
+            ->whereDate('tanggal_diterima', $date)
+            ->count();
+
+        // grafik 3: total barang masuk
+        $totalPerHari = 0;
+
+        $pengiriman = MPengiriman::where('cabang_tujuan_id', $cabangId)
+            ->where('status_pengiriman', 'Diterima')
+            ->whereDate('tanggal_diterima', $date)
+            ->get();
+
+        foreach ($pengiriman as $p) {
+            foreach ($p->keterangan ?? [] as $item) {
+                $totalPerHari += (int) ($item['jumlah'] ?? 0);
+            }
+        }
+
+        $grafikBarangMasuk[] = $totalPerHari;
+    }
+
+    // =========================
+    // WAKTU TERAKHIR UPDATE
+    // =========================
+
+    $lastPengirimanUpdate = MPengiriman::where('cabang_tujuan_id', $cabangId)
+        ->where('status_pengiriman', 'Dikirim')
+        ->latest('created_at')
+        ->first();
+
+    $lastPenerimaanUpdate = MPengiriman::where('cabang_tujuan_id', $cabangId)
+        ->where('status_pengiriman', 'Diterima')
+        ->latest('tanggal_diterima')
+        ->first();
+
+    $lastBarangUpdate = $lastPenerimaanUpdate;
+
+    return view('inventaris.gudangcabang.dashboard', compact(
+        'pengirimanMasukHariIni',
+        'pengirimanDiterimaHariIni',
+        'totalBarangMasukHariIni',
+        'totalJenisBarang',
+        'labels7Hari',
+        'grafikPengirimanMasuk',
+        'grafikPengirimanDiterima',
+        'grafikBarangMasuk',
+        'lastPengirimanUpdate',
+        'lastPenerimaanUpdate',
+        'lastBarangUpdate'
+    ));
+}
+
 }

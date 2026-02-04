@@ -17,9 +17,8 @@ Route::middleware(['auth', 'role:inventory cabang'])
     ->group(function () {
 
         // Dashboard
-        Route::get('/dashboard', function () {
-            return view('inventaris.gudangcabang.dashboard');
-        })->name('dashboard');
+        Route::get('/dashboard', [GudangCabangController::class, 'dashboard'])
+            ->name('dashboard');
 
         // barang
         Route::get('/barang', [GudangCabangController::class, 'barang'])

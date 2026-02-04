@@ -1,16 +1,46 @@
 @php
 use Illuminate\Support\Facades\Auth;
 
-if (request()->routeIs('gudangpusat.dashboard')) {
-    $pageTitle = 'Dashboard';
-} elseif (request()->routeIs('barang.pusat*')) {
-    $pageTitle = 'Data Barang';
-} else {
-    $pageTitle = 'Gudang Pusat';
-}
-
 $user = Auth::user();
 
+/*
+|--------------------------------------------------------------------------
+| AREA TITLE (BERDASARKAN ROLE)
+|--------------------------------------------------------------------------
+*/
+if ($user->hasRole('inventory utama')) {
+    $areaTitle = 'Gudang Pusat';
+} elseif ($user->hasRole('inventory cabang')) {
+    $areaTitle = 'Gudang Cabang';
+} else {
+    $areaTitle = 'Dashboard';
+}
+
+/*
+|--------------------------------------------------------------------------
+| PAGE TITLE (BERDASARKAN ROUTE)
+|--------------------------------------------------------------------------
+*/
+$pageTitle = match (true) {
+
+    request()->routeIs('gudangpusat.dashboard') => 'Dashboard',
+    request()->routeIs('gudangcabang.dashboard') => 'Dashboard',
+
+    request()->routeIs('barang.pusat*') => 'Data Barang',
+    request()->routeIs('gudangcabang.barang*') => 'Data Barang Cabang',
+
+    request()->routeIs('pengiriman.*') => 'Pengiriman Barang',
+    request()->routeIs('gudangcabang.penerimaan*') => 'Penerimaan Barang',
+
+    request()->routeIs('permintaan.*') => 'Permintaan Pengiriman',
+    request()->routeIs('gudangcabang.permintaan.*') => 'Permintaan Pengiriman',
+
+    request()->routeIs('gudangcabang.inventaris.index') => 'Inventaris Barang',
+    request()->routeIs('gudangcabang.inventaris.create') => 'Tambah Inventaris',
+    request()->routeIs('gudangcabang.inventaris.edit') => 'Edit Inventaris',
+
+    default => null,
+};
 /*
 |--------------------------------------------------------------------------
 | NOTIFIKASI
@@ -51,11 +81,21 @@ if ($user->hasRole('inventory utama')) {
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb bg-transparent mb-0 pb-0 pt-1 px-0 me-sm-6 me-5">
                 <li class="breadcrumb-item text-sm text-dark">Pages</li>
-                <li class="breadcrumb-item text-sm text-dark active">
-                    {{ $pageTitle }}
+
+                <li class="breadcrumb-item text-sm text-dark">
+                    {{ $areaTitle }}
                 </li>
+
+                @if($pageTitle)
+                    <li class="breadcrumb-item text-sm text-dark active">
+                        {{ $pageTitle }}
+                    </li>
+                @endif
             </ol>
-            <h6 class="font-weight-bolder mb-0">{{ $pageTitle }}</h6>
+
+            <h6 class="font-weight-bolder mb-0">
+                {{ $pageTitle ?? $areaTitle }}
+            </h6>
         </nav>
 
         {{-- =====================
