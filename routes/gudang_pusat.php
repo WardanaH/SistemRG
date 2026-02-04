@@ -17,9 +17,12 @@ Route::middleware(['auth', 'role:inventory utama'])
     ->group(function () {
 
         //dashboard
-        Route::get('/dashboard', function () {
-            return view('inventaris.gudangpusat.dashboard');
-        })->name('gudangpusat.dashboard');
+        // Route::get('/dashboard', function () {
+        //     return view('inventaris.gudangpusat.dashboard');
+        // })->name('gudangpusat.dashboard');
+
+        Route::get('/dashboard', [GudangPusatController::class, 'dashboard'])
+            ->name('gudangpusat.dashboard');
 
         // barang
         Route::get('/barang', [GudangPusatController::class, 'index'])

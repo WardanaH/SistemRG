@@ -61,12 +61,12 @@
 
                             <div class="col-md-2 mb-3">
                                 <label>Stok</label>
-                                <input type="number" name="stok" class="form-control" required>
+                                <input type="text" name="stok" class="form-control number-format" required>
                             </div>
 
                             <div class="col-md-2 mb-3">
                                 <label>Batas Stok</label>
-                                <input type="number" name="batas_stok" class="form-control" required>
+                                <input type="text" name="batas_stok" class="form-control number-format" required>
                             </div>
 
                             <div class="col-md-12 mb-3">
@@ -223,8 +223,8 @@ MODAL EDIT BARANG
                     <option>PCS</option><option>PAKET</option><option>KG</option>
                     <option>METER</option><option>CENTIMETER</option>
                 </select>
-                <input type="number" name="stok" id="edit_stok" class="form-control mb-2" required>
-                <input type="number" name="batas_stok" id="edit_batas" class="form-control mb-2" required>
+                <input type="text" name="stok" id="edit_stok" class="form-control number-format" required>
+                <input type="text" name="batas_stok" id="edit_batas" class="form-control number-format" required>
                 <textarea name="keterangan" id="edit_keterangan" class="form-control"></textarea>
             </div>
 
@@ -265,6 +265,24 @@ function hapusData(id){
 
 <script>
 $('.select2').select2({ width:'100%' });
+</script>
+<script>
+function formatNumberID(value) {
+    value = value.replace(/[^0-9,]/g, '');
+
+    let parts = value.split(',');
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+    return parts.length > 1
+        ? parts[0] + ',' + parts[1].slice(0, 2)
+        : parts[0];
+}
+
+document.querySelectorAll('.number-format').forEach(input => {
+    input.addEventListener('input', function () {
+        this.value = formatNumberID(this.value);
+    });
+});
 </script>
 
 @endsection

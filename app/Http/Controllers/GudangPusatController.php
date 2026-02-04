@@ -12,13 +12,14 @@ use App\Models\MGudangBarang;
 use App\Models\MPengiriman;
 use App\Models\MCabang;
 use App\Models\MPermintaanPengiriman;
+use Illuminate\Support\Facades\Auth;
 use App\Events\NotifikasiInventarisCabang;
 use PDF;
 
 class GudangPusatController extends Controller
 {
 
-    // 1. BARANG
+// 1. BARANG
     public function index()
     {
         $datas = MGudangBarang::orderByDesc('created_at')->paginate(10);
@@ -27,6 +28,19 @@ class GudangPusatController extends Controller
             'title' => 'Data Barang Gudang Pusat',
             'datas' => $datas,
         ]);
+    }
+
+    private function toDecimal($value)
+    {
+        if ($value === null) return null;
+
+        // hapus pemisah ribuan
+        $value = str_replace('.', '', $value);
+
+        // ubah koma ke titik
+        $value = str_replace(',', '.', $value);
+
+        return $value;
     }
 
     public function store(Request $request)
@@ -40,14 +54,15 @@ class GudangPusatController extends Controller
             'keterangan'  => 'nullable|string',
         ]);
 
-        MGudangBarang::create($request->only([
-            'kategori_id',
-            'nama_bahan',
-            'satuan',
-            'stok',
-            'batas_stok',
-            'keterangan'
-        ]));
+        MGudangBarang::create([
+            'kategori_id' => $request->kategori_id,
+            'nama_bahan'  => $request->nama_bahan,
+            'satuan'      => $request->satuan,
+            'stok'        => $this->toDecimal($request->stok),
+            'batas_stok'  => $this->toDecimal($request->batas_stok),
+            'keterangan'  => $request->keterangan,
+        ]);
+
 
         return redirect()
             ->route('barang.pusat')
@@ -715,24 +730,185 @@ class GudangPusatController extends Controller
     }
 
 // 4. NOTIFIKASI
-public function getHeaderNotifications()
-{
-    return MPermintaanPengiriman::with('cabang')
-        ->where('status', 'Menunggu')
-        ->where('created_at', '>=', Carbon::now()->subDays(3))
-        ->orderByDesc('created_at')
-        ->take(5)
-        ->get();
-}
+    public function getHeaderNotifications()
+    {
+        return MPermintaanPengiriman::with('cabang')
+            ->where('status', 'Menunggu')
+            ->where('created_at', '>=', Carbon::now()->subDays(3))
+            ->orderByDesc('created_at')
+            ->take(5)
+            ->get();
+    }
 
-// MARK AS READ
-public function markAsRead($id)
-{
-    MPermintaanPengiriman::where('id', $id)
-        ->update(['read_at' => now()]);
+    // MARK AS READ
+    public function markAsRead($id)
+    {
+        MPermintaanPengiriman::where('id', $id)
+            ->update(['read_at' => now()]);
 
-    return response()->json(['success' => true]);
-}
+        return response()->json(['success' => true]);
+    }
 
+// 5. DASHBOARD
+    public function dashboard()
+    {
+        $today = Carbon::today();
+        $yesterday = Carbon::yesterday();
 
+        // 4 KOTAK ATAS
+
+        // 1. Permintaan Menunggu
+        $totalPermintaanMenunggu = MPermintaanPengiriman::where('status','Menunggu')->count();
+
+        $permintaanHariIni = MPermintaanPengiriman::whereDate('created_at', $today)->count();
+        $permintaanKemarin = MPermintaanPengiriman::whereDate('created_at', $yesterday)->count();
+        $diffPermintaan = $permintaanHariIni - $permintaanKemarin;
+
+        // 2. Barang dikirim
+        $totalBarangDikirim = MPengiriman::where('status_pengiriman','Dikirim')->count();
+
+        $dikirimHariIni = MPengiriman::whereDate('created_at', $today)->count();
+        $dikirimKemarin = MPengiriman::whereDate('created_at', $yesterday)->count();
+        $diffDikirim = $dikirimHariIni - $dikirimKemarin;
+
+        // 3. Pengiriman tuntas
+        $totalPengirimanTuntas = MPengiriman::where('status_pengiriman','Diterima')->count();
+
+        $tuntasHariIni = MPengiriman::whereDate('created_at', $today)->count();
+        $tuntasKemarin = MPengiriman::whereDate('created_at', $yesterday)->count();
+        $diffTuntas = $tuntasHariIni - $tuntasKemarin;
+
+        // 4. Total jenis barang
+        $totalJenisBarang = MGudangBarang::count();
+
+        $barangHariIni = MGudangBarang::whereDate('created_at', $today)->count();
+        $barangKemarin = MGudangBarang::whereDate('created_at', $yesterday)->count();
+        $diffBarang = $barangHariIni - $barangKemarin;
+
+        // GRAFIK
+        $days = [];
+        $grafikPermintaan = [];
+        $grafikStokDikirim = [];
+        $grafikPengiriman = [];
+
+        for ($i = 6; $i >= 0; $i--) {
+            $date = Carbon::today()->subDays($i);
+
+            // label hari (contoh: 29 Jan)
+            $days[] = $date->format('d M');
+
+            // grafik 1: permintaan masuk per hari
+            $grafikPermintaan[] = MPermintaanPengiriman::whereDate('created_at', $date)->count();
+
+            // grafik 2: total stok dikirim per hari (sum qty / jumlah_barang)
+            $pengirimanHariIni = MPengiriman::whereDate('created_at', $date)->get();
+
+            $totalJumlah = 0;
+
+            foreach ($pengirimanHariIni as $kirim) {
+                $detail = is_string($kirim->keterangan)
+                    ? json_decode($kirim->keterangan, true)
+                    : $kirim->keterangan;
+
+                foreach ($detail ?? [] as $item) {
+                    $totalJumlah += (float) $item['jumlah'];
+                }
+            }
+
+            $grafikStokDikirim[] = $totalJumlah;
+
+            // grafik 3: pengiriman dikirim per hari
+            $grafikPengiriman[] = MPengiriman::whereDate('created_at', $date)
+                ->where('status_pengiriman','Dikirim')
+                ->count();
+
+            // waktu terakhir update grafik
+            $lastPermintaanUpdate = MPermintaanPengiriman::latest('created_at')->first();
+            $lastStokDikirimUpdate = MPengiriman::latest('created_at')->first();
+            $lastPengirimanUpdate = MPengiriman::where('status_pengiriman','Dikirim')
+                ->latest('created_at')->first();
+
+        }
+
+        // top 6 barang tabel
+        $bulanIni = Carbon::now()->month;
+        $tahunIni = Carbon::now()->year;
+
+        $pengirimanBulanIni = MPengiriman::with('cabangTujuan')
+            ->whereMonth('created_at', $bulanIni)
+            ->whereYear('created_at', $tahunIni)
+            ->where('status_pengiriman', 'Dikirim')
+            ->get();
+
+        $barangKeluar = [];
+
+        foreach ($pengirimanBulanIni as $kirim) {
+
+            if (!$kirim->cabangTujuan) continue;
+
+            $namaCabang = $kirim->cabangTujuan->nama;
+
+            foreach ($kirim->keterangan ?? [] as $item) {
+
+                $idBarang = $item['gudang_barang_id'];
+                $namaBarang = $item['nama_barang'];
+                $jumlah = (int) $item['jumlah'];
+
+                if (!isset($barangKeluar[$idBarang])) {
+                    $barangKeluar[$idBarang] = [
+                        'nama_barang' => $namaBarang,
+                        'cabang' => [],
+                        'total' => 0
+                    ];
+                }
+
+                $barangKeluar[$idBarang]['total'] += $jumlah;
+
+                // hitung per cabang
+                if (!isset($barangKeluar[$idBarang]['cabang'][$namaCabang])) {
+                    $barangKeluar[$idBarang]['cabang'][$namaCabang] = 0;
+                }
+
+                $barangKeluar[$idBarang]['cabang'][$namaCabang] += $jumlah;
+            }
+        }
+
+        // tentukan cabang terbanyak
+        foreach ($barangKeluar as &$barang) {
+            arsort($barang['cabang']);
+            $barang['cabang'] = array_key_first($barang['cabang']);
+        }
+
+        $topBarangKeluar = collect($barangKeluar)
+            ->sortByDesc('total')
+            ->take(6)
+            ->values();
+
+        // tabel notif terbaru
+        $latestNotifications = MPermintaanPengiriman::with('cabang')
+            ->where('status', 'Menunggu')
+            ->orderByDesc('created_at')
+            ->take(6)
+            ->get();
+
+        return view('inventaris.gudangpusat.dashboard', compact(
+            'totalPermintaanMenunggu',
+            'totalBarangDikirim',
+            'totalPengirimanTuntas',
+            'totalJenisBarang',
+            'diffPermintaan',
+            'diffDikirim',
+            'diffTuntas',
+            'diffBarang',
+            'days',
+            'grafikPermintaan',
+            'grafikStokDikirim',
+            'grafikPengiriman',
+            'lastPermintaanUpdate',
+            'lastStokDikirimUpdate',
+            'lastPengirimanUpdate',
+            'topBarangKeluar',
+            'latestNotifications'
+        ));
+    }
 }
