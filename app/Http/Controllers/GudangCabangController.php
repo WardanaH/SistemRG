@@ -440,18 +440,28 @@ class GudangCabangController extends Controller
             'tanggal_input' => $req->tanggal_input,
         ]);
 
-        $qrUrl = request()->getSchemeAndHttpHost() . '/inventaris/qr/' . $inventaris->kode_barang;
-        $svg = QrCode::format('svg')->size(250)->generate($qrUrl);
+        // 🔥 URL YANG DIMASUKKAN KE QR
+        $qrUrl = route('inventaris.qr.public', $inventaris->kode_barang);
+
+        // 🔥 SVG (TANPA IMAGICK)
+        $svg = QrCode::format('svg')
+            ->size(300)
+            ->margin(2)
+            ->generate($qrUrl);
 
         $path = 'qr_inventaris/qr_'.$inventaris->id.'.svg';
+
         Storage::disk('public')->put($path, $svg);
 
-        $inventaris->update(['qr_code' => $path]);
+        $inventaris->update([
+            'qr_code' => $path
+        ]);
 
         return redirect()
             ->route('gudangcabang.inventaris.index')
             ->with('success','Inventaris berhasil ditambahkan');
     }
+
 
     // AMBIL DATA UNTUK MODAL EDIT (AJAX)
     public function inventarisEdit($id)
@@ -486,8 +496,6 @@ class GudangCabangController extends Controller
     }
 
 // 7. DASHBOARD
-
-
 public function dashboard()
 {
     $today = Carbon::today();

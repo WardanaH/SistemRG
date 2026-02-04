@@ -159,9 +159,17 @@
                             {{-- QR CODE --}}
                             <td class="text-center">
                                 @if($item->qr_code)
-                                    <img src="{{ asset('storage/'.$item->qr_code) }}"
-                                        class="border-radius-md mb-1"
-                                        width="70">
+                                    <a href="{{ route('inventaris.qr.public', $item->kode_barang) }}"
+                                    target="_blank">
+                                        <img src="{{ asset('storage/'.$item->qr_code) }}"
+                                            width="70"
+                                            class="border-radius-md mb-1">
+                                    </a>
+
+                                    <div class="small text-muted">
+                                        Scan untuk detail
+                                    </div>
+
                                     <br>
                                     <a href="{{ asset('storage/'.$item->qr_code) }}"
                                     download
