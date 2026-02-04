@@ -58,7 +58,7 @@
 
                             <div class="col-md-2 mb-3">
                                 <label>Kondisi</label>
-                                <select name="kondisi" class="form-control">
+                                <select name="kondisi" class="form-control select2">
                                     <option>Baik</option>
                                     <option>Rusak Ringan</option>
                                     <option>Rusak Berat</option>
@@ -102,70 +102,106 @@
                 <div class="card-body px-0 pb-2">
                     <div class="table-responsive">
                         <table class="table align-items-center mb-0">
-                            <thead>
-                                <tr>
-                                    {{-- <th>No</th> --}}
-                                    <th>Kode</th>
-                                    <th>Nama</th>
-                                    <th>Jumlah</th>
-                                    <th>Kondisi</th>
-                                    {{-- <th>Lokasi</th> --}}
-                                    <th>Tanggal</th>
-                                    <th class="text-center">QR Code</th>
-                                    <th class="text-center">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($data as $i => $item)
-                                <tr>
-                                    <td>{{ $item->kode_barang }}</td>
-                                    <td>{{ $item->nama_barang }}</td>
-                                    <td>{{ $item->jumlah }}</td>
-                                    <td>{{ $item->kondisi }}</td>
-                                    {{-- <td>{{ $item->lokasi ?? '-' }}</td> --}}
-                                    <td>{{ $item->tanggal_input }}</td>
+                        <thead>
+                        <tr>
+                            <th>Kode</th>
+                            <th>Nama Barang</th>
+                            <th>Jumlah</th>
+                            <th>Kondisi</th>
+                            <th>Tanggal</th>
+                            <th class="text-center">QR Code</th>
+                            <th class="text-center">Aksi</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @forelse($data as $item)
+                        <tr>
 
-                                    {{-- QR CODE --}}
-                                    <td class="text-center">
-                                        @if($item->qr_code)
-                                            <img
-                                                src="{{ asset('storage/'.$item->qr_code) }}"
-                                                width="70"
-                                                class="mb-1"
-                                            >
-                                            <br>
+                            {{-- KODE --}}
+                            <td class="fw-bold text-sm">
+                                {{ $item->kode_barang }}
+                            </td>
 
-                                            <a href="{{ asset('storage/'.$item->qr_code) }}"
-                                            download
-                                            class="btn btn-sm btn-outline-primary">
-                                                Download
-                                            </a>
-                                        @else
-                                            <span class="text-muted">-</span>
-                                        @endif
-                                    </td>
+                            {{-- NAMA BARANG (ADA IKON KOTAK MELENGKUNG) --}}
+                            <td>
+                                <div class="d-flex px-2 py-1">
+                                    <div class="avatar avatar-sm me-3 border-radius-md
+                                                bg-gradient-success d-flex align-items-center justify-content-center">
+                                        <i class="material-icons text-white text-sm">inventory</i>
+                                    </div>
+                                    <div class="d-flex flex-column justify-content-center">
+                                        <h6 class="mb-0 text-sm">{{ $item->nama_barang }}</h6>
+                                    </div>
+                                </div>
+                            </td>
 
-                                    {{-- AKSI --}}
-                                    <td class="text-center">
-                                        <button class="btn btn-sm btn-warning btn-edit"
-                                                data-id="{{ $item->id }}">
-                                            Edit
-                                        </button>
-                                    </td>
-                                </tr>
+                            {{-- JUMLAH --}}
+                            <td>
+                                {{ $item->jumlah }}
+                            </td>
 
-                                @empty
-                                <tr>
-                                    <td colspan="8" class="text-center text-muted py-4">
-                                        Data inventaris belum tersedia
-                                    </td>
-                                </tr>
-                                @endforelse
-                            </tbody>
+                            {{-- KONDISI --}}
+                            <td>
+                                @if($item->kondisi == 'Baik')
+                                    <span class="badge bg-success">Baik</span>
+                                @elseif($item->kondisi == 'Rusak Ringan')
+                                    <span class="badge bg-warning">Rusak Ringan</span>
+                                @else
+                                    <span class="badge bg-danger">Rusak Berat</span>
+                                @endif
+                            </td>
+
+                            {{-- TANGGAL --}}
+                            <td>
+                                {{ \Carbon\Carbon::parse($item->tanggal_input)->format('d M Y') }}
+                            </td>
+
+                            {{-- QR CODE --}}
+                            <td class="text-center">
+                                @if($item->qr_code)
+                                    <img src="{{ asset('storage/'.$item->qr_code) }}"
+                                        class="border-radius-md mb-1"
+                                        width="70">
+                                    <br>
+                                    <a href="{{ asset('storage/'.$item->qr_code) }}"
+                                    download
+                                    class="btn btn-sm btn-outline-primary">
+                                        Download
+                                    </a>
+                                @else
+                                    <span class="text-muted">-</span>
+                                @endif
+                            </td>
+
+                            {{-- AKSI --}}
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-warning btn-edit"
+                                        onclick="editInventaris({{ $item->id }})">
+                                    <i class="material-icons text-sm">edit</i>
+                                </button>
+                            </td>
+
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">
+                                Data inventaris belum tersedia
+                            </td>
+                        </tr>
+                        @endforelse
+                        </tbody>
                         </table>
+                        <div class="d-flex justify-content-between align-items-center px-3 mt-3">
+                            <div class="text-sm text-muted">
+                                Menampilkan {{ $data->firstItem() }} - {{ $data->lastItem() }}
+                                dari {{ $data->total() }} data
+                            </div>
+                            <div>
+                                {{ $data->links('pagination::bootstrap-5') }}
+                            </div>
+                        </div>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>

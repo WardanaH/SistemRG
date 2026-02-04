@@ -21,7 +21,7 @@ class GudangPusatController extends Controller
     // 1. BARANG
     public function index()
     {
-        $datas = MGudangBarang::orderByDesc('stok')->get();
+        $datas = MGudangBarang::orderByDesc('created_at')->paginate(10);
 
         return view('inventaris.gudangpusat.barang', [
             'title' => 'Data Barang Gudang Pusat',
@@ -95,7 +95,7 @@ class GudangPusatController extends Controller
             'permintaan' => MPermintaanPengiriman::with('cabang')
                                 ->where('status', '!=', 'Selesai')
                                 ->orderByDesc('created_at')
-                                ->get(),
+                                ->paginate(10),
 
             'pengiriman' => MPengiriman::with(['cabang','permintaan'])
                                 ->orderByDesc('id')
@@ -553,7 +553,7 @@ class GudangPusatController extends Controller
             ')
             ->groupByRaw('YEAR(tanggal_pengiriman), MONTH(tanggal_pengiriman)')
             ->orderByRaw('YEAR(tanggal_pengiriman) DESC, MONTH(tanggal_pengiriman) DESC')
-            ->get();
+            ->paginate(10);
 
         return view('inventaris.gudangpusat.laporan', compact('laporan'));
     }

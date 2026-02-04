@@ -1,6 +1,19 @@
 @extends('inventaris.layouts.app')
 
 @section('title', 'Detail Laporan Penerimaan')
+<style>
+    .thead-blue th {
+        background-color: #97d4ff !important;
+        color: #0d47a1;
+        text-align: center;
+    }
+
+    .thead-pink th {
+        background-color: #fdbcd2 !important;
+        color: #880e4f;
+        text-align: center;
+    }
+</style>
 
 @section('content')
 <div class="container-fluid py-4">
@@ -22,15 +35,15 @@
 
                     <div class="table-responsive">
                         <table class="table table-bordered">
-                            <thead class="bg-light">
-                                <tr class="text-center">
-                                    <th style="width: 12%">Tanggal Diterima</th>
-                                    <th>Nama Barang</th>
-                                    <th style="width: 10%">Jumlah</th>
-                                    <th style="width: 10%">Satuan</th>
-                                    <th>Keterangan</th>
-                                    <th style="width: 20%">Dari Cabang / Gudang</th>
-                                </tr>
+                            <thead class="thead-blue">
+                            <tr class="text-center">
+                                <th style="width: 12%">Tanggal Diterima</th>
+                                <th>Nama Barang</th>
+                                <th style="width: 10%">Jumlah</th>
+                                <th style="width: 10%">Satuan</th>
+                                <th>Keterangan</th>
+                                <th style="width: 20%">Dari Cabang / Gudang</th>
+                            </tr>
                             </thead>
                             <tbody>
                                 @forelse($pengiriman as $item)
@@ -109,7 +122,7 @@
 
                             <div class="table-responsive">
                             <table class="table table-bordered">
-                                <thead class="bg-light text-center">
+                                <thead class="thead-pink text-center">
                                 <tr>
                                     <th>Nama Barang</th>
                                     <th>Satuan</th>
@@ -131,22 +144,21 @@
 
                     <div class="mt-4 d-flex justify-content-between">
                         <a href="{{ route('gudangcabang.laporan.index') }}" class="btn btn-secondary">Kembali</a>
-<div class="d-flex gap-3">
-    {{-- EXCEL --}}
-    <a href="{{ route('gudangcabang.laporan.excel', [$bulan, $tahun]) }}"
-       class="btn btn-success px-2 py-1"
-       title="Download Excel">
-        <i class="material-icons fs-1">table_view</i>
-    </a>
+                            <div class="d-flex gap-3">
+                                {{-- EXCEL --}}
+                                <a href="{{ route('gudangcabang.laporan.excel', [$bulan, $tahun]) }}"
+                                class="btn btn-success px-2 py-1"
+                                title="Download Excel">
+                                    <i class="material-icons fs-1">table_view</i>
+                                </a>
 
-    {{-- PDF --}}
-    <a href="{{ route('gudangcabang.laporan.download', [$bulan, $tahun]) }}"
-       class="btn btn-danger px-2 py-1"
-       title="Download PDF">
-        <i class="material-icons fs-1">picture_as_pdf</i>
-    </a>
-</div>
-
+                                {{-- PDF --}}
+                                <a href="{{ route('gudangcabang.laporan.download', [$bulan, $tahun]) }}"
+                                class="btn btn-danger px-2 py-1"
+                                title="Download PDF">
+                                    <i class="material-icons fs-1">picture_as_pdf</i>
+                                </a>
+                            </div>
                     </div>
 
                 </div>

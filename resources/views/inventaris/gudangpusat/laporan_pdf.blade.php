@@ -17,7 +17,7 @@
     </div>
 
     <table class="table">
-        <thead>
+        <thead class="thead-blue">
             <tr>
                 <th style="width: 12%">Tanggal</th>
                 <th>Nama Barang</th>
@@ -108,7 +108,7 @@
     <h4 style="text-align:center">Rekap Total Pengiriman Per Barang</h4>
 
     <table class="table">
-        <thead>
+        <thead class="thead-pink">
             <tr style="text-align:center">
                 <th>Nama Barang</th>
                 <th>Satuan</th>
@@ -139,4 +139,28 @@
     </table>
 
 </body>
+<style>
+    body { font-family: Arial, sans-serif; }
+
+    .table { width: 100%; border-collapse: collapse; }
+
+    .table th, .table td {
+        border: 1px solid #000;
+        padding: 8px;
+        font-size: 12px;
+    }
+
+    .thead-blue th {
+        background-color: #84d2ff;
+        color: #000000;
+        text-align: center;
+    }
+
+    .thead-pink th {
+        background-color: #fcbed2;
+        color: #000000;
+        text-align: center;
+    }
+</style>
+
 </html>

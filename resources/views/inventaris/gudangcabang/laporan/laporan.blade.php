@@ -28,31 +28,59 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse($laporan as $row)
-                                <tr>
-                                    <td>{{ \Carbon\Carbon::create()->month((int) $row->bulan)->translatedFormat('F') }}</td>
-                                    <td>{{ $row->tahun }}</td>
-                                    <td class="text-center">
-                                        <a href="{{ route('gudangcabang.laporan.detail', [$row->bulan, $row->tahun]) }}"
-                                           class="btn btn-sm bg-gradient-primary">
-                                            <i class="material-icons text-sm">visibility</i>
-                                            Detail
-                                        </a>
-                                    </td>
-                                </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="3" class="text-center text-muted py-4">
-                                        Belum ada data laporan
-                                    </td>
-                                </tr>
-                                @endforelse
+                            @forelse($laporan as $row)
+                            <tr>
+
+                                {{-- BULAN --}}
+                                <td>
+                                    <div class="d-flex px-2 py-1">
+                                        <div class="avatar avatar-sm me-3 border-radius-md
+                                                    bg-gradient-success d-flex align-items-center justify-content-center">
+                                            <i class="material-icons text-white text-sm">calendar_month</i>
+                                        </div>
+                                        <div class="d-flex flex-column justify-content-center">
+                                            <h6 class="mb-0 text-sm">
+                                                {{ \Carbon\Carbon::create()->month((int) $row->bulan)->translatedFormat('F') }}
+                                            </h6>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                {{-- TAHUN --}}
+                                <td class="fw-bold">
+                                    {{ $row->tahun }}
+                                </td>
+
+                                {{-- AKSI --}}
+                                <td class="text-center">
+                                    <a href="{{ route('gudangcabang.laporan.detail', [$row->bulan, $row->tahun]) }}"
+                                    class="btn btn-sm bg-gradient-primary">
+                                        <i class="material-icons text-sm">visibility</i>
+                                        Detail
+                                    </a>
+                                </td>
+
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="3" class="text-center text-muted py-4">
+                                    Belum ada data laporan
+                                </td>
+                            </tr>
+                            @endforelse
                             </tbody>
                         </table>
-
+                        <div class="d-flex justify-content-between align-items-center px-3 mt-3">
+                            <div class="text-sm text-muted">
+                                Menampilkan {{ $laporan->firstItem() }} - {{ $laporan->lastItem() }}
+                                dari {{ $laporan->total() }} data
+                            </div>
+                            <div>
+                                {{ $laporan->links('pagination::bootstrap-5') }}
+                            </div>
+                        </div>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>

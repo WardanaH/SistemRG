@@ -24,12 +24,12 @@ TABEL DETAIL PENERIMAAN
        style="border-collapse:collapse; width:100%; border:1px solid #000;">
     <thead>
         <tr style="background:#eaeaea; text-align:center;">
-            <th style="border:1px solid #000; font-weight:bold;">Tanggal Diterima</th>
-            <th style="border:1px solid #000; font-weight:bold;">Nama Barang</th>
-            <th style="border:1px solid #000; font-weight:bold;">Jumlah</th>
-            <th style="border:1px solid #000; font-weight:bold;">Satuan</th>
-            <th style="border:1px solid #000; font-weight:bold;">Keterangan</th>
-            <th style="border:1px solid #000; font-weight:bold;">Dari Cabang / Gudang</th>
+            <th style="border:1px solid #000; font-weight:bold; background-color:#acdcff; color:#000000;">Tanggal Diterima</th>
+            <th style="border:1px solid #000; font-weight:bold; background-color:#acdcff; color:#000000;">Nama Barang</th>
+            <th style="border:1px solid #000; font-weight:bold; background-color:#acdcff; color:#000000;">Jumlah</th>
+            <th style="border:1px solid #000; font-weight:bold; background-color:#acdcff; color:#000000;">Satuan</th>
+            <th style="border:1px solid #000; font-weight:bold; background-color:#acdcff; color:#000000;">Keterangan</th>
+            <th style="border:1px solid #000; font-weight:bold; background-color:#acdcff; color:#000000;">Dari Cabang / Gudang</th>
         </tr>
     </thead>
     <tbody>
@@ -83,9 +83,9 @@ TABEL REKAP PENERIMAAN
        style="border-collapse:collapse; width:100%; border:1px solid #000;">
     <thead>
         <tr style="background:#eaeaea; text-align:center;">
-            <th style="border:1px solid #000; font-weight:bold;">Nama Barang</th>
-            <th style="border:1px solid #000; font-weight:bold;">Satuan</th>
-            <th style="border:1px solid #000; font-weight:bold;">Total Diterima</th>
+            <th style="border:1px solid #000; font-weight:bold; background-color:#f8b0c8; color:#000000;">Nama Barang</th>
+            <th style="border:1px solid #000; font-weight:bold; background-color:#f8b0c8; color:#000000;">Satuan</th>
+            <th style="border:1px solid #000; font-weight:bold; background-color:#f8b0c8; color:#000000;">Total Diterima</th>
         </tr>
     </thead>
     <tbody>

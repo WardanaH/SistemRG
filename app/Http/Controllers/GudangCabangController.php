@@ -37,7 +37,7 @@ class GudangCabangController extends Controller
                 \DB::raw('COALESCE(cabang_barangs.stok, 0) as stok_cabang')
             )
             ->orderBy('gudang_barangs.nama_bahan', 'ASC')
-            ->get();
+            ->paginate(10);
 
         return view('inventaris.gudangcabang.barang', [
             'title'   => 'Data Barang - ' . $cabang->nama,
@@ -91,8 +91,8 @@ class GudangCabangController extends Controller
         $cabang = MCabang::findOrFail($user->cabang_id);
 
         $datas = MPengiriman::where('cabang_tujuan_id', $cabang->id)
-            ->orderByDesc('id')
-            ->get();
+            ->orderByDesc('tanggal_diterima')
+            ->paginate(10);
 
         return view('inventaris.gudangcabang.penerimaan', [
             'title' => 'Penerimaan Barang - ' . $cabang->nama,
@@ -166,7 +166,7 @@ class GudangCabangController extends Controller
             ->groupBy('bulan', 'tahun')
             ->orderByDesc('tahun')
             ->orderByDesc('bulan')
-            ->get();
+            ->paginate(10);
 
         return view('inventaris.gudangcabang.laporan.laporan', [
             'title' => 'Laporan Penerimaan Barang - ' . $cabang->nama,
@@ -278,7 +278,7 @@ class GudangCabangController extends Controller
                                 $q->where('status_pengiriman', 'Diterima');
                             })
                             ->latest()
-                            ->get()
+                            ->paginate(10)
         ]);
     }
 
@@ -408,7 +408,7 @@ class GudangCabangController extends Controller
 
         $data = MInventarisCabang::where('cabang_id', $cabangId)
             ->latest()
-            ->get();
+            ->paginate(10);
 
         return view('inventaris.gudangcabang.inventaris.index', compact('data'));
     }

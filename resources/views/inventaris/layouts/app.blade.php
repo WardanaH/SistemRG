@@ -96,6 +96,18 @@
         background: linear-gradient(195deg, #43a047 0%, #2e7d32 100%) !important;
     }
 
+    /* card warna warni */
+    .card-header .bg-gradient-primary,
+    .card-header .bg-gradient-success {
+        border-radius: 1rem !important;
+    }
+
+    /* kelengkungan tabel */
+    .card,
+    .border-radius-lg {
+        border-radius: 1rem !important; /* default ±0.75rem */
+    }
+
     /* =================
     DATA BARANG (BIRU)
     ================= */
@@ -104,32 +116,25 @@
     }
 
     /* border luar tabel */
-    .table {
-        border-collapse: separate !important;
-        border-spacing: 0;
-        border: 1px solid #e0e0e0;
-        border-radius: 0.75rem;
-        overflow: hidden;
-        background-color: #fff;
-    }
+.table {
+    border-collapse: separate !important;
+    border-spacing: 0;
+    border: 1px solid #e0e0e0;
+    border-radius: 1rem;
+    background-color: #fff;
+}
 
-    /* header */
-    .table thead th {
-        background-color: #f8f9fa;
-        color: #344767;
-        font-weight: 600;
-        border-bottom: 1px solid #e0e0e0;
-        border-right: 1px solid #e0e0e0;
-        white-space: nowrap;
-    }
+.table thead th,
+.table tbody td {
+    border-bottom: 1px solid #e0e0e0;
+    border-right: 1px solid #e0e0e0!important;
+}
 
-    /* isi tabel */
-    .table tbody td {
-        border-bottom: 1px solid #e0e0e0;
-        border-right: 1px solid #e0e0e0;
-        color: #495057;
-        vertical-align: middle;
-    }
+.table-responsive {
+    overflow-x: auto;
+    overflow-y: visible;
+    border-radius: 0.75rem;
+}
 
     /* hapus border kanan terakhir */
     .table thead th:last-child,
@@ -137,20 +142,17 @@
         border-right: none;
     }
 
-    /* hapus border bawah baris terakhir */
     .table tbody tr:last-child td {
-        border-bottom: none;
-    }
+    border-bottom: 1px solid #e0e0e0 !important;
+}
+
 
     /* hover */
     .table-hover tbody tr:hover {
         background-color: rgba(66, 165, 245, 0.06);
     }
 
-    /* responsive fix */
-    .table-responsive {
-        border-radius: 0.75rem;
-    }
+
     </style>
 
 </head>

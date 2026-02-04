@@ -41,12 +41,12 @@
                         <table class="table align-items-center mb-0">
                             <thead>
                                 <tr>
-                                    <th>No</th>
+                                    <th class="text-center">No</th>
                                     <th>Nama</th>
                                     <th>Satuan</th>
                                     <th>Stok</th>
                                     <th class="text-center">Status</th>
-                                    <th class="text-center">Aksi</th>
+                                    {{-- <th class="text-center">Aksi</th> --}}
                                 </tr>
                             </thead>
 
@@ -77,24 +77,36 @@
                                     @endphp
 
                                     <tr>
-                                        <td>{{ $i+1 }}</td>
-                                        <td class="fw-bold">{{ $item->nama_bahan }}</td>
-                                        <td>{{ $item->satuan }}</td>
-                                        <td>{{ $stokFormat }}</td>
-
+                                        {{-- NO --}}
                                         <td class="text-center">
-                                            <span class="badge {{ $badge }}">{{ $status }}</span>
+                                            {{ $datas->firstItem() + $i }}
                                         </td>
 
+                                        {{-- NAMA BARANG --}}
+                                        <td>
+                                            <div class="d-flex px-2 py-1">
+                                                <div class="avatar avatar-sm me-3 border-radius-md
+                                                            bg-gradient-primary d-flex align-items-center justify-content-center">
+                                                    <i class="material-icons text-white text-sm">inventory_2</i>
+                                                </div>
+                                                <div class="d-flex flex-column justify-content-center">
+                                                    <h6 class="mb-0 text-sm">{{ $item->nama_bahan }}</h6>
+                                                    <p class="text-xs text-secondary mb-0">{{ $item->satuan }}</p>
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        {{-- SATUAN --}}
+                                        <td>{{ $item->satuan }}</td>
+
+                                        {{-- STOK --}}
+                                        <td class="fw-bold">
+                                            {{ $stokFormat }}
+                                        </td>
+
+                                        {{-- STATUS --}}
                                         <td class="text-center">
-                                            <button class="btn btn-link text-info px-2"
-                                                onclick="editStok(
-                                                    {{ $item->id }},
-                                                    '{{ $item->nama_bahan }}',
-                                                    {{ $item->stok_cabang }}
-                                                )">
-                                                <i class="material-icons-round">edit</i>
-                                            </button>
+                                            <span class="badge {{ $badge }}">{{ $status }}</span>
                                         </td>
                                     </tr>
                                 @empty
@@ -105,8 +117,16 @@
                                     </tr>
                                 @endforelse
                             </tbody>
-
                         </table>
+                        <div class="d-flex justify-content-between align-items-center px-3 mt-3">
+                            <div>
+                                Menampilkan {{ $datas->firstItem() }} - {{ $datas->lastItem() }}
+                                dari {{ $datas->total() }} data
+                            </div>
+                            <div>
+                                {{ $datas->links('pagination::bootstrap-5') }}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

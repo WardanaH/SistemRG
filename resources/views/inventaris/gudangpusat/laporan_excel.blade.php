@@ -20,13 +20,13 @@ TABEL DETAIL PENGIRIMAN
 <table cellpadding="6" cellspacing="0"
        style="border-collapse:collapse; width:100%; border:1px solid #000;">
     <thead>
-        <tr style="background:#eaeaea; text-align:center;">
-            <th style="border:1px solid #000; font-weight:bold;">Tanggal</th>
-            <th style="border:1px solid #000; font-weight:bold;">Nama Barang</th>
-            <th style="border:1px solid #000; font-weight:bold;">Jumlah</th>
-            <th style="border:1px solid #000; font-weight:bold;">Satuan</th>
-            <th style="border:1px solid #000; font-weight:bold;">Keterangan</th>
-            <th style="border:1px solid #000; font-weight:bold;">Cabang Tujuan</th>
+        <tr>
+            <th style="border:1px solid #000; font-weight:bold; background-color:#acdcff; color:#000000;">Tanggal</th>
+            <th style="border:1px solid #000; font-weight:bold; background-color:#acdcff; color:#000000;">Nama Barang</th>
+            <th style="border:1px solid #000; font-weight:bold; background-color:#acdcff; color:#000000;">Jumlah</th>
+            <th style="border:1px solid #000; font-weight:bold; background-color:#acdcff; color:#000000;">Satuan</th>
+            <th style="border:1px solid #000; font-weight:bold; background-color:#acdcff; color:#000000;">Keterangan</th>
+            <th style="border:1px solid #000; font-weight:bold; background-color:#acdcff; color:#000000;">Cabang Tujuan</th>
         </tr>
     </thead>
     <tbody>
@@ -79,16 +79,19 @@ TABEL REKAP PENGIRIMAN
 <table cellpadding="6" cellspacing="0"
        style="border-collapse:collapse; width:100%; border:1px solid #000;">
     <thead>
-        <tr style="background:#eaeaea; text-align:center;">
-            <th style="border:1px solid #000; font-weight:bold;">Nama Barang</th>
-            <th style="border:1px solid #000; font-weight:bold;">Satuan</th>
+       <tr>
+            <th style="border:1px solid #000; font-weight:bold; background-color:#f8b0c8; color:#000000;">Nama Barang</th>
+            <th style="border:1px solid #000; font-weight:bold; background-color:#f8b0c8; color:#000000;">Satuan</th>
+
             @foreach($semuaCabang as $cabang)
-                <th style="border:1px solid #000; font-weight:bold;">
+                <th style="border:1px solid #000; font-weight:bold; background-color:#f8b0c8; color:#000000;">
                     {{ $cabang->nama }}
                 </th>
             @endforeach
-            <th style="border:1px solid #000; font-weight:bold;">Total</th>
+
+            <th style="border:1px solid #000; font-weight:bold; background-color:#f8b0c8; color:#000000;">Total</th>
         </tr>
+
     </thead>
     <tbody>
         @foreach($rekap as $row)

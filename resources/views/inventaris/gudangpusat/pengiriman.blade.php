@@ -47,17 +47,21 @@
     {{-- ======================================================
     TABEL ATAS : PERMINTAAN CABANG
     ====================================================== --}}
-    <div class="card mb-4">
-        <div class="card-header bg-gradient-success text-white">
-            <h6 class="mb-0">Daftar Permintaan Pengiriman Cabang</h6>
-        </div>
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card my-4">
+                <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+                    <div class="bg-gradient-success shadow-success border-radius-lg pt-4 pb-3">
+                        <h6 class="text-white ps-3">Daftar Permintaan Pengiriman Cabang</h6>
+                    </div>
+                </div>
 
         <div class="card-body px-0 pb-2">
             <div class="table-responsive p-0">
                 <table class="table align-items-center mb-0">
                     <thead>
                         <tr>
-                            <th>No</th>
+                            <th class="text-center">No</th>
                             <th>Kode Permintaan</th>
                             <th>Cabang</th>
                             <th>Tanggal</th>
@@ -68,10 +72,34 @@
                     <tbody>
                     @forelse($permintaan as $i => $p)
                         <tr>
-                            <td>{{ $i + 1 }}</td>
-                            <td class="fw-bold">{{ $p->kode_permintaan }}</td>
+                            <td class="text-center">{{ $permintaan->firstItem() + $i }}</td>
+                            <td>
+                                <div class="d-flex px-2 py-1">
+                                    <div class="avatar avatar-sm me-3 border-radius-md bg-gradient-info d-flex align-items-center justify-content-center">
+                                        <i class="material-icons text-white text-sm">qr_code</i>
+                                    </div>
+                                    <div class="d-flex flex-column justify-content-center">
+                                        <h6 class="mb-0 text-sm">{{ $p->kode_permintaan }}</h6>
+                                        <p class="text-xs text-secondary mb-0">Kode Permintaan</p>
+                                    </div>
+                                </div>
+                            </td>
+
                             <td>{{ $p->cabang->nama }}</td>
-                            <td>{{ \Carbon\Carbon::parse($p->tanggal_permintaan)->format('d M Y') }}</td>
+                            <td>
+                                <div class="d-flex px-2 py-1">
+                                    <div class="avatar avatar-sm me-3 border-radius-md bg-gradient-success d-flex align-items-center justify-content-center">
+                                        <i class="material-icons text-white text-sm">event</i>
+                                    </div>
+                                    <div class="d-flex flex-column justify-content-center">
+                                        <h6 class="mb-0 text-sm">
+                                            {{ \Carbon\Carbon::parse($p->tanggal_permintaan)->format('d M Y') }}
+                                        </h6>
+                                        <p class="text-xs text-secondary mb-0">Tanggal Permintaan</p>
+                                    </div>
+                                </div>
+                            </td>
+
                             <td>
                                 @if($p->status == 'Menunggu')
                                     <span class="badge bg-warning">Menunggu</span>
@@ -107,6 +135,15 @@
                     @endforelse
                     </tbody>
                 </table>
+                <div class="d-flex justify-content-between align-items-center mt-3 px-3">
+                    <div>
+                        Menampilkan {{ $permintaan->firstItem() }} - {{ $permintaan->lastItem() }}
+                        dari {{ $permintaan->total() }} data
+                    </div>
+                    <div>
+                        {{ $permintaan->links('pagination::bootstrap-5') }}
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -114,10 +151,14 @@
     {{-- ======================================================
     TABEL BAWAH : DATA PENGIRIMAN
     ====================================================== --}}
-    <div class="card my-4">
-        <div class="card-header bg-gradient-primary text-white">
-            <h6 class="mb-0">Data Pengiriman Barang</h6>
-        </div>
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card my-4">
+                <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+                    <div class="bg-gradient-primary shadow-primary border-radius-lg pt-4 pb-3">
+                        <h6 class="text-white ps-3">Data Pengiriman Barang</h6>
+                    </div>
+                </div>
 
         <div class="card-body px-0 pb-2">
             <div class="table-responsive p-0">
@@ -125,7 +166,7 @@
                 <table class="table align-items-center mb-0">
                     <thead>
                         <tr>
-                            <th>No</th>
+                            <th class="text-center">No</th>
                             <th>Kode</th>
                             <th>Cabang Tujuan</th>
                             <th>Barang</th>
@@ -143,11 +184,30 @@
                             $detail = $item->keterangan ?? [];
                         @endphp
                         <tr>
-                            <td>{{ ($pengiriman->currentPage()-1) * $pengiriman->perPage() + $index + 1 }}</td>
+                            <td class="text-center">{{ $pengiriman->firstItem() + $index }}</td>
+                            <td>
+                                <div class="d-flex px-2 py-1">
+                                    <div class="avatar avatar-sm me-3 border-radius-md bg-gradient-primary d-flex align-items-center justify-content-center">
+                                        <i class="material-icons text-white text-sm">local_shipping</i>
+                                    </div>
+                                    <div class="d-flex flex-column justify-content-center">
+                                        <h6 class="mb-0 text-sm">{{ $item->kode_pengiriman }}</h6>
+                                        <p class="text-xs text-secondary mb-0">Kode Pengiriman</p>
+                                    </div>
+                                </div>
+                            </td>
 
-                            <td class="fw-bold">{{ $item->kode_pengiriman }}</td>
-
-                            <td>{{ $item->cabang->nama ?? '-' }}</td>
+                            <td>
+                                <div class="d-flex px-2 py-1">
+                                    <div class="avatar avatar-sm me-3 border-radius-md bg-gradient-success d-flex align-items-center justify-content-center">
+                                        <i class="material-icons text-white text-sm">storefront</i>
+                                    </div>
+                                    <div class="d-flex flex-column justify-content-center">
+                                        <h6 class="mb-0 text-sm">{{ $item->cabang->nama ?? '-' }}</h6>
+                                        <p class="text-xs text-secondary mb-0">Tujuan</p>
+                                    </div>
+                                </div>
+                            </td>
 
                             <td>
                                 {{ collect($detail)->pluck('nama_barang')->take(2)->implode(', ') }}
@@ -236,11 +296,15 @@
                     @endforelse
                     </tbody>
                 </table>
-
-                <div class="d-flex justify-content-end mt-3 px-3">
-                    {{ $pengiriman->links('pagination::bootstrap-5') }}
+                <div class="d-flex justify-content-between align-items-center mt-3 px-3">
+                    <div>
+                        Menampilkan {{ $pengiriman->firstItem() }} - {{ $pengiriman->lastItem() }}
+                        dari {{ $pengiriman->total() }} data
+                    </div>
+                    <div>
+                        {{ $pengiriman->links('pagination::bootstrap-5') }}
+                    </div>
                 </div>
-
             </div>
         </div>
     </div>
@@ -307,7 +371,7 @@ MODAL PROSES PERMINTAAN
             <label>Catatan Gudang</label>
             <textarea name="catatan"
               class="form-control"
-              placeholder="Catatan jika ada barang tidak dikirim"></textarea>
+              placeholder="Tulis catatan disini (opsional)"></textarea>
           </div>
 
         </div>
@@ -393,7 +457,7 @@ $(document).on('click', '.btn-detail', function () {
         <table class="table table-bordered mt-3">
             <thead>
                 <tr>
-                    <th>No</th>
+                    <th class="text-center">No</th>
                     <th>Barang</th>
                     <th>Jumlah</th>
                     <th>Satuan</th>

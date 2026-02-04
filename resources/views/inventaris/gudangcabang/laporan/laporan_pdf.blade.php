@@ -17,7 +17,7 @@
     </div>
 
     <table class="table">
-        <thead>
+        <thead class="thead-blue">
             <tr>
                 <th style="width: 12%">Tanggal Diterima</th>
                 <th>Nama Barang</th>
@@ -92,7 +92,7 @@
     <h4 style="text-align:center">Rekap Total Penerimaan Barang</h4>
 
     <table class="table">
-        <thead>
+        <thead class="thead-pink">
             <tr style="text-align:center">
                 <th>Nama Barang</th>
                 <th>Satuan</th>
@@ -112,4 +112,17 @@
         </tbody>
     </table>
 </body>
+<style>
+.thead-blue th {
+    background-color: #84d2ff;
+    color: #000000;
+    text-align: center;
+}
+
+.thead-pink th {
+    background-color: #fcbed2;
+    color: #000000;
+    text-align: center;
+}
+</style>
 </html>

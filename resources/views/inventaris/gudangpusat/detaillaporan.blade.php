@@ -2,6 +2,21 @@
 
 @section('title', 'Detail Laporan Pengiriman')
 
+<style>
+    .thead-blue th {
+        background-color: #97d4ff !important; /* biru muda */
+        color: #0d47a1;
+        text-align: center;
+    }
+
+    .thead-pink th {
+        background-color: #fdbcd2 !important; /* pink muda */
+        color: #880e4f;
+        text-align: center;
+    }
+    
+</style>
+
 @section('content')
 <div class="container-fluid py-4">
 
@@ -26,7 +41,7 @@
                     {{-- TABEL LAPORAN --}}
                     <div class="table-responsive">
                         <table class="table table-bordered">
-                            <thead class="bg-light">
+                            <thead class="thead-blue">
                                 <tr class="text-center">
                                     <th style="width: 12%">Tanggal</th>
                                     <th>Nama Barang</th>
@@ -124,7 +139,7 @@
 
                     <div class="table-responsive">
                     <table class="table table-bordered">
-                        <thead class="bg-light text-center">
+                        <thead class="thead-pink text-center">
                         <tr>
                             <th>Nama Barang</th>
                             <th>Satuan</th>
