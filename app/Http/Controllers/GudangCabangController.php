@@ -15,6 +15,7 @@ use App\Models\MInventarisCabang;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use App\Events\NotifikasiInventaris;
 use Carbon\Carbon;
 use PDF;
 
@@ -320,6 +321,15 @@ class GudangCabangController extends Controller
             'detail_barang'      => $detailBarang,
             'catatan'            => $request->catatan
         ]);
+
+        $permintaan = MPermintaanPengiriman::latest()->first();
+
+        event(new NotifikasiInventaris(
+            $permintaan->id,
+            'Permintaan pengiriman dari ' . $permintaan->cabang->nama,
+            'inventory utama',
+            'permintaan'
+        ));
 
         return back()->with('success', 'Permintaan pengiriman berhasil dibuat');
     }

@@ -91,7 +91,7 @@ if ($user->hasRole('inventory utama')) {
                         <i class="fa fa-bell fa-lg"></i>
 
                         @if($unreadCount > 0)
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                        <span id="badge-notif" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
                             {{ $unreadCount }}
                         </span>
                         @endif
@@ -103,7 +103,7 @@ if ($user->hasRole('inventory utama')) {
                             Notifikasi
                         </div>
 
-                        <div class="notification-body">
+                        <div class="notification-body" id="notif-body" data-source="server">
 
                             @forelse($notifications as $note)
 
@@ -149,9 +149,9 @@ if ($user->hasRole('inventory utama')) {
                                     </div>
                                 @endif
                             @empty
-                                <div class="notification-empty">
-                                    Tidak ada notifikasi
-                                </div>
+                            <div class="notification-empty" id="notif-empty">
+                                Tidak ada notifikasi
+                            </div>
                             @endforelse
 
                         </div>
@@ -169,7 +169,7 @@ if ($user->hasRole('inventory utama')) {
 
                 {{-- LOGOUT --}}
                 <li class="nav-item">
-                    <form method="POST" action="{{ route('logout') }}">
+                    <form method="POST" action="{{ route('auth.logout') }}">
                         @csrf
                         <button class="btn btn-sm btn-outline-danger">
                             <i class="fa fa-sign-out-alt me-1"></i> Logout
@@ -182,52 +182,6 @@ if ($user->hasRole('inventory utama')) {
     </div>
 </nav>
 
-{{-- =====================
-SCRIPT NOTIFIKASI
-===================== --}}
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-
-    document.querySelectorAll('.notification-item.unread').forEach(item => {
-        item.addEventListener('click', function () {
-
-            const notifId = this.dataset.id;
-            let url = '';
-
-            @if(auth()->user()->hasRole('inventory utama'))
-                url = "{{ route('permintaan.pusat.read', ':id') }}".replace(':id', notifId);
-            @elseif(auth()->user()->hasRole('inventory cabang'))
-                url = "{{ route('gudangcabang.notif.read', ':id') }}".replace(':id', notifId);
-            @endif
-
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(() => {
-                this.classList.remove('unread');
-
-                const badge = document.querySelector('.badge.bg-danger');
-                if (badge) {
-                    let count = parseInt(badge.innerText);
-                    count--;
-
-                    if (count <= 0) {
-                        badge.remove();
-                    } else {
-                        badge.innerText = count;
-                    }
-                }
-
-            });
-        });
-    });
-
-});
-</script>
 
 
 <style>

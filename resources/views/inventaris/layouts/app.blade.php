@@ -23,6 +23,8 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
+    <!-- notifikasi pakai pusher -->
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
 
     <style>
     /* ===============================
@@ -204,6 +206,155 @@ $(function () {
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+
+<script>
+/* =========================================================
+   PUSHER INIT
+   ========================================================= */
+Pusher.logToConsole = true;
+
+const pusher = new Pusher('{{ config("broadcasting.connections.pusher.key") }}', {
+    cluster: '{{ config("broadcasting.connections.pusher.options.cluster") }}',
+    forceTLS: true
+});
+
+const isInventoryUtama = {{ Auth::check() && Auth::user()->hasRole('inventory utama') ? 'true' : 'false' }};
+const isInventoryCabang = {{ Auth::check() && Auth::user()->hasRole('inventory cabang') ? 'true' : 'false' }};
+
+const channel = pusher.subscribe('inventaris-channel');
+
+/* =========================================================
+   EVENT PUSHER
+   ========================================================= */
+channel.bind('inventaris-notif', function (data) {
+
+    if (data.role === 'inventory utama' && !isInventoryUtama) return;
+    if (data.role === 'inventory cabang' && !isInventoryCabang) return;
+
+    /* ===============================
+       1. UPDATE BADGE
+       =============================== */
+    let badge = document.getElementById('badge-notif');
+
+    if (!badge) {
+        // HAPUS EMPTY STATE JIKA ADA
+        const empty = document.getElementById('notif-empty');
+        if (empty) empty.remove();
+
+        const bell = document.querySelector('.notification-wrapper a');
+        bell.insertAdjacentHTML('beforeend',
+            `<span id="badge-notif"
+                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                1
+            </span>`
+        );
+    } else {
+        let count = parseInt(badge?.innerText || 0);
+        count++;
+        badge.innerText = count;
+        badge.style.display = 'inline-block';
+    }
+
+    /* ===============================
+       2. TAMBAH ITEM KE DROPDOWN
+       =============================== */
+    const body = document.getElementById('notif-body');
+    if (body) {
+
+        let html = '';
+
+        if (isInventoryUtama) {
+            html = `
+                <div class="notification-item unread" data-id="${data.id}">
+                    <div class="notif-icon bg-warning">
+                        <i class="fa fa-truck"></i>
+                    </div>
+                    <div class="notif-content">
+                        <div class="notif-title">Permintaan Pengiriman</div>
+                        <div class="notif-text">
+                            Dari <strong>${data.cabang}</strong>
+                        </div>
+                        <div class="notif-time">Baru saja</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        if (isInventoryCabang) {
+            html = `
+                <div class="notification-item unread" data-id="${data.id}">
+                    <div class="notif-icon bg-success">
+                        <i class="fa fa-box"></i>
+                    </div>
+                    <div class="notif-content">
+                        <div class="notif-title">Barang Dikirim</div>
+                        <div class="notif-time">Baru saja</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        body.insertAdjacentHTML('afterbegin', html);
+    }
+
+    /* ===============================
+       3. AUDIO (TIDAK DIUBAH)
+       =============================== */
+    let audio = new Audio('{{ asset("assets/sound/notif_spk.mp3") }}');
+    audio.play().catch(() => {});
+
+    /* ===============================
+       4. SWEETALERT 3 DETIK
+       =============================== */
+    Swal.fire({
+        title: 'Notifikasi Baru',
+        text: data.pesan,
+        icon: 'info',
+        timer: 3000,
+        timerProgressBar: true,
+        showConfirmButton: false
+    }).then(() => {
+        document.querySelector('.notification-wrapper > a')?.click();
+    });
+
+});
+
+/* =========================================================
+   CLICK NOTIF (READ AT) — EVENT DELEGATION
+   ========================================================= */
+document.addEventListener('click', function (e) {
+
+    const item = e.target.closest('.notification-item.unread');
+    if (!item) return;
+
+    const notifId = item.dataset.id;
+    let url = '';
+
+    @if(auth()->user()->hasRole('inventory utama'))
+        url = "{{ route('permintaan.pusat.read', ':id') }}".replace(':id', notifId);
+    @elseif(auth()->user()->hasRole('inventory cabang'))
+        url = "{{ route('gudangcabang.notif.read', ':id') }}".replace(':id', notifId);
+    @endif
+
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        }
+    }).then(() => {
+
+        item.classList.remove('unread');
+
+        const badge = document.getElementById('badge-notif');
+        if (badge) {
+            let count = parseInt(badge.innerText) - 1;
+            count <= 0 ? badge.remove() : badge.innerText = count;
+        }
+
+    });
+});
+</script>
 
 
 @stack('scripts')

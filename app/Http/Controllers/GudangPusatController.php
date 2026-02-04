@@ -12,6 +12,7 @@ use App\Models\MGudangBarang;
 use App\Models\MPengiriman;
 use App\Models\MCabang;
 use App\Models\MPermintaanPengiriman;
+use App\Events\NotifikasiInventarisCabang;
 use PDF;
 
 class GudangPusatController extends Controller
@@ -195,6 +196,21 @@ class GudangPusatController extends Controller
         $pengiriman->status_pengiriman = $request->status_pengiriman;
         $pengiriman->save();
 
+        if ($request->status_pengiriman === 'Dikirim') {
+
+            $permintaan = MPermintaanPengiriman::with('cabang')
+                ->findOrFail($pengiriman->permintaan_id);
+
+            $permintaan->load('cabang');
+
+            event(new NotifikasiInventarisCabang(
+                $permintaan->id,
+                'Permintaan pengiriman baru',
+                'inventory utama',
+                'permintaan',
+            ));
+        }
+
         if ($request->status_pengiriman === 'Diterima') {
             MPermintaanPengiriman::where('id', $pengiriman->permintaan_id)
                 ->update(['status' => 'Selesai']);
@@ -210,23 +226,19 @@ class GudangPusatController extends Controller
     {
         if (!$permintaanId) return;
 
-        $permintaan = MPermintaanPengiriman::find($permintaanId);
-        if (!$permintaan) return;
+        $permintaan = MPermintaanPengiriman::with('cabang')
+            ->findOrFail($permintaanId);
 
         $totalPengiriman = MPengiriman::where('permintaan_id', $permintaan->id)->count();
-
         $totalDiterima = MPengiriman::where('permintaan_id', $permintaan->id)
             ->where('status_pengiriman', 'Diterima')
             ->count();
 
         if ($totalPengiriman === 0) {
-            // SEMUA pengiriman dihapus
             $permintaan->status = 'Menunggu';
         } elseif ($totalPengiriman === $totalDiterima) {
-            // Semua sudah diterima cabang
             $permintaan->status = 'Selesai';
         } else {
-            // Masih ada proses
             $permintaan->status = 'Diproses';
         }
 
@@ -721,5 +733,6 @@ public function markAsRead($id)
 
     return response()->json(['success' => true]);
 }
+
 
 }
