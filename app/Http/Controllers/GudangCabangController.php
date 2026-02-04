@@ -11,7 +11,10 @@ use App\Models\MGudangBarang;
 use App\Models\MCabang;
 use App\Models\MPengiriman;
 use App\Models\MPermintaanPengiriman;
+use App\Models\MInventarisCabang;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Carbon\Carbon;
 use PDF;
 
@@ -367,26 +370,108 @@ class GudangCabangController extends Controller
         );
     }
 
-// NOTIFIKASI
-public function getHeaderNotifications()
-{
-    $user = Auth::user();
+// 5. NOTIFIKASI
+    public function getHeaderNotifications()
+    {
+        $user = Auth::user();
 
-    return MPengiriman::where('cabang_tujuan_id', $user->cabang_id)
-        ->where('status_pengiriman', 'Dikirim')
-        ->where('created_at', '>=', Carbon::now()->subDays(3))
-        ->orderByDesc('created_at')
-        ->take(5)
-        ->get();
-}
+        return MPengiriman::where('cabang_tujuan_id', $user->cabang_id)
+            ->where('status_pengiriman', 'Dikirim')
+            ->where('created_at', '>=', Carbon::now()->subDays(3))
+            ->orderByDesc('created_at')
+            ->take(5)
+            ->get();
+    }
 
-// MARK AS READ
-public function markNotifRead($id)
-{
-    MPengiriman::where('id', $id)
-        ->update(['read_at' => now()]);
+    public function markNotifRead($id)
+    {
+        MPengiriman::where('id', $id)
+            ->update(['read_at' => now()]);
 
-    return response()->json(['success' => true]);
-}
+        return response()->json(['success' => true]);
+    }
 
+// 6. INVENTARIS KANTOR CABANG
+    public function inventarisIndex()
+    {
+        $cabangId = Auth::user()->cabang_id;
+
+        $data = MInventarisCabang::where('cabang_id', $cabangId)
+            ->latest()
+            ->get();
+
+        return view('inventaris.gudangcabang.inventaris.index', compact('data'));
+    }
+
+    // FORM TAMBAH
+    public function inventarisCreate()
+    {
+        return view('inventaris.gudangcabang.inventaris.create');
+    }
+
+    // SIMPAN + QR
+    public function inventarisStore(Request $req)
+    {
+        $req->validate([
+            'kode_barang'   => 'required|unique:inventaris_cabangs',
+            'nama_barang'   => 'required',
+            'jumlah'        => 'required|numeric|min:1',
+            'kondisi'       => 'required',
+            'tanggal_input' => 'required|date',
+        ]);
+
+        $inventaris = MInventarisCabang::create([
+            'cabang_id'     => Auth::user()->cabang_id,
+            'kode_barang'   => $req->kode_barang,
+            'nama_barang'   => $req->nama_barang,
+            'jumlah'        => $req->jumlah,
+            'kondisi'       => $req->kondisi,
+            'lokasi'        => $req->lokasi,
+            'tanggal_input' => $req->tanggal_input,
+        ]);
+
+        $qrUrl = request()->getSchemeAndHttpHost() . '/inventaris/qr/' . $inventaris->kode_barang;
+        $svg = QrCode::format('svg')->size(250)->generate($qrUrl);
+
+        $path = 'qr_inventaris/qr_'.$inventaris->id.'.svg';
+        Storage::disk('public')->put($path, $svg);
+
+        $inventaris->update(['qr_code' => $path]);
+
+        return redirect()
+            ->route('gudangcabang.inventaris.index')
+            ->with('success','Inventaris berhasil ditambahkan');
+    }
+
+    // AMBIL DATA UNTUK MODAL EDIT (AJAX)
+    public function inventarisEdit($id)
+    {
+        return MInventarisCabang::findOrFail($id);
+    }
+
+    // UPDATE
+    public function inventarisUpdate(Request $req, $id)
+    {
+        $req->validate([
+            'nama_barang' => 'required',
+            'jumlah' => 'required|numeric|min:1',
+            'kondisi' => 'required',
+        ]);
+
+        MInventarisCabang::findOrFail($id)->update($req->all());
+
+        return response()->json(['success' => true]);
+    }
+
+    // QR PUBLIC
+    public function inventarisQr($kode)
+    {
+        $inventaris = MInventarisCabang::where('kode_barang',$kode)
+            ->firstOrFail();
+
+        return view(
+            'inventaris.gudangcabang.inventaris.show_qr',
+            compact('inventaris')
+        );
+    }
 }

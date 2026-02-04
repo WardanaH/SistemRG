@@ -20,6 +20,8 @@
         $pageTitle = 'Penerimaan Barang';
     } elseif (request()->routeIs('gudangcabang.laporan*')) {
         $pageTitle = 'Laporan Penerimaan';
+    } elseif (request()->routeIs('gudangcabang.inventaris*')) {
+        $pageTitle = 'Inventaris Kantor';
     } elseif (request()->routeIs('gudangcabang.permintaan*')) {
         $pageTitle = 'Permintaan Pengiriman';
     } else {
@@ -100,6 +102,19 @@
             @endhasrole
 
             @hasrole('inventory cabang')
+            {{-- =====================
+            INVENTARIS KANTOR (CABANG)
+            ===================== --}}
+            <li class="nav-item">
+                <a class="nav-link text-white {{ request()->routeIs('gudangcabang.inventaris*') ? 'active bg-gradient-primary' : '' }}"
+                href="{{ route('gudangcabang.inventaris.index') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons-round opacity-10">qr_code</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Inventaris Kantor</span>
+                </a>
+            </li>
+
             {{-- =====================
             PERMINTAAN PENGIRIMAN (HANYA UNTUK CABANG)
             ===================== --}}

@@ -57,6 +57,20 @@ Route::middleware(['auth', 'role:inventory cabang'])
         Route::post('/notif/read/{id}', [GudangCabangController::class, 'markNotifRead'])
             ->name('notif.read');
 
+            //inventaris
+        Route::get('/inventaris',[GudangCabangController::class, 'inventarisIndex'])
+            ->name('inventaris.index');
+
+        Route::get('/inventaris/create',[GudangCabangController::class, 'inventarisCreate'])
+            ->name('inventaris.create');
+
+        Route::post('/inventaris',[GudangCabangController::class, 'inventarisStore'])
+            ->name('inventaris.store');
+
+        Route::get('/inventaris/{id}/edit',[GudangCabangController::class, 'inventarisEdit']);
+
+        Route::put('/inventaris/{id}',[GudangCabangController::class, 'inventarisUpdate'])
+            ->name('inventaris.update');
 // ==============================
 // PERMINTAAN PENGIRIMAN
 // ==============================

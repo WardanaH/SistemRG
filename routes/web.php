@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\GudangCabangController;
 
 Route::get('/dashboard', function () {
     return view('dashboard.index');
@@ -37,3 +38,7 @@ Route::get('/', function () {
 
     return redirect()->route('auth.index');
 })->middleware('auth')->name('home');
+
+
+// inventaris qr tanpalogin
+Route::get('/inventaris/qr/{kode}',[GudangCabangController::class, 'inventarisQr'])->name('inventaris.qr.public');
