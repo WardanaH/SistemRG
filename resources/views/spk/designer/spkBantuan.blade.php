@@ -140,6 +140,10 @@
                                 <input class="form-check-input" type="radio" name="modal_jenis" id="m_indoor" value="indoor">
                                 <label class="custom-control-label" for="m_indoor">Indoor</label>
                             </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_jenis" id="m_multi" value="multi">
+                                <label class="custom-control-label" for="m_multi">Multi</label>
+                            </div>
                         </div>
                     </div>
                     <div class="col-md-6">

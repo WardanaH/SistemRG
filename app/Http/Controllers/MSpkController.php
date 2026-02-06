@@ -205,19 +205,21 @@ class MSpkController extends Controller
     // Halaman Edit SPK
     public function edit($id)
     {
-        $spk = MSpk::findOrFail($id);
+        // 1. Ambil Data SPK beserta Items-nya
+        $spk = MSpk::with(['items'])->findOrFail($id);
 
-        // Pastikan user hanya bisa edit SPK cabangnya sendiri (kecuali admin pusat)
+        // 2. Validasi Akses Cabang
         if (Auth::user()->cabang->jenis !== 'pusat' && $spk->cabang_id !== Auth::user()->cabang_id) {
             abort(403, 'Akses ditolak');
         }
 
+        // 3. Data Pendukung untuk Dropdown
         $bahans = MBahanBaku::all();
         $finishings = MFinishing::all();
 
-        // Ambil data designer & operator (sesuai cabang)
         $cabangId = $spk->cabang_id;
         $designers = User::role('designer')->where('cabang_id', $cabangId)->get();
+        // Ambil semua operator di cabang ini
         $operators = User::role(['operator indoor', 'operator outdoor', 'operator multi'])
             ->where('cabang_id', $cabangId)->get();
 
@@ -231,46 +233,63 @@ class MSpkController extends Controller
         ]);
     }
 
-    // Proses Update SPK
     public function update(Request $request, $id)
     {
         $spk = MSpk::findOrFail($id);
 
-        // Validasi Update (Nomor SPK & Tipe Bantuan tidak boleh diubah untuk menjaga integritas)
+        // 1. Validasi Header & Items
         $request->validate([
+            // Header
             'nama_pelanggan' => 'required|string|max:255',
-            'no_telp'        => 'nullable|numeric|digits_between:10,13',
-            'nama_file'      => 'required|string',
-            'ukuran_p'       => 'required|numeric|min:0',
-            'ukuran_l'       => 'required|numeric|min:0',
-            'bahan_id'       => 'required|exists:m_bahan_bakus,id',
-            'qty'            => 'required|integer|min:1',
-            'designer_id'    => 'required|exists:users,id',
-            'operator_id'    => 'required|exists:users,id',
+            'no_telepon'     => 'nullable|string',
+            'items'          => 'required|array|min:1',
+
+            // Detail Items (Validasi Array)
+            'items.*.jenis'       => 'required|in:outdoor,indoor,multi',
+            'items.*.file'        => 'required|string',
+            'items.*.p'           => 'required|numeric|min:0',
+            'items.*.l'           => 'required|numeric|min:0',
+            'items.*.bahan_id'    => 'required|exists:m_bahan_bakus,id',
+            'items.*.qty'         => 'required|integer|min:1',
+            'items.*.operator_id' => 'required|exists:users,id',
         ]);
 
-        $spk->update([
-            'nama_pelanggan'  => $request->nama_pelanggan,
-            'no_telepon'      => $request->no_telp, // Di sini Admin bisa update no telp
-            'nama_file'       => $request->nama_file,
-            'ukuran_panjang'  => $request->ukuran_p,
-            'ukuran_lebar'    => $request->ukuran_l,
-            'bahan_id'        => $request->bahan_id,
-            'kuantitas'       => $request->qty,
-            'finishing'       => $request->finishing,
-            'keterangan'      => $request->catatan,
-            'designer_id'     => $request->designer_id,
-            'operator_id'     => $request->operator_id,
-            'jenis_order_spk' => $request->jenis_order,
+        try {
+            DB::transaction(function () use ($request, $spk) {
+                // 2. Update Header
+                $spk->update([
+                    'nama_pelanggan' => $request->nama_pelanggan,
+                    'no_telepon'     => $request->no_telepon,
+                    // designer_id jarang berubah, tapi kalau mau diupdate silakan tambahkan
+                ]);
 
-            // Asal Cabang bisa diupdate jika perlu, tapi is_bantuan & no_spk sebaiknya jangan
-            'asal_cabang_id'  => $request->has('is_bantuan') ? $request->asal_cabang_id : null,
-        ]);
+                // 3. Hapus Semua Item Lama (Reset)
+                // Cara paling aman & mudah untuk update one-to-many adalah hapus dulu, lalu buat baru
+                // Kecuali Anda butuh tracking ID item yang persis sama
+                $spk->items()->delete();
 
-        if ($spk->is_bantuan == '1') {
-            return redirect()->route('spk-bantuan.index')->with('success', 'Data SPK bantuan berhasil diperbarui!');
-        } else {
-            return redirect()->route('spk.index')->with('success', 'Data SPK berhasil diperbarui!');
+                // 4. Buat Ulang Item Baru
+                foreach ($request->items as $item) {
+                    MSubSpk::create([
+                        'spk_id'          => $spk->id,
+                        'nama_file'       => $item['file'],
+                        'jenis_order'     => $item['jenis'],
+                        'p'               => $item['p'],
+                        'l'               => $item['l'],
+                        'bahan_id'        => $item['bahan_id'],
+                        'qty'             => $item['qty'],
+                        'finishing'       => $item['finishing'] ?? '-',
+                        'catatan'         => $item['catatan'] ?? '-',
+                        'operator_id'     => $item['operator_id'],
+                        'status_produksi' => 'pending', // Reset status jika diedit total
+                    ]);
+                }
+            });
+
+            $route = $spk->is_bantuan ? 'spk-bantuan.index' : 'spk.index';
+            return redirect()->route($route)->with('success', 'Data SPK berhasil diperbarui!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal update: ' . $e->getMessage());
         }
     }
 
