@@ -306,7 +306,7 @@
               <h6>Daftar Permintaan Masuk</h6>
               <p class="text-sm">
                 <i class="fa fa-arrow-up text-success" aria-hidden="true"></i>
-                <span class="font-weight-bold"> 6 Permintaan terbaru</span> saat ini
+                <span class="font-weight-bold"> Permintaan terbaru</span> saat ini
               </p>
             </div>
             <div class="card-body p-3">

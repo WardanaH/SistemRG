@@ -90,9 +90,10 @@ class GudangCabangController extends Controller
         $user = Auth::user();
         $cabang = MCabang::findOrFail($user->cabang_id);
 
-        $datas = MPengiriman::where('cabang_tujuan_id', $cabang->id)
-            ->orderByDesc('tanggal_diterima')
-            ->paginate(10);
+$datas = MPengiriman::where('cabang_tujuan_id', $cabang->id)
+    ->orderByDesc('updated_at')  
+    ->orderByDesc('id')
+    ->paginate(10);
 
         return view('inventaris.gudangcabang.penerimaan', [
             'title' => 'Penerimaan Barang - ' . $cabang->nama,
@@ -428,7 +429,14 @@ class GudangCabangController extends Controller
             'jumlah'        => 'required|numeric|min:1',
             'kondisi'       => 'required',
             'tanggal_input' => 'required|date',
+            'foto'          => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
+
+        // upload foto
+        $fotoPath = null;
+        if ($req->hasFile('foto')) {
+            $fotoPath = $req->file('foto')->store('inventaris', 'public');
+        }
 
         $inventaris = MInventarisCabang::create([
             'cabang_id'     => Auth::user()->cabang_id,
@@ -438,30 +446,26 @@ class GudangCabangController extends Controller
             'kondisi'       => $req->kondisi,
             'lokasi'        => $req->lokasi,
             'tanggal_input' => $req->tanggal_input,
+            'foto'          => $fotoPath, // ✅ SIMPAN FOTO
         ]);
 
-        // 🔥 URL YANG DIMASUKKAN KE QR
+        // QR SVG
         $qrUrl = route('inventaris.qr.public', $inventaris->kode_barang);
 
-        // 🔥 SVG (TANPA IMAGICK)
         $svg = QrCode::format('svg')
             ->size(300)
             ->margin(2)
             ->generate($qrUrl);
 
         $path = 'qr_inventaris/qr_'.$inventaris->id.'.svg';
-
         Storage::disk('public')->put($path, $svg);
 
-        $inventaris->update([
-            'qr_code' => $path
-        ]);
+        $inventaris->update(['qr_code' => $path]);
 
         return redirect()
             ->route('gudangcabang.inventaris.index')
             ->with('success','Inventaris berhasil ditambahkan');
     }
-
 
     // AMBIL DATA UNTUK MODAL EDIT (AJAX)
     public function inventarisEdit($id)
@@ -486,7 +490,8 @@ class GudangCabangController extends Controller
     // QR PUBLIC
     public function inventarisQr($kode)
     {
-        $inventaris = MInventarisCabang::where('kode_barang',$kode)
+        $inventaris = MInventarisCabang::with('cabang')
+            ->where('kode_barang', $kode)
             ->firstOrFail();
 
         return view(
@@ -494,6 +499,7 @@ class GudangCabangController extends Controller
             compact('inventaris')
         );
     }
+
 
 // 7. DASHBOARD
 public function dashboard()

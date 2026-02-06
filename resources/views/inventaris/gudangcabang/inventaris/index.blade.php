@@ -37,7 +37,7 @@
                 </div>
 
                 <div class="card-body">
-                    <form method="POST" action="{{ route('gudangcabang.inventaris.store') }}">
+                    <form method="POST" action="{{ route('gudangcabang.inventaris.store') }}" enctype="multipart/form-data">
                         @csrf
 
                         <div class="row">
@@ -74,6 +74,13 @@
                                 <label>Tanggal Input</label>
                                 <input type="date" name="tanggal_input" class="form-control" required>
                             </div>
+                            <div class="col-md-3 mb-3">
+                                <label>Foto Barang</label>
+                                <input type="file"
+                                    name="foto"
+                                    class="form-control"
+                                    accept="image/*">
+                            </div>
                         </div>
 
                         <div class="text-end">
@@ -109,6 +116,7 @@
                             <th>Jumlah</th>
                             <th>Kondisi</th>
                             <th>Tanggal</th>
+                            <th>Foto</th>
                             <th class="text-center">QR Code</th>
                             <th class="text-center">Aksi</th>
                         </tr>
@@ -154,6 +162,17 @@
                             {{-- TANGGAL --}}
                             <td>
                                 {{ \Carbon\Carbon::parse($item->tanggal_input)->format('d M Y') }}
+                            </td>
+
+                            {{-- foto --}}
+                            <td>
+                                @if($item->foto)
+                                    <img src="{{ asset('storage/'.$item->foto) }}"
+                                        width="50"
+                                        class="rounded">
+                                @else
+                                    <span class="text-muted">-</span>
+                                @endif
                             </td>
 
                             {{-- QR CODE --}}
