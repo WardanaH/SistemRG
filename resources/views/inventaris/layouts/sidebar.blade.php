@@ -6,7 +6,7 @@
     */
     if (request()->routeIs('gudangpusat.dashboard')) {
         $pageTitle = 'Dashboard';
-    } elseif (request()->routeIs('barang.pusat*')) {
+    } elseif (request()->routeIs('barang.pusat') || request()->routeIs('barang.pusat.index')) {
         $pageTitle = 'Barang Gudang Pusat';
     } elseif (request()->routeIs('pengiriman.pusat*')) {
         $pageTitle = 'Pengiriman Barang';
@@ -16,6 +16,8 @@
         $pageTitle = 'Dashboard Cabang';
     } elseif (request()->routeIs('gudangcabang.barang*')) {
         $pageTitle = 'Data Barang Cabang';
+    } elseif (request()->routeIs('barang.pusat.updatestok*')) {
+        $pageTitle = 'Update Stok';
     } elseif (request()->routeIs('gudangcabang.penerimaan*')) {
         $pageTitle = 'Penerimaan Barang';
     } elseif (request()->routeIs('gudangcabang.laporan*')) {
@@ -91,12 +93,24 @@
             </li>
             @else
             <li class="nav-item">
-                <a class="nav-link text-white {{ request()->routeIs('barang.pusat*') ? 'active bg-gradient-primary' : '' }}"
+                <a class="nav-link text-white {{  request()->routeIs('barang.pusat') || request()->routeIs('barang.pusat.index')? 'active bg-gradient-primary' : '' }}"
                    href="{{ route('barang.pusat') }}">
                     <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
                         <i class="material-icons-round opacity-10">inventory_2</i>
                     </div>
                     <span class="nav-link-text ms-1">Data Barang</span>
+                </a>
+            </li>
+            @endhasrole
+
+            @hasrole('inventory utama')
+            <li class="nav-item">
+                <a class="nav-link text-white {{ request()->routeIs('barang.pusat.updatestok*') ? 'active bg-gradient-success' : '' }}"
+                href="{{ route('barang.pusat.updatestok') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons-round opacity-10">sync_alt</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Update Stok</span>
                 </a>
             </li>
             @endhasrole

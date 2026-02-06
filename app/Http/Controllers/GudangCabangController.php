@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\GudangCabangLaporanExport;
 use App\Models\MCabangBarang;
@@ -90,10 +91,11 @@ class GudangCabangController extends Controller
         $user = Auth::user();
         $cabang = MCabang::findOrFail($user->cabang_id);
 
-$datas = MPengiriman::where('cabang_tujuan_id', $cabang->id)
-    ->orderByDesc('updated_at')  
-    ->orderByDesc('id')
-    ->paginate(10);
+        $datas = MPengiriman::with('permintaan')
+            ->where('cabang_tujuan_id', $cabang->id)
+            ->orderByDesc('updated_at')
+            ->orderByDesc('id')
+            ->paginate(10);
 
         return view('inventaris.gudangcabang.penerimaan', [
             'title' => 'Penerimaan Barang - ' . $cabang->nama,
@@ -104,54 +106,189 @@ $datas = MPengiriman::where('cabang_tujuan_id', $cabang->id)
 
     public function terimaPengiriman(Request $request, $id)
     {
+        $pengiriman = MPengiriman::with('permintaan')->findOrFail($id);
+
+        $request->validate([
+            'barang' => 'required|array',
+            'foto'   => 'required|image|max:2048',
+        ]);
+
+        DB::beginTransaction();
+        try {
+
+            $barangPermintaan = collect(
+                is_string($pengiriman->permintaan->detail_barang)
+                    ? json_decode($pengiriman->permintaan->detail_barang, true)
+                    : $pengiriman->permintaan->detail_barang
+            );
+
+            $barangDiterima = collect($request->barang);
+            $statusKelengkapan = 'Lengkap';
+
+            foreach ($barangPermintaan as $item) {
+
+                $diterima = $barangDiterima->firstWhere(
+                    'gudang_barang_id',
+                    $item['gudang_barang_id']
+                );
+
+                // ❌ tidak diterima / jumlah kurang
+                if (
+                    !$diterima ||
+                    empty($diterima['checked']) ||
+                    (float) $diterima['jumlah'] < (float) $item['jumlah']
+                ) {
+                    $statusKelengkapan = 'Tidak Lengkap';
+                    continue;
+                }
+
+                // ✅ KURANGI STOK PUSAT DI SINI
+                $barang = MGudangBarang::find($item['gudang_barang_id']);
+                if ($barang) {
+                    $barang->stok -= (float) $diterima['jumlah'];
+                    $barang->save();
+                }
+            }
+
+            $fotoPath = $request->file('foto')
+                ->store('penerimaan', 'public');
+
+            $pengiriman->update([
+                'status_pengiriman'  => 'Diterima',
+                'status_kelengkapan' => $statusKelengkapan,
+                'tanggal_diterima'   => now(),
+                'foto_penerimaan'    => $fotoPath,
+                'keterangan_terima'  => $request->keterangan_terima,
+            ]);
+
+            $pengiriman->permintaan->update([
+                'status' => 'Selesai'
+            ]);
+
+            DB::commit();
+            return back()->with('success', 'Pengiriman berhasil diterima');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', $e->getMessage());
+        }
+    }
+
+// 3. PERMINTAAN PENGIRIMAN KE GUDANG
+    public function permintaan()
+    {
         $user = Auth::user();
-        $cabang = MCabang::findOrFail($user->cabang_id);
 
-        $pengiriman = MPengiriman::findOrFail($id);
+        return view('inventaris.gudangcabang.permintaanpengiriman', [
+            'barangs' => MGudangBarang::orderBy('nama_bahan')->get(),
+            'datas'   => MPermintaanPengiriman::where('cabang_id', $user->cabang_id)
+                            ->whereDoesntHave('pengirimans', function ($q) {
+                                $q->where('status_pengiriman', 'Diterima');
+                            })
+                            ->latest()
+                            ->paginate(10)
+        ]);
+    }
 
-        if ($pengiriman->cabang_tujuan_id != $cabang->id) {
-            return back()->with('error', 'Pengiriman tidak ditujukan ke cabang Anda.');
-        }
+    public function permintaanStore(Request $request)
+    {
+        $request->validate([
+            'tanggal_permintaan' => 'required|date',
+            'barang'             => 'required|array'
+        ]);
 
-        if ($pengiriman->status_pengiriman != 'Dikirim') {
-            return back()->with('error', 'Pengiriman hanya bisa diterima jika statusnya Dikirim.');
-        }
+        $detailBarang = [];
 
-        $items = $pengiriman->keterangan;
-        if (is_string($items)) {
-            $items = json_decode($items, true);
-        }
+        foreach ($request->barang as $item) {
 
-        if (!is_array($items)) {
-            $items = [];
-        }
-
-        foreach ($items as $item) {
             if (!isset($item['gudang_barang_id']) || !isset($item['jumlah'])) {
                 continue;
             }
 
-            $jumlah = (float) str_replace(',', '.', $item['jumlah']);
-            $cabangBarang = MCabangBarang::firstOrNew([
-                'cabang_id'        => $cabang->id,
-                'gudang_barang_id' => $item['gudang_barang_id']
-            ]);
+            $barang = MGudangBarang::find($item['gudang_barang_id']);
 
-            $cabangBarang->stok = ($cabangBarang->stok ?? 0) + $jumlah;
-            $cabangBarang->save();
+            if (!$barang) continue;
+
+            $jumlah = (float) str_replace(',', '.', $item['jumlah']);
+
+            $detailBarang[] = [
+                'gudang_barang_id' => $barang->id,
+                'nama_barang'     => $barang->nama_bahan,
+                'jumlah'          => $jumlah,
+                'satuan'          => $barang->satuan,
+                'keterangan'      => $item['keterangan'] ?? null
+            ];
+
         }
 
-            $pengiriman->status_pengiriman = 'Diterima';
-            $pengiriman->tanggal_diterima = now();
-            $pengiriman->save();
-            if ($pengiriman->permintaan_id) {
-                MPermintaanPengiriman::where('id', $pengiriman->permintaan_id)
-                    ->update(['status' => 'Selesai']);
-            }
-        return back()->with('success', 'Pengiriman berhasil diterima dan stok cabang terupdate.');
+        MPermintaanPengiriman::create([
+            'kode_permintaan'    => 'REQ-' . date('Ymd') . '-' . strtoupper(Str::random(4)),
+            'cabang_id'          => Auth::user()->cabang_id,
+            'tanggal_permintaan' => $request->tanggal_permintaan,
+            'status'             => 'Menunggu',
+            'detail_barang'      => $detailBarang,
+            'catatan'            => $request->catatan
+        ]);
+
+        $permintaan = MPermintaanPengiriman::latest()->first();
+
+        event(new NotifikasiInventaris(
+            $permintaan->id,
+            'Permintaan pengiriman dari ' . $permintaan->cabang->nama,
+            'inventory utama',
+            'permintaan'
+        ));
+
+        return back()->with('success', 'Permintaan pengiriman berhasil dibuat');
     }
 
-//3. LAPORAN
+    public function laporanExcel($bulan, $tahun)
+    {
+        $user = Auth::user();
+        $cabang = MCabang::findOrFail($user->cabang_id);
+
+        $pengiriman = MPengiriman::where('cabang_tujuan_id', $cabang->id)
+            ->where('status_pengiriman', 'Diterima')
+            ->whereMonth('tanggal_diterima', $bulan)
+            ->whereYear('tanggal_diterima', $tahun)
+            ->orderBy('tanggal_diterima')
+            ->get();
+
+        $semuaBarang = MGudangBarang::all();
+
+        $rekap = [];
+        foreach ($semuaBarang as $barang) {
+            $rekap[$barang->id] = [
+                'barang' => $barang->nama_bahan,
+                'satuan' => $barang->satuan,
+                'total'  => 0
+            ];
+        }
+
+        foreach ($pengiriman as $item) {
+            $detail = is_string($item->keterangan)
+                ? json_decode($item->keterangan, true)
+                : $item->keterangan;
+
+            foreach ($detail ?? [] as $d) {
+                $rekap[$d['gudang_barang_id']]['total']
+                    += (float) $d['jumlah'];
+            }
+        }
+
+        return Excel::download(
+            new GudangCabangLaporanExport(
+                $pengiriman,
+                $rekap,
+                $bulan,
+                $tahun,
+                $cabang
+            ),
+            'laporan_penerimaan_'.$cabang->nama.'_'.$bulan.'_'.$tahun.'.xlsx'
+        );
+    }
+
+//4. LAPORAN
     public function laporanIndex()
     {
         $user = Auth::user();
@@ -264,120 +401,6 @@ $datas = MPengiriman::where('cabang_tujuan_id', $cabang->id)
 
         return $pdf->download(
             'laporan_penerimaan_'.$cabang->nama.'_'.$bulan.'_'.$tahun.'.pdf'
-        );
-    }
-
-// 4. PERMINTAAN PENGIRIMAN KE GUDANG
-    public function permintaan()
-    {
-        $user = Auth::user();
-
-        return view('inventaris.gudangcabang.permintaanpengiriman', [
-            'barangs' => MGudangBarang::orderBy('nama_bahan')->get(),
-            'datas'   => MPermintaanPengiriman::where('cabang_id', $user->cabang_id)
-                            ->whereDoesntHave('pengirimans', function ($q) {
-                                $q->where('status_pengiriman', 'Diterima');
-                            })
-                            ->latest()
-                            ->paginate(10)
-        ]);
-    }
-
-    public function permintaanStore(Request $request)
-    {
-        $request->validate([
-            'tanggal_permintaan' => 'required|date',
-            'barang'             => 'required|array'
-        ]);
-
-        $detailBarang = [];
-
-        foreach ($request->barang as $item) {
-
-            if (!isset($item['gudang_barang_id']) || !isset($item['jumlah'])) {
-                continue;
-            }
-
-            $barang = MGudangBarang::find($item['gudang_barang_id']);
-
-            if (!$barang) continue;
-
-            $jumlah = (float) str_replace(',', '.', $item['jumlah']);
-
-            $detailBarang[] = [
-                'gudang_barang_id' => $barang->id,
-                'nama_barang'     => $barang->nama_bahan,
-                'jumlah'          => $jumlah,
-                'satuan'          => $barang->satuan,
-                'keterangan'      => $item['keterangan'] ?? null
-            ];
-
-        }
-
-        MPermintaanPengiriman::create([
-            'kode_permintaan'    => 'REQ-' . date('Ymd') . '-' . strtoupper(Str::random(4)),
-            'cabang_id'          => Auth::user()->cabang_id,
-            'tanggal_permintaan' => $request->tanggal_permintaan,
-            'status'             => 'Menunggu',
-            'detail_barang'      => $detailBarang,
-            'catatan'            => $request->catatan
-        ]);
-
-        $permintaan = MPermintaanPengiriman::latest()->first();
-
-        event(new NotifikasiInventaris(
-            $permintaan->id,
-            'Permintaan pengiriman dari ' . $permintaan->cabang->nama,
-            'inventory utama',
-            'permintaan'
-        ));
-
-        return back()->with('success', 'Permintaan pengiriman berhasil dibuat');
-    }
-
-    public function laporanExcel($bulan, $tahun)
-    {
-        $user = Auth::user();
-        $cabang = MCabang::findOrFail($user->cabang_id);
-
-        $pengiriman = MPengiriman::where('cabang_tujuan_id', $cabang->id)
-            ->where('status_pengiriman', 'Diterima')
-            ->whereMonth('tanggal_diterima', $bulan)
-            ->whereYear('tanggal_diterima', $tahun)
-            ->orderBy('tanggal_diterima')
-            ->get();
-
-        $semuaBarang = MGudangBarang::all();
-
-        $rekap = [];
-        foreach ($semuaBarang as $barang) {
-            $rekap[$barang->id] = [
-                'barang' => $barang->nama_bahan,
-                'satuan' => $barang->satuan,
-                'total'  => 0
-            ];
-        }
-
-        foreach ($pengiriman as $item) {
-            $detail = is_string($item->keterangan)
-                ? json_decode($item->keterangan, true)
-                : $item->keterangan;
-
-            foreach ($detail ?? [] as $d) {
-                $rekap[$d['gudang_barang_id']]['total']
-                    += (float) $d['jumlah'];
-            }
-        }
-
-        return Excel::download(
-            new GudangCabangLaporanExport(
-                $pengiriman,
-                $rekap,
-                $bulan,
-                $tahun,
-                $cabang
-            ),
-            'laporan_penerimaan_'.$cabang->nama.'_'.$bulan.'_'.$tahun.'.xlsx'
         );
     }
 

@@ -162,6 +162,7 @@
 
                                     {{-- AKSI --}}
                                     <td class="text-center">
+                                        {{-- EDIT --}}
                                         <button class="btn btn-link text-info px-2"
                                             onclick="editBarang(
                                                 {{ $item->id }},
@@ -174,10 +175,21 @@
                                             <i class="material-icons-round">edit</i>
                                         </button>
 
-                                        <button class="btn btn-link text-danger px-2"
+                                        {{-- HAPUS --}}
+                                        <button type="button"
+                                            class="btn btn-link text-danger px-2"
                                             onclick="hapusData({{ $item->id }})">
                                             <i class="material-icons-round">delete</i>
                                         </button>
+
+                                        {{-- FORM DELETE (WAJIB ADA) --}}
+                                        <form id="hapus-{{ $item->id }}"
+                                            action="{{ route('barang.pusat.destroy', $item->id) }}"
+                                            method="POST"
+                                            style="display: none;">
+                                            @csrf
+                                            @method('DELETE')
+                                        </form>
                                     </td>
                                 </tr>
                             @empty
@@ -218,14 +230,57 @@ MODAL EDIT BARANG
             </div>
 
             <div class="modal-body">
-                <input type="text" name="nama_bahan" id="edit_nama" class="form-control mb-2" required>
-                <select name="satuan" id="edit_satuan" class="form-control mb-2">
-                    <option>PCS</option><option>PAKET</option><option>KG</option>
-                    <option>METER</option><option>CENTIMETER</option>
-                </select>
-                <input type="text" name="stok" id="edit_stok" class="form-control number-format" required>
-                <input type="text" name="batas_stok" id="edit_batas" class="form-control number-format" required>
-                <textarea name="keterangan" id="edit_keterangan" class="form-control"></textarea>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Nama Bahan</label>
+                        <input type="text"
+                            name="nama_bahan"
+                            id="edit_nama"
+                            class="form-control"
+                            required>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Satuan</label>
+                        <select name="satuan"
+                                id="edit_satuan"
+                                class="form-control">
+                            <option>PCS</option>
+                            <option>PAKET</option>
+                            <option>KG</option>
+                            <option>METER</option>
+                            <option>CENTIMETER</option>
+                            <option>ROLL</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Stok</label>
+                        <input type="text"
+                            name="stok"
+                            id="edit_stok"
+                            class="form-control number-format"
+                            required>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Batas Stok</label>
+                        <input type="text"
+                            name="batas_stok"
+                            id="edit_batas"
+                            class="form-control number-format"
+                            required>
+                    </div>
+
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label">Keterangan</label>
+                        <textarea name="keterangan"
+                                id="edit_keterangan"
+                                class="form-control"
+                                rows="2"
+                                placeholder="Opsional"></textarea>
+                    </div>
+                </div>
             </div>
 
             <div class="modal-footer">

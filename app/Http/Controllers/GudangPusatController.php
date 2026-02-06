@@ -32,7 +32,7 @@ class GudangPusatController extends Controller
 
     private function toDecimal($value)
     {
-        if ($value === null) return null;
+        if ($value === null || $value === '') return null;
 
         // hapus pemisah ribuan
         $value = str_replace('.', '', $value);
@@ -40,7 +40,7 @@ class GudangPusatController extends Controller
         // ubah koma ke titik
         $value = str_replace(',', '.', $value);
 
-        return $value;
+        return (float) $value;
     }
 
     public function store(Request $request)
@@ -101,8 +101,63 @@ class GudangPusatController extends Controller
 
         return back()->with('success', 'Barang berhasil dihapus');
     }
+//2. UPDATA STOK
+    public function updateStokIndex()
+    {
+        $barangs = MGudangBarang::orderBy('nama_bahan')->get();
+        $datas   = MGudangBarang::orderByDesc('updated_at')->paginate(10);
 
-//2. PENGIRIMAN
+        return view('inventaris.gudangpusat.updatestok', [
+            'barangs' => $barangs,
+            'datas'   => $datas,
+            'title'   => 'Update Stok Gudang Pusat'
+        ]);
+    }
+
+    public function updateStokStore(Request $request)
+    {
+        $request->validate([
+            'barang_id'    => 'required|exists:gudang_barangs,id',
+            'tambah_stok'  => 'nullable',
+            'kurangi_stok' => 'nullable',
+        ]);
+
+        if (!$request->tambah_stok && !$request->kurangi_stok) {
+            return back()->with('error', 'Isi tambah atau kurangi stok');
+        }
+
+        if ($request->tambah_stok && $request->kurangi_stok) {
+            return back()->with('error', 'Hanya boleh isi salah satu');
+        }
+
+        $barang = MGudangBarang::findOrFail($request->barang_id);
+
+        $tambah  = $this->toDecimal($request->tambah_stok);
+        $kurangi = $this->toDecimal($request->kurangi_stok);
+
+        $stokBaru = (float) $barang->stok;
+
+        if ($tambah !== null) {
+            $stokBaru += $tambah;
+        }
+
+        if ($kurangi !== null) {
+            if ($stokBaru < $kurangi) {
+                return back()->with('error', 'Stok tidak mencukupi');
+            }
+            $stokBaru -= $kurangi;
+        }
+
+        $barang->update([
+            'stok' => $stokBaru
+        ]);
+
+        return redirect()
+            ->route('barang.pusat.updatestok')
+            ->with('success', 'Stok berhasil diperbarui');
+    }
+
+//3. PENGIRIMAN
     public function pengirimanIndex()
     {
         return view('inventaris.gudangpusat.pengiriman', [
@@ -154,8 +209,8 @@ class GudangPusatController extends Controller
                     );
                 }
 
-                $barang->stok -= $jumlah;
-                $barang->save();
+                // $barang->stok -= $jumlah;
+                // $barang->save();
 
                 $detailBarang[] = [
                     'gudang_barang_id' => $barang->id,
@@ -177,7 +232,7 @@ class GudangPusatController extends Controller
                 'permintaan_id'       => $request->permintaan_id,
                 'cabang_tujuan_id'    => $request->cabang_tujuan_id,
                 'tanggal_pengiriman' => $request->tanggal_pengiriman,
-                'status_pengiriman'  => 'Dikemas',
+                // 'status_pengiriman'  => null,
                 'keterangan'         => $detailBarang,
             ]);
 
@@ -317,6 +372,7 @@ class GudangPusatController extends Controller
                     'nama_barang'      => $lama['nama_barang'],
                     'jumlah'           => $jumlah,
                     'satuan'           => $lama['satuan'],
+                    'keterangan'       => $lama['keterangan'] ?? null,
                 ];
             }
 
@@ -415,14 +471,15 @@ class GudangPusatController extends Controller
                 // kurangi stok
                 $jumlah = (float) str_replace(',', '.', $item['jumlah']);
 
-                $barang->stok -= $jumlah;
-                $barang->save();
+                // $barang->stok -= $jumlah;
+                // $barang->save();
 
                 $detailBarang[] = [
                     'gudang_barang_id' => $barang->id,
                     'nama_barang'      => $barang->nama_bahan,
                     'jumlah'           => $item['jumlah'],
                     'satuan'           => $barang->satuan,
+                    'keterangan'       => $item['keterangan'] ?? null,
                 ];
 
                 $jumlahDiproses++;
@@ -436,9 +493,9 @@ class GudangPusatController extends Controller
                 ->filter(fn ($item) => isset($item['checked']))
                 ->count();
 
-            $statusKelengkapan = (
-                $jumlahDiproses === $totalDicentang
-            ) ? 'Lengkap' : 'Tidak Lengkap';
+            // $statusKelengkapan = (
+            //     $jumlahDiproses === $totalDicentang
+            // ) ? 'Lengkap' : 'Tidak Lengkap';
 
             MPengiriman::create([
                 'kode_pengiriman'     => 'KRM-' . now()->format('Ymd') . '-' . strtoupper(Str::random(4)),
@@ -446,7 +503,7 @@ class GudangPusatController extends Controller
                 'cabang_tujuan_id'    => $permintaan->cabang_id,
                 'tanggal_pengiriman' => now(),
                 'status_pengiriman'  => 'Dikirim',
-                'status_kelengkapan' => $statusKelengkapan,
+                'status_kelengkapan' => null,
                 'keterangan'         => $detailBarang,
                 'catatan_gudang'     => $request->catatan
             ]);
@@ -471,20 +528,23 @@ class GudangPusatController extends Controller
     {
         $permintaan = MPermintaanPengiriman::findOrFail($id);
 
+        $detail = is_string($permintaan->detail_barang)
+            ? json_decode($permintaan->detail_barang, true)
+            : $permintaan->detail_barang;
+
         $result = [];
 
-        foreach ($permintaan->detail_barang as $item) {
+        foreach ($detail ?? [] as $item) {
 
-            $barang = MGudangBarang::find($item['gudang_barang_id']);
-
+            $barang = MGudangBarang::find($item['gudang_barang_id'] ?? null);
             if (!$barang) continue;
 
             $result[] = [
                 'gudang_barang_id' => $barang->id,
-                'nama_barang'     => $barang->nama_bahan,
-                'jumlah'          => $item['jumlah'],
-                'satuan'          => $barang->satuan,
-                'stok'            => $barang->stok,
+                'nama_barang'      => $barang->nama_bahan,
+                'jumlah'           => $item['jumlah'],
+                'satuan'           => $barang->satuan,
+                'stok'             => $barang->stok,
             ];
         }
 
@@ -495,7 +555,9 @@ class GudangPusatController extends Controller
     {
         $request->validate([
             'permintaan_id' => 'required|exists:permintaan_pengirimans,id',
-            'barang'        => 'required|array'
+            'barang'        => 'required|array',
+            'barang.*.gudang_barang_id' => 'required',
+            'barang.*.jumlah' => 'required'
         ]);
 
         DB::beginTransaction();
@@ -505,26 +567,24 @@ class GudangPusatController extends Controller
             $barangDikirim = [];
             $jumlahDiproses = 0;
 
-            foreach ($request->barang as $item) {
-                if (!isset($item['checked'], $item['gudang_barang_id'], $item['jumlah'])) continue;
+            foreach ($permintaan->detail_barang as $item) {
 
                 $barang = MGudangBarang::find($item['gudang_barang_id']);
                 if (!$barang) continue;
 
-                $jumlahBarang = (float) str_replace(',', '.', $item['jumlah']);
-                if ($jumlahBarang <= 0) continue;
-                if ($barang->stok < $jumlahBarang) {
-                    throw new \Exception('Stok '.$barang->nama_bahan.' tidak mencukupi');
+                if ($barang->stok < $item['jumlah']) {
+                    throw new \Exception("Stok {$barang->nama_bahan} tidak cukup");
                 }
 
-                $barang->stok -= $jumlahBarang;
-                $barang->save();
+                // $barang->stok -= $item['jumlah'];
+                // $barang->save();
 
                 $barangDikirim[] = [
                     'gudang_barang_id' => $barang->id,
                     'nama_barang'      => $barang->nama_bahan,
-                    'jumlah'           => $jumlahBarang,
+                    'jumlah'           => $item['jumlah'],
                     'satuan'           => $barang->satuan,
+                    'keterangan'       => $item['keterangan'] ?? null,
                 ];
 
                 $jumlahDiproses++;
@@ -534,7 +594,7 @@ class GudangPusatController extends Controller
                 return back()->with('error', 'Tidak ada barang yang dikirim');
             }
 
-            $statusKelengkapan = $jumlahDiproses === count($permintaan->detail_barang) ? 'Lengkap' : 'Tidak Lengkap';
+            // $statusKelengkapan = $jumlahDiproses === count($permintaan->detail_barang) ? 'Lengkap' : 'Tidak Lengkap';
 
             MPengiriman::create([
                 'kode_pengiriman'     => 'KRM-' . now()->format('Ymd') . '-' . strtoupper(Str::random(4)),
@@ -542,7 +602,7 @@ class GudangPusatController extends Controller
                 'cabang_tujuan_id'    => $permintaan->cabang_id,
                 'tanggal_pengiriman' => now(),
                 'status_pengiriman'  => 'Dikemas',
-                'status_kelengkapan' => $statusKelengkapan,
+                'status_kelengkapan' => null,
                 'keterangan'         => $barangDikirim,
                 'catatan_gudang'     => $request->catatan
             ]);
@@ -558,7 +618,7 @@ class GudangPusatController extends Controller
         }
     }
 
-//3. LAPORAN CATATAN PENGIRIMAN PERBULAN
+//4. LAPORAN CATATAN PENGIRIMAN PERBULAN
     public function laporanIndex()
     {
         $laporan = MPengiriman::whereNotNull('tanggal_pengiriman')
@@ -729,7 +789,7 @@ class GudangPusatController extends Controller
         );
     }
 
-// 4. NOTIFIKASI
+// 5. NOTIFIKASI
     public function getHeaderNotifications()
     {
         return MPermintaanPengiriman::with('cabang')
@@ -749,7 +809,7 @@ class GudangPusatController extends Controller
         return response()->json(['success' => true]);
     }
 
-// 5. DASHBOARD
+// 6. DASHBOARD
     public function dashboard()
     {
         $today = Carbon::today();

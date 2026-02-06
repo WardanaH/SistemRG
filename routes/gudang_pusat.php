@@ -74,9 +74,14 @@ Route::middleware(['auth', 'role:inventory utama'])
             [GudangPusatController::class, 'laporanExcel']
         )->name('laporan.pengiriman.excel');
 
-        // =====================
-        // PERMINTAAN CABANG
-        // =====================
+        // UPDATE STOK
+        Route::get('/update-stok', [GudangPusatController::class, 'updateStokIndex'])
+            ->name('barang.pusat.updatestok');
+
+        Route::post('/update-stok', [GudangPusatController::class, 'updateStokStore'])
+            ->name('barang.pusat.updatestok.store');
+
+        // permintaan
         Route::get('/permintaan', [GudangPusatController::class, 'permintaanIndex'])
             ->name('permintaan.pusat.index');
 

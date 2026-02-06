@@ -14,7 +14,7 @@
             Swal.fire({
                 icon: 'success',
                 title: 'Berhasil',
-                text: '{{ session('success') }}',
+                text: '{{ is_array(session('success')) ? implode(", ", session('success')) : session('success') }}',
                 timer: 2000,
                 showConfirmButton: false
             });
@@ -28,7 +28,7 @@
             Swal.fire({
                 icon: 'error',
                 title: 'Gagal',
-                text: '{{ session('error') }}'
+                text: '{{ is_array(session('error')) ? implode(", ", session('error')) : session('error') }}'
             });
         });
     </script>
@@ -73,6 +73,11 @@
                         </thead>
                         <tbody>
                         @foreach($riwayat as $index => $r)
+                        @php
+                            $detail = is_array(optional($r->permintaan)->detail_barang)
+                                ? $r->permintaan->detail_barang
+                                : json_decode(optional($r->permintaan)->detail_barang, true) ?? [];
+                        @endphp
                         <tr>
 
                             {{-- NO --}}
@@ -87,8 +92,7 @@
                                     </div>
                                     <div class="d-flex flex-column justify-content-center">
                                         <h6 class="mb-0 text-sm">
-                                            {{ collect(is_array($r->keterangan) ? $r->keterangan : json_decode($r->keterangan, true) ?? [])
-                                                ->pluck('nama_barang')->implode(', ') }}
+                                            {{ collect($detail)->pluck('nama_barang')->implode(', ') }}
                                         </h6>
                                     </div>
                                 </div>
@@ -96,14 +100,12 @@
 
                             {{-- JUMLAH --}}
                             <td>
-                                {{ collect(is_array($r->keterangan) ? $r->keterangan : json_decode($r->keterangan, true) ?? [])
-                                    ->pluck('jumlah')->implode(', ') }}
+                                {{ collect($detail)->pluck('jumlah')->implode(', ') }}
                             </td>
 
                             {{-- SATUAN --}}
                             <td>
-                                {{ collect(is_array($r->keterangan) ? $r->keterangan : json_decode($r->keterangan, true) ?? [])
-                                    ->pluck('satuan')->implode(', ') }}
+                                {{ collect($detail)->pluck('satuan')->implode(', ') }}
                             </td>
 
                             {{-- TANGGAL KIRIM --}}
@@ -131,21 +133,27 @@
 
                             {{-- KELENGKAPAN --}}
                             <td class="text-center">
-                                @if($r->status_kelengkapan === 'Lengkap')
-                                    <span class="badge bg-success">LENGKAP</span>
-                                @else
-                                    <span class="badge bg-warning">TIDAK LENGKAP</span>
-                                @endif
+                            @if($r->status_pengiriman === 'Diterima')
+                                <span class="badge {{ $r->status_kelengkapan === 'Lengkap' ? 'bg-success' : 'bg-warning' }}">
+                                    {{ $r->status_kelengkapan }}
+                                </span>
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
                             </td>
 
                             {{-- DETAIL --}}
                             <td class="text-center">
                                 <button type="button"
                                     class="btn btn-link text-primary btn-detail"
-                                    data-detail='@json($r->keterangan)'
+                                    data-detail='@json($detail)'
                                     data-kode="{{ $r->kode_pengiriman }}"
                                     data-cabang="{{ $cabang->nama }}"
-                                    data-tanggal="{{ $r->tanggal_pengiriman }}">
+                                    data-tanggal="{{ $r->created_at }}"
+                                    data-foto="{{ $r->foto_penerimaan }}"
+                                    data-catatan-permintaan='@json(optional($r->permintaan)->catatan)'
+                                    data-catatan-gudang="{{ $r->catatan_gudang ?? '' }}"
+                                    data-catatan-terima='@json($r->keterangan_terima)'>
                                     <i class="material-icons-round">receipt_long</i>
                                 </button>
                             </td>
@@ -153,20 +161,16 @@
                             {{-- AKSI --}}
                             <td class="text-center">
                                 @if($r->status_pengiriman == 'Dikirim')
-                                    <form action="{{ route('gudangcabang.penerimaan.terima', $r->id) }}"
-                                        method="POST"
-                                        class="form-terima d-inline">
-                                        @csrf
-                                        <button type="button"
-                                                class="btn btn-success btn-sm btn-terima">
-                                            Terima
-                                        </button>
-                                    </form>
+                                    <button
+                                        class="btn btn-success btn-sm btn-terima"
+                                        data-id="{{ $r->id }}"
+                                        data-detail='@json($detail)'>
+                                        Terima
+                                    </button>
                                 @else
                                     <span class="text-muted">-</span>
                                 @endif
                             </td>
-
                         </tr>
                         @endforeach
                         </tbody>
@@ -187,6 +191,7 @@
         </div>
     </div>
 </div>
+<!-- modal detail -->
 <div class="modal fade" id="modalDetail">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
@@ -203,6 +208,56 @@
     </div>
   </div>
 </div>
+<!-- modal terima -->
+<div class="modal fade" id="modalTerima">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+
+      <form method="POST" id="formTerima"
+            enctype="multipart/form-data">
+        @csrf
+
+        <div class="modal-header">
+          <h5 class="modal-title">Penerimaan Barang</h5>
+          <button class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+
+          <table class="table table-bordered">
+            <thead>
+              <tr>
+                <th>✔</th>
+                <th>Barang</th>
+                <th>Dikirim</th>
+                <th>Diterima</th>
+              </tr>
+            </thead>
+            <tbody id="bodyTerima"></tbody>
+          </table>
+
+          <div class="mb-2">
+            <label>Foto Penerimaan</label>
+            <input type="file" name="foto" class="form-control">
+          </div>
+
+          <div>
+            <label>Keterangan</label>
+            <textarea name="keterangan_terima" class="form-control"></textarea>
+          </div>
+
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <button class="btn btn-success">Simpan Penerimaan</button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+</div>
 
 @endsection
 
@@ -211,79 +266,180 @@
 
 <script>
     // KONFIRMASI TERIMA BARANG
-    $(document).on('click', '.btn-terima', function(e) {
-        e.preventDefault();
+    $(document).on('click', '.btn-terima', function () {
 
-        let form = $(this).closest('form');
+        let id = $(this).data('id');
+        let detail = $(this).data('detail');
 
-        Swal.fire({
-            title: 'Terima Barang?',
-            text: 'Pastikan barang sudah benar-benar diterima!',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Ya, Terima',
-            cancelButtonText: 'Batal'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                form.submit();
-            }
+        let html = '';
+
+        detail.forEach((d, i) => {
+            html += `
+            <tr>
+            <td>
+                <input type="checkbox"
+                    name="barang[${i}][checked]"
+                    checked>
+                <input type="hidden"
+                    name="barang[${i}][gudang_barang_id]"
+                    value="${d.gudang_barang_id}">
+            </td>
+            <td>${d.nama_barang}</td>
+            <td>${d.jumlah}</td>
+            <td>
+                <input type="number"
+                    name="barang[${i}][jumlah]"
+                    value="${d.jumlah}"
+                    step="0.01"
+                    class="form-control">
+            </td>
+            </tr>
+            `;
         });
+
+        $('#bodyTerima').html(html);
+        $('#formTerima').attr(
+            'action',
+            `/gudang-cabang/penerimaan/terima/${id}`
+        );
+
+        new bootstrap.Modal(
+            document.getElementById('modalTerima')
+        ).show();
     });
 </script>
 <script>
 $(document).on('click', '.btn-detail', function () {
 
     let detail = $(this).data('detail');
-
-    if (!detail || detail.length === 0) {
-        Swal.fire({
-            icon: 'info',
-            title: 'Tidak ada detail',
-            text: 'Pengiriman ini dibuat sebelum fitur multi-barang'
-        });
-        return;
-    }
-
-    let kode = $(this).data('kode');
+    let kode   = $(this).data('kode');
     let cabang = $(this).data('cabang');
     let tanggal = $(this).data('tanggal');
+    let foto   = $(this).data('foto');
+
+    let catPermintaan = $(this).data('catatan-permintaan');
+    let catGudang     = $(this).data('catatan-gudang');
+    let catTerima     = $(this).data('catatan-terima');
+
+    if (Array.isArray(catPermintaan)) {
+        catPermintaan = catPermintaan.join(', ');
+    }
+
+    if (Array.isArray(catGudang)) {
+        catGudang = catGudang.join(', ');
+    }
+
+    if (Array.isArray(catTerima)) {
+        catTerima = catTerima.join(', ');
+    }
 
     let html = `
-        <p><b>Kode:</b> ${kode}</p>
-        <p><b>Cabang:</b> ${cabang}</p>
-        <p><b>Tanggal:</b> ${tanggal}</p>
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>No</th>
-                    <th>Barang</th>
-                    <th>Qty</th>
-                    <th>Satuan</th>
-                    <th>Keterangan</th>
-                </tr>
-            </thead>
-            <tbody>
+
+    <div class="card shadow-sm border-0 mb-3">
+        <div class="card-body">
+
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <div class="text-xs text-muted">Kode Pengiriman</div>
+                    <div class="fw-bold">${kode}</div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="text-xs text-muted">Cabang</div>
+                    <div class="fw-bold">${cabang}</div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="text-xs text-muted">Tanggal</div>
+                    <div class="fw-bold">${tanggal}</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    `;
+
+    if (catPermintaan) {
+        html += `
+            <div class="alert alert-info border-0 shadow-sm">
+                <b>Catatan Permintaan</b><br>
+                ${catPermintaan}
+            </div>
+        `;
+    }
+
+    if (catGudang) {
+        html += `
+            <div class="alert alert-success border-0 shadow-sm">
+                <b>Catatan Pengiriman Gudang</b><br>
+                ${catGudang}
+            </div>
+        `;
+    }
+
+    if (catTerima) {
+        html += `
+            <div class="alert alert-success border-0 shadow-sm">
+                <b>Catatan Penerimaan Cabang</b><br>
+                ${catTerima}
+            </div>
+        `;
+    }
+
+    if (foto) {
+        html += `
+            <div class="card shadow-sm mb-3">
+                <div class="card-body">
+                    <div class="fw-bold mb-2">Foto Penerimaan</div>
+                    <img src="/storage/${foto}"
+                        class="img-fluid rounded border">
+                </div>
+            </div>
+        `;
+    }
+
+    html += `
+    <div class="card shadow-sm">
+        <div class="card-header bg-light fw-bold">
+            Detail Barang Dikirim
+        </div>
+
+        <div class="table-responsive">
+            <table class="table align-items-center mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th>No</th>
+                        <th>Barang</th>
+                        <th>Qty</th>
+                        <th>Satuan</th>
+                        <th>Keterangan</th>
+                    </tr>
+                </thead>
+                <tbody>
     `;
 
     detail.forEach((d, i) => {
         html += `
             <tr>
-                <td>${i+1}</td>
-                <td>${d.nama_barang}</td>
+                <td>${i + 1}</td>
+                <td class="fw-semibold">${d.nama_barang}</td>
                 <td>${d.jumlah}</td>
                 <td>${d.satuan}</td>
-                <td>${d.keterangan ?? '-'}</td>
+                <td class="text-muted">${d.keterangan ? d.keterangan : '-'}</td>
             </tr>
         `;
     });
 
-    html += `</tbody></table>`;
+    html += `
+                </tbody>
+            </table>
+        </div>
+    </div>
+    `;
 
     $('#notaContent').html(html);
-
-    let modal = new bootstrap.Modal(document.getElementById('modalDetail'));
-    modal.show();
+    new bootstrap.Modal(document.getElementById('modalDetail')).show();
 });
-</script>
 
+</script>
 @endpush

@@ -10,31 +10,46 @@
     {{-- =====================
     SWEETALERT
     ===================== --}}
-    @if(session('success'))
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            Swal.fire({
-                icon: 'success',
-                title: 'Berhasil',
-                text: '{{ session('success') }}',
-                timer: 2000,
-                showConfirmButton: false
-            });
-        });
-    </script>
-    @endif
+@if(session('success'))
+@php
+    $successMsg = session('success');
+    if (is_array($successMsg)) {
+        $successMsg = implode(', ', $successMsg);
+    }
+@endphp
 
-    @if(session('error'))
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            Swal.fire({
-                icon: 'error',
-                title: 'Gagal',
-                text: '{{ session('error') }}'
-            });
-        });
-    </script>
-    @endif
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    Swal.fire({
+        icon: 'success',
+        title: 'Berhasil',
+        text: @json($successMsg),
+        timer: 2000,
+        showConfirmButton: false
+    });
+});
+</script>
+@endif
+
+@if(session('error'))
+@php
+    $errorMsg = session('error');
+    if (is_array($errorMsg)) {
+        $errorMsg = implode(', ', $errorMsg);
+    }
+@endphp
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    Swal.fire({
+        icon: 'error',
+        title: 'Gagal',
+        text: @json($errorMsg)
+    });
+});
+</script>
+@endif
+
 
     {{-- =====================
     INFO
@@ -180,9 +195,13 @@
 
                     <tbody>
                     @forelse($pengiriman as $index => $item)
-                        @php
-                            $detail = $item->keterangan ?? [];
-                        @endphp
+                    @php
+                    $detail = $item->permintaan && $item->permintaan->detail_barang
+                        ? (is_array($item->permintaan->detail_barang)
+                            ? $item->permintaan->detail_barang
+                            : json_decode($item->permintaan->detail_barang, true))
+                        : [];
+                    @endphp
                         <tr>
                             <td class="text-center">{{ $pengiriman->firstItem() + $index }}</td>
                             <td>
@@ -269,12 +288,16 @@
                             </td>
 
                             <td>
+                            @if($item->status_pengiriman === 'Diterima')
                                 <span class="badge
-                                    {{ $item->status_kelengkapan == 'Lengkap'
+                                    {{ $item->status_kelengkapan === 'Lengkap'
                                         ? 'bg-success'
                                         : 'bg-warning' }}">
-                                    {{ $item->status_kelengkapan ?? '-' }}
+                                    {{ $item->status_kelengkapan }}
                                 </span>
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
                             </td>
 
                             <td class="text-center">
@@ -282,7 +305,11 @@
                                     class="btn btn-link text-primary btn-detail"
                                     data-detail='@json($detail)'
                                     data-kode="{{ $item->kode_pengiriman }}"
-                                    data-cabang="{{ $item->cabang->nama }}">
+                                    data-cabang="{{ $item->cabang->nama }}"
+                                    data-foto="{{ $item->status_pengiriman === 'Diterima' ? $item->foto_penerimaan : '' }}"
+                                    data-catatan-permintaan='@json(optional($item->permintaan)->catatan)'
+                                    data-catatan-gudang="{{ $item->catatan_gudang ?? '' }}"
+                                    data-catatan-terima='@json($item->keterangan_terima)'>
                                     <i class="material-icons-round">receipt_long</i>
                                 </button>
                             </td>
@@ -355,7 +382,7 @@ MODAL PROSES PERMINTAAN
           <table class="table table-bordered mt-3">
             <thead class="table-light">
               <tr>
-                <th width="50">✔</th>
+                {{-- <th width="50">✔</th> --}}
                 <th>Nama Barang</th>
                 <th>Jumlah</th>
                 <th>Satuan</th>
@@ -447,85 +474,172 @@ MODAL EDIT PENGIRIMAN (PERBAIKAN)
 <script>
 $(document).on('click', '.btn-detail', function () {
 
-    let detail = $(this).data('detail');
-    let kode = $(this).data('kode');
+    let detail = $(this).data('detail') || [];
+    let kode   = $(this).data('kode');
     let cabang = $(this).data('cabang');
+    let foto   = $(this).data('foto');
 
+    let catPermintaan = $(this).data('catatan-permintaan');
+    let catGudang     = $(this).data('catatan-gudang');
+    let catTerima     = $(this).data('catatan-terima');
+
+    if (Array.isArray(catPermintaan)) catPermintaan = catPermintaan.join(', ');
+    if (Array.isArray(catGudang))     catGudang     = catGudang.join(', ');
+    if (Array.isArray(catTerima))     catTerima     = catTerima.join(', ');
+
+    // =============================
+    // HEADER INFO (CARD STYLE)
+    // =============================
     let html = `
-        <p><b>Kode Pengiriman:</b> ${kode}</p>
-        <p><b>Cabang Tujuan:</b> ${cabang}</p>
-        <table class="table table-bordered mt-3">
-            <thead>
-                <tr>
-                    <th class="text-center">No</th>
-                    <th>Barang</th>
-                    <th>Jumlah</th>
-                    <th>Satuan</th>
-                </tr>
-            </thead>
-            <tbody>
+    <div class="card shadow-sm border-0 mb-3">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="text-xs text-muted">Kode Pengiriman</div>
+                    <div class="fw-bold">${kode}</div>
+                </div>
+                <div class="col-md-6">
+                    <div class="text-xs text-muted">Cabang Tujuan</div>
+                    <div class="fw-bold">${cabang}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    `;
+
+    // =============================
+    // CATATAN
+    // =============================
+    if (catPermintaan) {
+        html += `
+        <div class="alert alert-info border-0 shadow-sm">
+            <b>Catatan Permintaan</b><br>
+            ${catPermintaan}
+        </div>`;
+    }
+
+    if (catGudang) {
+        html += `
+        <div class="alert alert-success border-0 shadow-sm">
+            <b>Catatan Pengiriman Gudang</b><br>
+            ${catGudang}
+        </div>`;
+    }
+
+    if (catTerima) {
+        html += `
+        <div class="alert alert-success border-0 shadow-sm">
+            <b>Catatan Penerimaan Cabang</b><br>
+            ${catTerima}
+        </div>`;
+    }
+
+    // =============================
+    // FOTO LAMPIRAN
+    // =============================
+    if (foto) {
+        html += `
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <div class="fw-bold mb-2">Foto Penerimaan</div>
+                <img src="/storage/${foto}"
+                     class="img-fluid rounded border">
+            </div>
+        </div>`;
+    }
+
+    // =============================
+    // TABEL DETAIL BARANG
+    // =============================
+    html += `
+    <div class="card shadow-sm">
+        <div class="card-header bg-light fw-bold">
+            Detail Barang Dikirim
+        </div>
+
+        <div class="table-responsive">
+            <table class="table align-items-center mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th>No</th>
+                        <th>Barang</th>
+                        <th>Jumlah</th>
+                        <th>Satuan</th>
+                        <th>Keterangan</th>
+                    </tr>
+                </thead>
+                <tbody>
     `;
 
     detail.forEach((d, i) => {
         html += `
             <tr>
-                <td>${i+1}</td>
-                <td>${d.nama_barang}</td>
+                <td>${i + 1}</td>
+                <td class="fw-semibold">${d.nama_barang}</td>
                 <td>${d.jumlah}</td>
                 <td>${d.satuan}</td>
+                <td class="text-muted">${d.keterangan ?? '-'}</td>
             </tr>
         `;
     });
 
-    html += `</tbody></table>`;
+    html += `
+                </tbody>
+            </table>
+        </div>
+    </div>
+    `;
 
     $('#notaContent').html(html);
     new bootstrap.Modal(document.getElementById('modalDetail')).show();
 });
 </script>
+
 <script>
 $(document).on('click', '.btn-proses', function () {
 
-    let id = $(this).data('id');
-    let kode = $(this).data('kode');
+    let id     = $(this).data('id');
+    let kode   = $(this).data('kode');
     let cabang = $(this).data('cabang');
 
     $('#permintaan_id').val(id);
     $('#kode_permintaan').text(kode);
     $('#nama_cabang').text(cabang);
-    $('#listBarang').html('');
+
+    $('#listBarang').html('<tr><td colspan="4" class="text-center text-muted">Memuat data...</td></tr>');
 
     $.ajax({
-        url: "{{ url('gudang-pusat/permintaan') }}/" + id + "/detail",
+        url: "{{ route('permintaan.pusat.detail', ':id') }}".replace(':id', id),
         method: "GET",
         success: function (res) {
 
+            let rows = '';
 
             res.forEach((item, index) => {
 
-                let disabled = item.stok <= 0 ? 'disabled' : 'checked';
                 let rowClass = item.stok <= 0 ? 'text-muted' : '';
+                let statusStok = item.stok <= 0
+                    ? `<span class="badge bg-danger">Stok Habis</span>`
+                    : `<span class="badge bg-success">Tersedia</span>`;
 
-                $('#listBarang').append(`
+                rows += `
                 <tr class="${rowClass}">
-                    <td class="text-center">
-                    <input type="checkbox"
-                        name="barang[${index}][checked]"
-                        ${disabled}>
-                    <input type="hidden"
-                        name="barang[${index}][gudang_barang_id]"
-                        value="${item.gudang_barang_id}">
-                    <input type="hidden"
-                        name="barang[${index}][jumlah]"
-                        value="${item.jumlah}">
-                    </td>
-                    <td>${item.nama_barang}</td>
+                    <td class="fw-semibold">${item.nama_barang}</td>
                     <td>${item.jumlah}</td>
                     <td>${item.satuan}</td>
-                    <td>${item.stok}</td>
+                    <td>
+                        ${item.stok}
+                        <div class="mt-1">${statusStok}</div>
+                    </td>
+
+                    <input type="hidden" name="barang[${index}][gudang_barang_id]" value="${item.gudang_barang_id}">
+                    <input type="hidden" name="barang[${index}][jumlah]" value="${item.jumlah}">
+                    <input type="hidden" name="barang[${index}][checked]" value="1">
                 </tr>
-                `);
+                `;
             });
+
+            $('#listBarang').html(rows);
 
             new bootstrap.Modal(
                 document.getElementById('modalProses')
@@ -537,7 +651,9 @@ $(document).on('click', '.btn-proses', function () {
         }
     });
 });
+
 </script>
+
 <script>
 $(document).ready(function () {
 

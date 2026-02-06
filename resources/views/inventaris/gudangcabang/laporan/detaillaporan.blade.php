@@ -48,7 +48,7 @@
                             <tbody>
                                 @forelse($pengiriman as $item)
                                 @php
-                                    $detail = $item->keterangan;
+                                    $detail = $item->keterangan_terima;
                                     if (is_string($detail)) $detail = json_decode($detail, true);
                                     if (!is_array($detail)) $detail = [];
                                 @endphp
