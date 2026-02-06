@@ -39,4 +39,9 @@ class MSpk extends Model
     {
         return $this->belongsTo(MCabang::class, 'asal_cabang_id', 'id');
     }
+
+    public function items()
+    {
+        return $this->hasMany(MSubSpk::class, 'spk_id');
+    }
 }

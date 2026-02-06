@@ -15,6 +15,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/spk', [MSpkController::class, 'index'])
         ->middleware('role:manajemen|designer|admin')
         ->name('spk.index');
+    Route::get('/spk/{spk}/detail', [MSpkController::class, 'show'])
+        ->middleware('role:manajemen|designer|admin')
+        ->name('spk.show');
     Route::post('/spk', [MSpkController::class, 'store'])
         ->middleware('role:manajemen|designer')
         ->name('spk.store');
@@ -25,7 +28,7 @@ Route::middleware('auth')->group(function () {
         ->middleware('role:manajemen|admin')
         ->name('spk.update');
     Route::delete('/spk/{spk}/delete', [MSpkController::class, 'destroy'])
-        ->middleware('role:manajemen|designer')
+        ->middleware('role:manajemen|designer|admin')
         ->name('spk.destroy');
 
     Route::put('/manajemen/spk/update-status/{id}', [MSpkController::class, 'updateStatus'])
@@ -36,6 +39,7 @@ Route::middleware('auth')->group(function () {
         ->name('manajemen.spk.cetak-spk');
 
     Route::get('/spk-bantuan', [SpkBantuanController::class, 'index'])->name('spk-bantuan.index');
+    Route::get('/spk-bantuan/{id}/detail', [SpkBantuanController::class, 'show'])->name('spk-bantuan.show');
     Route::get('/spk-bantuan/buat', [SpkBantuanController::class, 'create'])->name('spk-bantuan');
     Route::post('/spk-bantuan', [SpkBantuanController::class, 'store'])->name('spk-bantuan.store');
     Route::get('/spk-bantuan/cetak/{id}', [SpkBantuanController::class, 'cetakSpkBantuan'])->name('spk-bantuan.cetak-spk-bantuan');
