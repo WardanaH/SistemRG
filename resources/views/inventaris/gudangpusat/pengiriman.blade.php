@@ -436,7 +436,7 @@ MODAL EDIT PENGIRIMAN (PERBAIKAN)
                     <table class="table table-bordered mt-3">
                         <thead class="table-light">
                             <tr>
-                                <th width="50">✔</th>
+                                {{-- <th width="50">✔</th> --}}
                                 <th>Nama Barang</th>
                                 <th>Jumlah</th>
                                 <th>Satuan</th>
@@ -723,10 +723,7 @@ $(document).on('click', '.btn-edit', function () {
         res.detail.forEach((item, i) => {
             html += `
                 <tr>
-                    <td class="text-center">
-                        <input type="checkbox" name="barang[${i}][checked]" checked>
-                        <input type="hidden" name="barang[${i}][gudang_barang_id]" value="${item.gudang_barang_id}">
-                    </td>
+ 
                     <td>${item.nama_barang}</td>
                     <td>${item.jumlah}</td>
                     <td>${item.satuan}</td>

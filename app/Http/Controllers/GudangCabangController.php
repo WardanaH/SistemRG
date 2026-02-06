@@ -313,22 +313,57 @@ class GudangCabangController extends Controller
         ]);
     }
 
-    public function laporanDetail($bulan, $tahun)
+    public function laporanDetail(Request $request, $bulan, $tahun)
     {
         $user = Auth::user();
         $cabang = MCabang::findOrFail($user->cabang_id);
 
-        $pengiriman = MPengiriman::where('cabang_tujuan_id', $cabang->id)
+        $barangFilter = $request->barang_id;
+        if (!is_array($barangFilter)) {
+            $barangFilter = $barangFilter ? [$barangFilter] : [];
+        }
+
+        $tanggalAwal  = $request->tanggal_awal;
+        $tanggalAkhir = $request->tanggal_akhir;
+
+        $query = MPengiriman::where('cabang_tujuan_id', $cabang->id)
             ->where('status_pengiriman', 'Diterima')
             ->whereMonth('tanggal_diterima', $bulan)
-            ->whereYear('tanggal_diterima', $tahun)
-            ->orderBy('tanggal_diterima')
-            ->get();
+            ->whereYear('tanggal_diterima', $tahun);
+
+        if ($tanggalAwal) {
+            $query->whereDate('tanggal_diterima', '>=', $tanggalAwal);
+        }
+
+        if ($tanggalAkhir) {
+            $query->whereDate('tanggal_diterima', '<=', $tanggalAkhir);
+        }
+
+        $pengiriman = $query->orderBy('tanggal_diterima')->get();
 
         $semuaBarang = MGudangBarang::all();
 
+        // FILTER DATA BERDASARKAN BARANG
+        if (!empty($barangFilter)) {
+            $pengiriman = $pengiriman->filter(function ($item) use ($barangFilter) {
+                $detail = is_string($item->keterangan_terima)
+                    ? json_decode($item->keterangan_terima, true)
+                    : $item->keterangan_terima;
+
+                foreach ($detail ?? [] as $d) {
+                    if (in_array($d['gudang_barang_id'], $barangFilter)) {
+                        return true;
+                    }
+                }
+                return false;
+            })->values();
+        }
+
+        // REKAP
         $rekap = [];
         foreach ($semuaBarang as $barang) {
+            if (!empty($barangFilter) && !in_array($barang->id, $barangFilter)) continue;
+
             $rekap[$barang->id] = [
                 'barang' => $barang->nama_bahan,
                 'satuan' => $barang->satuan,
@@ -337,23 +372,24 @@ class GudangCabangController extends Controller
         }
 
         foreach ($pengiriman as $item) {
-            $detail = is_string($item->keterangan)
-                ? json_decode($item->keterangan, true)
-                : $item->keterangan;
+            $detail = is_string($item->keterangan_terima)
+                ? json_decode($item->keterangan_terima, true)
+                : $item->keterangan_terima;
 
             foreach ($detail ?? [] as $d) {
-                $rekap[$d['gudang_barang_id']]['total']
-                    += (float) $d['jumlah'];
+                if (!isset($rekap[$d['gudang_barang_id']])) continue;
+
+                $rekap[$d['gudang_barang_id']]['total'] += (float) $d['jumlah'];
             }
         }
 
         return view('inventaris.gudangcabang.laporan.detaillaporan', [
-            'title'      => 'Detail Laporan Penerimaan - ' . $cabang->nama,
             'pengiriman' => $pengiriman,
             'bulan'      => $bulan,
             'tahun'      => $tahun,
             'rekap'      => $rekap,
-            'cabang'     => $cabang
+            'cabang'     => $cabang,
+            'semuaBarang'=> $semuaBarang
         ]);
     }
 

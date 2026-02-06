@@ -14,7 +14,15 @@
         color: #880e4f;
         text-align: center;
     }
-    
+
+    .btn-filter-custom {
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+
 </style>
 
 @section('content')
@@ -36,7 +44,103 @@
                         </p>
                     </div>
 
-                    <hr>
+<hr>
+
+<form method="GET">
+    <div class="row mb-4">
+
+        {{-- FILTER BARANG --}}
+        <div class="col-md-4">
+            <label class="form-label">Filter Barang</label>
+<select name="barang_id[]" id="filterBarang" class="form-control" multiple>
+    @foreach($semuaBarang as $barang)
+        <option value="{{ $barang->id }}"
+            {{ collect(request('barang_id'))->contains($barang->id) ? 'selected' : '' }}>
+            {{ $barang->nama_bahan }}
+        </option>
+    @endforeach
+</select>
+        </div>
+
+        {{-- TANGGAL AWAL --}}
+        <div class="col-md-3">
+            <label class="form-label">Tanggal Awal</label>
+            <input type="date" name="tanggal_awal"
+                value="{{ request('tanggal_awal') }}"
+                class="form-control">
+        </div>
+
+        {{-- TANGGAL AKHIR --}}
+        <div class="col-md-3">
+            <label class="form-label">Tanggal Akhir</label>
+            <input type="date" name="tanggal_akhir"
+                value="{{ request('tanggal_akhir') }}"
+                class="form-control">
+        </div>
+
+        {{-- BUTTON --}}
+<div class="col-md-2">
+
+    <div class="row">
+        {{-- FILTER --}}
+        <div class="col-6">
+            <label class="form-label">Filter</label>
+            <button type="submit"
+                class="btn bg-gradient-info btn-filter-custom w-100"
+                title="Filter">
+                <i class="material-icons">search</i>
+            </button>
+        </div>
+
+        {{-- RESET --}}
+        <div class="col-6">
+            <label class="form-label">Reset</label>
+            <a href="{{ route('laporan.pengiriman.detail', [$bulan, $tahun]) }}"
+                class="btn btn-outline-secondary btn-filter-custom w-100"
+                title="Reset Filter">
+                <i class="material-icons">restart_alt</i>
+            </a>
+        </div>
+    </div>
+
+</div>
+    </div>
+</form>
+
+                    <h5 class="mt-4"><b>Rekap Total Pengiriman Per Barang</b></h5>
+
+                    <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="thead-pink text-center">
+                        <tr>
+                            <th>Nama Barang</th>
+                            <th>Satuan</th>
+                            @foreach($semuaCabang as $cabang)
+                                <th>{{ $cabang->nama }}</th>
+                            @endforeach
+                            <th>Total</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($rekap as $row)
+                            <tr>
+                                <td>{{ $row['barang'] }}</td>
+                                <td class="text-center">{{ $row['satuan'] }}</td>
+
+                                @foreach($semuaCabang as $cabang)
+                                    <td class="text-center">
+                                        {{ $row['cabang'][$cabang->id] ?? 0 }}
+                                    </td>
+                                @endforeach
+
+                                <td class="text-center fw-bold">
+                                    {{ $row['total'] }}
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                    </div>
 
                     {{-- TABEL LAPORAN --}}
                     <div class="table-responsive">
@@ -47,7 +151,7 @@
                                     <th>Nama Barang</th>
                                     <th style="width: 10%">Jumlah</th>
                                     <th style="width: 10%">Satuan</th>
-                                    <th>Keterangan</th>
+                                    {{-- <th>Keterangan</th> --}}
                                     <th style="width: 20%">Cabang Tujuan</th>
                                 </tr>
                             </thead>
@@ -107,15 +211,15 @@
                                         </td>
 
                                         {{-- Keterangan --}}
-                                        <td>
-                                            @if(count($detail) > 0)
+                                        {{-- <td> --}}
+                                            {{-- @if(count($detail) > 0)
                                                 @foreach($detail as $d)
                                                     <div>{{ $d['keterangan'] ?? '-' }}</div>
                                                 @endforeach
                                             @else
                                                 -
                                             @endif
-                                        </td>
+                                        </td> --}}
 
                                         {{-- Cabang Tujuan --}}
                                         <td>
@@ -135,40 +239,6 @@
                         </table>
                     </div>
                     <hr>
-                    <h5 class="mt-4"><b>Rekap Total Pengiriman Per Barang</b></h5>
-
-                    <div class="table-responsive">
-                    <table class="table table-bordered">
-                        <thead class="thead-pink text-center">
-                        <tr>
-                            <th>Nama Barang</th>
-                            <th>Satuan</th>
-                            @foreach($semuaCabang as $cabang)
-                                <th>{{ $cabang->nama }}</th>
-                            @endforeach
-                            <th>Total</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($rekap as $row)
-                            <tr>
-                                <td>{{ $row['barang'] }}</td>
-                                <td class="text-center">{{ $row['satuan'] }}</td>
-
-                                @foreach($semuaCabang as $cabang)
-                                    <td class="text-center">
-                                        {{ $row['cabang'][$cabang->id] ?? 0 }}
-                                    </td>
-                                @endforeach
-
-                                <td class="text-center fw-bold">
-                                    {{ $row['total'] }}
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                    </div>
 
 
                     {{-- TOMBOL DOWNLOAD --}}
@@ -202,3 +272,14 @@
 
 </div>
 @endsection
+@push('scripts')
+<script>
+$(document).ready(function() {
+    $('#filterBarang').select2({
+        placeholder: "Pilih barang...",
+        allowClear: true,
+        width: '100%'
+    });
+});
+</script>
+@endpush

@@ -13,6 +13,15 @@
         color: #880e4f;
         text-align: center;
     }
+
+    .btn-filter-custom {
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+
 </style>
 
 @section('content')
@@ -32,6 +41,84 @@
                     </div>
 
                     <hr>
+                    <form method="GET">
+                        <div class="row mb-3">
+
+                            {{-- FILTER BARANG --}}
+                            <div class="col-md-4">
+                                <label class="form-label">Filter Barang</label>
+                                <select name="barang_id[]" id="filterBarang" class="form-control" multiple>
+                                    @foreach($semuaBarang as $barang)
+                                        <option value="{{ $barang->id }}"
+                                            {{ collect(request('barang_id'))->contains($barang->id) ? 'selected' : '' }}>
+                                            {{ $barang->nama_bahan }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            {{-- TANGGAL AWAL --}}
+                            <div class="col-md-3">
+                                <label class="form-label">Tanggal Awal</label>
+                                <input type="date" name="tanggal_awal" class="form-control"
+                                    value="{{ request('tanggal_awal') }}">
+                            </div>
+
+                            {{-- TANGGAL AKHIR --}}
+                            <div class="col-md-3">
+                                <label class="form-label">Tanggal Akhir</label>
+                                <input type="date" name="tanggal_akhir" class="form-control"
+                                    value="{{ request('tanggal_akhir') }}">
+                            </div>
+
+                            {{-- TOMBOL --}}
+                            <div class="col-md-2">
+                                <div class="row">
+
+                                    <div class="col-6">
+                                        <label class="form-label">Filter</label>
+                                        <button type="submit"
+                                            class="btn bg-gradient-info btn-filter-custom w-100">
+                                            <i class="material-icons">search</i>
+                                        </button>
+                                    </div>
+
+                                    <div class="col-6">
+                                        <label class="form-label">Reset</label>
+                                        <a href="{{ route('gudangcabang.laporan.detail', [$bulan,$tahun]) }}"
+                                            class="btn btn-outline-secondary btn-filter-custom w-100">
+                                            <i class="material-icons">restart_alt</i>
+                                        </a>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                            <h5 class="mt-4"><b>Rekap Total Penerimaan Barang</b></h5>
+
+                            <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead class="thead-pink text-center">
+                                <tr>
+                                    <th>Nama Barang</th>
+                                    <th>Satuan</th>
+                                    <th>Total Diterima</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($rekap as $row)
+                                    <tr>
+                                        <td>{{ $row['barang'] }}</td>
+                                        <td class="text-center">{{ $row['satuan'] }}</td>
+                                        <td class="text-center fw-bold">{{ $row['total'] }}</td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+
+                            <hr>
 
                     <div class="table-responsive">
                         <table class="table table-bordered">
@@ -117,29 +204,7 @@
                                 @endforelse
                             </tbody>
                         </table>
-                        <hr>
-                            <h5 class="mt-4"><b>Rekap Total Penerimaan Barang</b></h5>
 
-                            <div class="table-responsive">
-                            <table class="table table-bordered">
-                                <thead class="thead-pink text-center">
-                                <tr>
-                                    <th>Nama Barang</th>
-                                    <th>Satuan</th>
-                                    <th>Total Diterima</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($rekap as $row)
-                                    <tr>
-                                        <td>{{ $row['barang'] }}</td>
-                                        <td class="text-center">{{ $row['satuan'] }}</td>
-                                        <td class="text-center fw-bold">{{ $row['total'] }}</td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                            </div>
                     </div>
 
                     <div class="mt-4 d-flex justify-content-between">
@@ -168,3 +233,14 @@
     </div>
 </div>
 @endsection
+@push('scripts')
+<script>
+$(document).ready(function() {
+    $('#filterBarang').select2({
+        placeholder: "Pilih barang...",
+        allowClear: true,
+        width: '100%'
+    });
+});
+</script>
+@endpush
