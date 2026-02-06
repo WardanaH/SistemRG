@@ -6,26 +6,12 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 @if (session('success'))
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        Swal.fire({
-            icon: "success",
-            title: "Berhasil!",
-            text: "{{ session('success') }}",
-            showConfirmButton: false,
-            timer: 1500
-        });
-    });
-</script>
-@endif
-@if (session('error'))
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        Swal.fire({
-            icon: "error",
-            title: "Gagal!",
-            text: "{{ session('error') }}",
-            showConfirmButton: true
-        });
+    Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "{{ session('success') }}",
+        timer: 1500,
+        showConfirmButton: false
     });
 </script>
 @endif
@@ -34,30 +20,21 @@
     <div class="col-12">
         <div class="card my-4">
 
-            {{-- HEADER ORANGE (WARNING/ONGOING) --}}
+            {{-- HEADER WARNA-WARNI SESUAI STATUS --}}
             <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
-                <div class="bg-gradient-warning shadow-warning border-radius-lg pt-4 pb-3 d-flex justify-content-between align-items-center px-3">
+                <div class="bg-gradient-info shadow-info border-radius-lg pt-4 pb-3 d-flex justify-content-between align-items-center px-3">
                     <div class="d-flex align-items-center">
-                        <h6 class="text-white text-capitalize mb-0">Antrian Produksi Bantuan (Ongoing)</h6>
+                        <h6 class="text-white text-capitalize mb-0">Antrian Pekerjaan Saya (Item View)</h6>
                     </div>
 
                     {{-- SEARCH BAR --}}
                     <div>
-                        <form action="{{ route('spk.index') }}" method="GET">
+                        <form action="{{ route('spk.produksi') }}" method="GET">
                             <div class="bg-white rounded d-flex align-items-center px-2" style="height: 40px; min-width: 250px;">
                                 <i class="material-icons text-secondary text-sm">search</i>
-                                <input type="text"
-                                    name="search"
-                                    class="form-control border-0 ps-2"
-                                    placeholder="Cari SPK..."
-                                    value="{{ request('search') }}"
+                                <input type="text" name="search" class="form-control border-0 ps-2"
+                                    placeholder="Cari File / No SPK..." value="{{ request('search') }}"
                                     style="box-shadow: none !important; height: 100%; background: transparent;">
-
-                                @if(request('search'))
-                                <a href="{{ route('spk.index') }}" class="text-danger d-flex align-items-center cursor-pointer">
-                                    <i class="material-icons text-sm">close</i>
-                                </a>
-                                @endif
                             </div>
                         </form>
                     </div>
@@ -70,103 +47,90 @@
                     <table class="table align-items-center mb-0">
                         <thead>
                             <tr>
-                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-3">No. SPK / Tanggal</th>
-                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Pelanggan</th>
-                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Detail Produksi</th>
-                                <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Status</th>
-                                <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Catatan</th>
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-3">Info SPK (Parent)</th>
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Detail Item (File)</th>
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Spesifikasi</th>
+                                <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Qty</th>
+                                <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Status Item</th>
                                 <th class="text-secondary opacity-7 text-end pe-4">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($spks as $spk)
+                            @forelse($items as $item)
                             <tr>
-                                {{-- Kolom 1: SPK --}}
+                                {{-- KOLOM 1: INFO SPK PARENT --}}
                                 <td class="ps-3">
-                                    <div class="d-flex px-2 py-1">
+                                    <div class="d-flex flex-column justify-content-center">
+                                        <h6 class="mb-0 text-sm text-primary font-weight-bold">{{ $item->spk->no_spk }}</h6>
+                                        <p class="text-xs text-secondary mb-0">{{ $item->spk->nama_pelanggan }}</p>
+                                        <span class="text-xxs text-muted">
+                                            {{ \Carbon\Carbon::parse($item->spk->tanggal_spk)->format('d M Y') }}
+                                        </span>
+                                    </div>
+                                </td>
+
+                                {{-- KOLOM 2: NAMA FILE & JENIS --}}
+                                <td>
+                                    <div class="d-flex flex-column">
+                                        <h6 class="mb-0 text-sm text-truncate" style="max-width: 200px;">
+                                            {{ $item->nama_file }}
+                                        </h6>
                                         <div>
-                                            <div class="avatar avatar-sm me-3 border-radius-lg bg-gradient-warning d-flex align-items-center justify-content-center">
-                                                <i class="material-icons text-white text-sm">precision_manufacturing</i>
-                                            </div>
-                                        </div>
-                                        <div class="d-flex flex-column justify-content-center">
-                                            <h6 class="mb-0 text-sm">{{ $spk->no_spk }}</h6>
-                                            <p class="text-xs text-secondary mb-0">
-                                                {{ \Carbon\Carbon::parse($spk->tanggal_spk)->format('d M Y') }}
-                                            </p>
+                                            {{-- Badge Jenis Order --}}
+                                            @if($item->jenis_order == 'outdoor')
+                                            <span class="badge badge-sm bg-gradient-warning text-xxs me-1">OUT</span>
+                                            @else
+                                            <span class="badge badge-sm bg-gradient-success text-xxs me-1">IN</span>
+                                            @endif
                                         </div>
                                     </div>
                                 </td>
 
-                                {{-- Kolom 2: Pelanggan --}}
+                                {{-- KOLOM 3: SPESIFIKASI --}}
                                 <td>
-                                    <p class="text-xs font-weight-bold mb-0">{{ $spk->nama_pelanggan }}</p>
-                                    <p class="text-xs text-secondary mb-0">{{ $spk->no_telepon }}</p>
+                                    <p class="text-xs font-weight-bold mb-0">Bahan: {{ $item->bahan->nama_bahan ?? '-' }}</p>
+                                    <p class="text-xs text-secondary mb-0">{{ $item->p }} x {{ $item->l }} cm</p>
+                                    <p class="text-xs text-secondary mb-0">Fin: {{ $item->finishing ?? '-' }}</p>
                                 </td>
 
-                                {{-- Kolom 3: Detail File & Bahan --}}
-                                <td>
-                                    <p class="text-xs font-weight-bold mb-0 text-truncate" style="max-width: 150px;">{{ $spk->nama_file }}</p>
-                                    <span class="text-xs text-secondary">
-                                        {{ $spk->bahan->nama ?? '-' }}
-                                        ({{ $spk->ukuran_panjang }}x{{ $spk->ukuran_lebar }})
-                                    </span>
-                                    <div class="text-xs text-secondary">Qty: <strong>{{ $spk->kuantitas }}</strong> | Fin: {{ $spk->finishing ?? '-' }}</div>
+                                {{-- KOLOM 4: QTY --}}
+                                <td class="align-middle text-center">
+                                    <h6 class="mb-0 text-sm">{{ $item->qty }}</h6>
                                 </td>
 
-                                {{-- Kolom 4: Status Badge --}}
+                                {{-- KOLOM 5: STATUS ITEM --}}
                                 <td class="align-middle text-center text-sm">
                                     @php
-                                    $badges = [
-                                    'pending' => 'warning',
-                                    'ripping' => 'info',
-                                    'ongoing' => 'info',
-                                    'finishing' => 'info',
-                                    'done' => 'success'
-                                    ];
+                                    $statusClass = 'secondary';
+                                    if($item->status_produksi == 'pending') $statusClass = 'warning';
+                                    elseif($item->status_produksi == 'ripping') $statusClass = 'info';
+                                    elseif($item->status_produksi == 'ongoing') $statusClass = 'primary';
+                                    elseif($item->status_produksi == 'finishing') $statusClass = 'info';
+                                    elseif($item->status_produksi == 'done') $statusClass = 'success';
                                     @endphp
-                                    <span class="badge badge-sm bg-gradient-{{ $badges[$spk->status_produksi] ?? 'secondary' }}">
-                                        {{ ucfirst($spk->status_produksi) }}
+                                    <span class="badge badge-sm bg-gradient-{{ $statusClass }}">
+                                        {{ ucfirst($item->status_produksi) }}
                                     </span>
                                 </td>
 
-                                {{-- Kolom 5: Catatan --}}
-                                <td class="align-middle text-center">
-                                    <span class="text-secondary text-xs">
-                                        {{ Str::limit($spk->catatan_operator ?? '-') }}
-                                    </span>
-                                </td>
-
-                                {{-- Kolom 6: Aksi --}}
+                                {{-- KOLOM 6: AKSI --}}
                                 <td class="align-middle text-end pe-4">
-                                    <div class="d-flex justify-content-end align-items-center gap-2">
-
-                                        {{-- Tombol Cetak --}}
-                                        <a href="{{ route('manajemen.spk.cetak-spk', $spk->id) }}" target="_blank" class="badge bg-gradient-primary text-white text-xs" data-toggle="tooltip" title="Cetak SPK" style="text-decoration: none;">
-                                            <i class="material-icons text-xs position-relative" style="top: 1px;">print</i>
-                                        </a>
-
-                                        {{-- Tombol Update Status --}}
-                                        <button type="button"
-                                            class="badge bg-gradient-info border-0 text-white text-xs btn-update-status"
-                                            data-id="{{ $spk->id }}"
-                                            data-no="{{ $spk->no_spk }}"
-                                            data-status="{{ $spk->status_produksi }}"
-                                            data-catatan="{{ $spk->catatan_operator }}"
-                                            data-toggle="tooltip"
-                                            title="Update Produksi">
-                                            <i class="material-icons text-xs position-relative" style="top: 1px;">edit_note</i> Status
-                                        </button>
-
-                                    </div>
+                                    <button type="button"
+                                        class="btn btn-sm btn-info btn-update-status mb-0"
+                                        data-id="{{ $item->id }}"
+                                        data-file="{{ $item->nama_file }}"
+                                        data-status="{{ $item->status_produksi }}"
+                                        data-catatan="{{ $item->catatan_operator }}">
+                                        Update Status
+                                    </button>
                                 </td>
                             </tr>
                             @empty
                             <tr>
                                 <td colspan="6" class="text-center py-5">
                                     <div class="d-flex flex-column align-items-center justify-content-center">
-                                        <i class="material-icons text-secondary text-4xl mb-2">assignment_turned_in</i>
-                                        <h6 class="text-secondary font-weight-normal">Tidak ada antrian produksi saat ini.</h6>
+                                        <i class="material-icons text-secondary text-4xl mb-2">check_circle</i>
+                                        <h6 class="text-secondary font-weight-normal">Tidak ada antrian pekerjaan untuk Anda.</h6>
                                     </div>
                                 </td>
                             </tr>
@@ -177,47 +141,47 @@
             </div>
 
             <div class="card-footer py-3">
-                {{ $spks->withQueryString()->links('pagination::bootstrap-5') }}
+                {{ $items->withQueryString()->links('pagination::bootstrap-5') }}
             </div>
         </div>
     </div>
 </div>
 
-{{-- MODAL UPDATE STATUS PRODUKSI --}}
-<form id="formUpdateStatus" method="POST" action="">
+{{-- MODAL UPDATE STATUS (ITEM) --}}
+<form id="formUpdateStatus" method="POST" action="#">
     @csrf @method('PUT')
     <div class="modal fade" id="modalUpdateStatus" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title font-weight-normal">Update Produksi: <span id="txtNoSpk" class="font-weight-bold"></span></h5>
-                    <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h5 class="modal-title font-weight-normal">Update Item: <br><small id="txtNamaFile" class="font-weight-bold text-info"></small></h5>
+                    <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
                 </div>
 
                 <div class="modal-body">
-                    {{-- Dropdown Status --}}
-                    <div class="input-group input-group-outline mb-4 is-filled">
+                    {{-- Status Dropdown --}}
+                    <div class="input-group input-group-outline mb-4 is-filled" >
                         <label class="form-label">Status Produksi</label>
-                        <select name="status_produksi" id="selectStatusProduksi" class="form-control" style="appearance: auto; padding-left: 10px;">
-                            <option value="pending">Pending</option>
+                        <select name="status_produksi" id="selectStatusProduksi" class="form-control" >
+                            <option value="pending">Pending (Menunggu)</option>
                             <option value="ripping">Ripping (Persiapan)</option>
-                            <option value="ongoing">Ongoing (Cetak)</option>
-                            <option value="finishing">Finishing</option>
+                            <option value="ongoing">Ongoing (Sedang Cetak)</option>
+                            <option value="finishing">Finishing (Potong/Lipat)</option>
                             <option value="done">Done (Selesai)</option>
                         </select>
                     </div>
 
-                    {{-- Textarea Catatan --}}
-                    <div class="input-group input-group-outline">
-                        <label class="form-label"></label>
-                        <textarea name="catatan_operator" id="txtCatatanOperator" class="form-control" rows="3"></textarea>
+                    {{-- Catatan --}}
+                    <div class="input-group input-group-outline mb-2">
+                        <textarea name="catatan_operator" id="txtCatatanOperator" class="form-control" rows="2" placeholder="Catatan Operator"></textarea>
                     </div>
-                    <small class="text-xs text-muted ms-1">*Catatan ini akan tersimpan di riwayat SPK.</small>
                 </div>
 
                 <div class="modal-footer">
                     <button type="button" class="btn bg-gradient-secondary" data-bs-dismiss="modal">Batal</button>
-                    <button type="submit" class="btn bg-gradient-success">Simpan Perubahan</button>
+                    <button type="button" class="btn bg-gradient-success" onclick="this.closest('form').submit()">Simpan</button>
                 </div>
             </div>
         </div>
@@ -229,39 +193,34 @@
 @push('scripts')
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        const btns = document.querySelectorAll(".btn-update-status");
-        const modal = new bootstrap.Modal(document.getElementById('modalUpdateStatus'));
+        const modalElement = document.getElementById('modalUpdateStatus');
+        const modal = new bootstrap.Modal(modalElement);
         const form = document.getElementById('formUpdateStatus');
 
-        const txtNoSpk = document.getElementById('txtNoSpk');
-        const selectStatus = document.getElementById('selectStatusProduksi');
-        const txtCatatan = document.getElementById('txtCatatanOperator');
+        // URL Template dengan placeholder 'PH_ID'
+        // Route ini harus mengarah ke update status ITEM (bukan SPK Header)
+        // Pastikan Anda membuat route baru untuk update item
+        const urlTemplate = "{{ route('spk.update-produksi', 'PH_ID') }}";
 
-        btns.forEach(btn => {
+        document.querySelectorAll(".btn-update-status").forEach(btn => {
             btn.addEventListener("click", function() {
-                // Ambil Data dari Atribut Tombol
                 let id = this.getAttribute('data-id');
-                let no = this.getAttribute('data-no');
+                let file = this.getAttribute('data-file');
                 let status = this.getAttribute('data-status');
                 let catatan = this.getAttribute('data-catatan');
 
                 // Isi Data ke Modal
-                txtNoSpk.innerText = no;
-                selectStatus.value = status;
-                txtCatatan.value = catatan ? catatan : '';
+                document.getElementById('txtNamaFile').innerText = file;
+                document.getElementById('selectStatusProduksi').value = status;
+                document.getElementById('txtCatatanOperator').value = catatan ? catatan : '';
 
-                // Handle Input Outline Animation (Material Dashboard)
-                // Agar label tidak menumpuk saat ada isi
-                if (catatan) {
-                    txtCatatan.parentElement.classList.add('is-filled');
-                } else {
-                    txtCatatan.parentElement.classList.remove('is-filled');
-                }
+                // Handle label floating animation
+                if (catatan) document.getElementById('txtCatatanOperator').parentElement.classList.add('is-filled');
+                else document.getElementById('txtCatatanOperator').parentElement.classList.remove('is-filled');
 
-                // Update Action URL
-                // Pastikan route ini ada di web.php
-                let url = "{{ route('spk.update-produksi', ':id') }}";
-                form.action = url.replace(':id', id);
+                // Update Action Form dengan ID Item yang benar
+                let finalUrl = urlTemplate.replace('PH_ID', id);
+                form.action = finalUrl;
 
                 modal.show();
             });

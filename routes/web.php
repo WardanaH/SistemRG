@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\GudangCabangController;
 
 Route::get('/dashboard', function () {
     return view('dashboard.index');
@@ -22,6 +23,8 @@ require __DIR__.'/manajemen.php';
 require __DIR__.'/admin.php';
 require __DIR__.'/operator.php';
 require __DIR__.'/designer.php';
+require __DIR__.'/gudang_pusat.php';
+require __DIR__.'/gudang_cabang.php';
 
 Route::get('/', function () {
     $user = auth()->user();
@@ -38,3 +41,7 @@ Route::get('/', function () {
 
     return redirect()->route('auth.index');
 })->middleware('auth')->name('home');
+
+
+// inventaris qr tanpalogin
+Route::get('/inventaris/qr/{kode}',[GudangCabangController::class, 'inventarisQr'])->name('inventaris.qr.public');
