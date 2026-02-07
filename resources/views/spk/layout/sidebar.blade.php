@@ -70,29 +70,6 @@
             </li>
             @endhasrole
 
-            @hasrole('manajemen|designer|admin')
-            <li class="nav-item">
-                <a class="nav-link text-white {{
-                                request()->routeIs('spk.index') ? 'active bg-gradient-primary' : ''
-                                }}" href="{{ route('spk.index') }}">
-                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
-                        <i class="material-icons-round opacity-10">book</i>
-                    </div>
-                    <span class="nav-link-text ms-1">Manajemen SPK</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link text-white {{
-                                request()->routeIs('spk-bantuan.index') ? 'active bg-gradient-primary' : ''
-                                }}" href="{{ route('spk-bantuan.index') }}">
-                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
-                        <i class="material-icons-round opacity-10">book</i>
-                    </div>
-                    <span class="nav-link-text ms-1">Manajemen SPK Bantuan</span>
-                </a>
-            </li>
-            @endhasrole
-
             @hasrole('manajemen|designer')
             <li class="nav-item">
                 <a class="nav-link text-white {{
@@ -112,6 +89,29 @@
                         <i class="material-icons-round opacity-10">work</i>
                     </div>
                     <span class="nav-link-text ms-1">Buat SPK Bantuan</span>
+                </a>
+            </li>
+            @endhasrole
+
+            @hasrole('manajemen|designer|admin')
+            <li class="nav-item">
+                <a class="nav-link text-white {{
+                                request()->routeIs('spk.index') ? 'active bg-gradient-primary' : ''
+                                }}" href="{{ route('spk.index') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons-round opacity-10">book</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Manajemen SPK</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-white {{
+                                request()->routeIs('spk-bantuan.index') ? 'active bg-gradient-primary' : ''
+                                }}" href="{{ route('spk-bantuan.index') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons-round opacity-10">book</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Manajemen SPK Bantuan</span>
                 </a>
             </li>
             @endhasrole
@@ -142,8 +142,8 @@
             @hasrole('manajemen|admin|operator indoor|operator outdoor|operator multi')
             <li class="nav-item">
                 <a class="nav-link text-white {{
-                                request()->routeIs('spk.riwayat') ? 'active bg-gradient-primary' : ''
-                                }}" href="{{ route('spk.riwayat') }}">
+                    request()->routeIs('spk.riwayat') ? 'active bg-gradient-primary' : ''
+                    }}" href="{{ route('spk.riwayat') }}">
                     <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
                         <i class="material-icons-round opacity-10">manage_history</i>
                     </div>
@@ -158,6 +158,19 @@
                         <i class="material-icons-round opacity-10">manage_history</i>
                     </div>
                     <span class="nav-link-text ms-1">Riwayat Produksi SPKB</span>
+                </a>
+            </li>
+            @endhasrole
+
+            @hasrole('manajemen|admin|operator indoor|operator outdoor|operator multi|designer')
+            <li class="nav-item">
+                <a class="nav-link text-white {{
+                                request()->routeIs('laporan.index') ? 'active bg-gradient-primary' : ''
+                                }}" href="{{ route('laporan.index') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons-round opacity-10">analytics</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Laporan Kinerja</span>
                 </a>
             </li>
             @endhasrole
