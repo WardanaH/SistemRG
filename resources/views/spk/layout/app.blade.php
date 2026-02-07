@@ -119,7 +119,7 @@
 
     <script>
         // 1. AKTIFKAN LOGGING
-        Pusher.logToConsole = true;
+        // Pusher.logToConsole = true;
 
         // 2. Inisialisasi Pusher
         var pusher = new Pusher('{{ config("broadcasting.connections.pusher.key") }}', {
@@ -128,21 +128,21 @@
         });
 
         // Cek Config di Console
-        console.log("Config Pusher:", {
-            key: '{{ config("broadcasting.connections.pusher.key") }}',
-            cluster: '{{ config("broadcasting.connections.pusher.options.cluster") }}'
-        });
+        // console.log("Config Pusher:", {
+        //     key: '{{ config("broadcasting.connections.pusher.key") }}',
+        //     cluster: '{{ config("broadcasting.connections.pusher.options.cluster") }}'
+        // });
 
         // Status Admin
         const isAdmin = {{Auth::check() && Auth::user() -> hasRole('admin') ? 'true' : 'false'}};
-        console.log("Status Admin:", isAdmin);
+        // console.log("Status Admin:", isAdmin);
 
         var channel = pusher.subscribe('channel-admin');
 
         // 3. Binding Event (Menangani Notifikasi Masuk)
         channel.bind('spk-dibuat', function(data) {
 
-            console.log("EVENT DITERIMA:", data);
+            // console.log("EVENT DITERIMA:", data);
 
             if (isAdmin) {
                 // B. Mainkan Suara (File Custom Kamu)

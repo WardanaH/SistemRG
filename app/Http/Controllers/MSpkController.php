@@ -315,6 +315,7 @@ class MSpkController extends Controller
 
         $spk = MSpk::findOrFail($id);
         $spk->status_spk = $request->status_spk;
+        $spk->admin_id = auth()->id();
 
         // Opsional: Jika status ACC, status produksi otomatis jadi ongoing?
         // if ($request->status_spk == 'acc') {

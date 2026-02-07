@@ -27,6 +27,7 @@ return new class extends Migration
 
             // Penanggung Jawab Admin/Designer (Satu orang per SPK)
             $table->foreignId('designer_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('admin_id')->nullable()->constrained('users')->onDelete('set null');
 
             // Status Global (Opsional, untuk tracking level admin)
             $table->enum('status_spk', ['pending', 'acc', 'rejected'])->default('pending');
