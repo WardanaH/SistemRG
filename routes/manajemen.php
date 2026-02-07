@@ -10,11 +10,11 @@ use App\Http\Controllers\MFinishingController;
 Route::middleware('auth')->group(function () {
     Route::get('/manajemen/dashboard', [ManajemenController::class, 'index'])->middleware('role:manajemen')->name('manajemen.dashboard');
     Route::get('/manajemen/user', [UserController::class, 'index'])->middleware('role:manajemen')->name('manajemen.user');
+    Route::post('/manajemen/user/import', [UserController::class, 'importCsv'])->middleware('role:manajemen')->name('manajemen.user.import');
     Route::post('/manajemen/user', [UserController::class, 'store'])->middleware('role:manajemen')->name('manajemen.user.store');
     Route::get('/manajemen/user/{user}/edit', [UserController::class, 'edit'])->middleware('role:manajemen')->name('manajemen.user.edit');
-    Route::post('/manajemen/user/{user}', [UserController::class, 'update'])->middleware('role:manajemen')->name('manajemen.user.update');
+    Route::put('/manajemen/user/{user}', [UserController::class, 'update'])->middleware('role:manajemen')->name('manajemen.user.update');
     Route::delete('/manajemen/user/{user}/delete', [UserController::class, 'destroy'])->middleware('role:manajemen')->name('manajemen.user.destroy');
-    Route::post('/manajemen/user/import', [UserController::class, 'importCsv'])->middleware('role:manajemen')->name('manajemen.user.import');
 
     Route::get('/manajemen/cabang', [MCabangController::class, 'index'])->middleware('role:manajemen')->name('manajemen.cabang');
     Route::post('/manajemen/cabang', [MCabangController::class, 'store'])->middleware('role:manajemen')->name('manajemen.cabang.store');

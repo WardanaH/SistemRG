@@ -315,11 +315,11 @@
                         <td align="center" style="font-weight: bold; font-size: 12px;">{{ $item->qty }}</td>
                         <td align="center">{{ $item->finishing ?? '-' }}</td>
                         <td align="center">{{ $item->catatan ?? '-' }}</td>
-                        <td align="center" style="font-size: 10px; font-weight: bold;">
-                            {{ strtoupper($item->operator->nama ?? '-') }}
-                        </td>
                         <td align="center" style="font-weight: bold; font-size: 10px;">
                             {{ strtoupper($item->jenis_order) }}
+                        </td>
+                        <td align="center" style="font-size: 10px; font-weight: bold;">
+                            {{ strtoupper($item->operator->nama ?? '-') }}
                         </td>
                     </tr>
                     @endforeach

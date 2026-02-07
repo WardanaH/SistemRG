@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('m_spks', function (Blueprint $table) {
             $table->id();
             $table->string('no_spk')->unique();
-            $table->date('tanggal_spk');
+            $table->timestamp('tanggal_spk');
 
             // Info Pelanggan
             $table->string('nama_pelanggan');
@@ -27,6 +27,7 @@ return new class extends Migration
 
             // Penanggung Jawab Admin/Designer (Satu orang per SPK)
             $table->foreignId('designer_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('admin_id')->nullable()->constrained('users')->onDelete('set null');
 
             // Status Global (Opsional, untuk tracking level admin)
             $table->enum('status_spk', ['pending', 'acc', 'rejected'])->default('pending');

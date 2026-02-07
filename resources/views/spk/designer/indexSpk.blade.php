@@ -85,7 +85,7 @@
                                             <div class="d-flex flex-column justify-content-center">
                                                 <h6 class="mb-0 text-sm">{{ $spk->no_spk }}</h6>
                                                 <p class="text-xs text-secondary mb-0">
-                                                    {{ \Carbon\Carbon::parse($spk->tanggal_spk)->format('d/m/Y') }}
+                                                    {{ \Carbon\Carbon::parse($spk->tanggal_spk)->format('d/m/Y H:i:s') }}
                                                 </p>
                                             </div>
                                         </div>
@@ -143,6 +143,10 @@
                                                     {{ $isFinal ? 'lock' : 'verified' }}
                                                 </i>
                                             </button>
+
+                                            <a href="{{ route('spk.edit', $spk->id) }}" class="badge bg-gradient-warning text-white text-xs" data-toggle="tooltip" title="Edit Data">
+                                                <i class="material-icons text-xs position-relative" style="top: 1px;">edit</i>
+                                            </a>
                                             @endhasrole
 
                                             {{-- TOMBOL CETAK --}}

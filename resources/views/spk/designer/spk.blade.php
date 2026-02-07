@@ -38,7 +38,7 @@
         <div class="card my-4">
             <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
                 <div class="bg-gradient-primary shadow-primary border-radius-lg pt-4 pb-3">
-                    <h6 class="text-white text-capitalize ps-3">Input SPK Reguler (Multi Item)</h6>
+                    <h6 class="text-white text-capitalize ps-3">{{ $title }}</h6>
                 </div>
             </div>
 
@@ -169,9 +169,11 @@
                     </div>
                     {{-- Operator Dipilih Disini (Per Item) --}}
                     <div class="col-md-6">
-                        <div class="input-group input-group-outline is-filled">
-                            <label class="form-label">Operator (Penanggung Jawab)</label>
-                            <select id="modal_operator" class="form-control" style="appearance: auto;">
+                        <div class="input-group input-group-outline">
+                            <select id="modal_operator"
+                                class="form-control select2"
+                                data-placeholder="Cari & Pilih Operator Produksi..."
+                                style="appearance: auto;">
                                 <option value="" disabled selected>Pilih Operator...</option>
                                 @foreach($operators as $op)
                                 <option value="{{ $op->id }}" data-nama="{{ $op->nama }}">{{ $op->nama }} - {{ $op->roles()->pluck('name')->implode(', ') }}</option>
@@ -207,7 +209,10 @@
                     </div>
                     <div class="col-md-4">
                         <div class="input-group input-group-outline">
-                            <select id="modal_bahan" class="form-control" style="appearance: auto;">
+                            <select id="modal_bahan"
+                                class="form-control select2"
+                                data-placeholder="Cari & Pilih Bahan..."
+                                style="appearance: auto;">
                                 <option value="" disabled selected>Pilih Bahan</option>
                                 @foreach($bahans as $b)
                                 <option value="{{ $b->id }}" data-nama="{{ $b->nama_bahan }}">{{ $b->nama_bahan }}</option>
@@ -216,7 +221,7 @@
                         </div>
                     </div>
                     <div class="col-md-2">
-                        <div class="input-group input-group-outline">
+                        <div class="input-group input-group-outline is-filled">
                             <label class="form-label">Qty</label>
                             <input type="number" id="modal_qty" class="form-control" value="1" min="1">
                         </div>
@@ -227,7 +232,10 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="input-group input-group-outline">
-                            <select id="modal_finishing" class="form-control" style="appearance: auto;">
+                            <select id="modal_finishing"
+                                class="form-control select2"
+                                data-placeholder="Cari & Pilih Finishing..."
+                                style="appearance: auto;">
                                 <option value="" disabled selected>Pilih Finishing...</option>
                                 @foreach($finishings as $f)
                                 <option value="{{ $f->nama_finishing }}">{{ $f->nama_finishing }}</option>

@@ -14,13 +14,13 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        // --- Buat 2 cabang ---
+        // --- 1. Buat Cabang ---
         $cabangGDGUtama = MCabang::create([
             'kode' => 'GDG-UTM',
             'nama' => 'Gudang Utama',
             'slug' => 'gudang-utama',
-            'email' => 'utama@example.com',
-            'telepon' => '08123456789',
+            'email' => 'gudang-utama@example.com',
+            'telepon' => '0811000000',
             'alamat' => 'Jl. Merdeka No. 1, Jakarta',
             'jenis' => 'pusat',
         ]);
@@ -51,138 +51,81 @@ class UserSeeder extends Seeder
             'slug' => 'cabang-banjarbaru',
             'email' => 'banjarbaru@example.com',
             'telepon' => '08234567890',
-            'alamat' => 'Jl. Veteran No. 2, Banjarmasin',
+            'alamat' => 'Jl. Veteran No. 3, Banjarbaru',
             'jenis' => 'cabang',
         ]);
 
-        // --- Buat user Manajemen ---
-        $admin = User::create([
-            'nama' => 'Manajemen',
-            'username' => 'manajemen',
-            'email' => 'manajemen@example.com',
-            'password' => Hash::make('password'),
-            'cabang_id' => $cabangUtama->id,
-        ]);
-        $admin->assignRole('manajemen');
+        // --- 2. Fungsi Helper untuk membuat User A & B ---
+        $createUsers = function($cabang, $role, $prefixName, $usernameBase) {
+            $suffix = ['a', 'b'];
+            foreach ($suffix as $s) {
+                $user = User::create([
+                    'nama' => $prefixName . ' ' . strtoupper($s),
+                    'username' => $usernameBase . $s,
+                    'email' => $usernameBase . $s . '@example.com',
+                    'password' => Hash::make('password'),
+                    'cabang_id' => $cabang->id,
+                ]);
+                $user->assignRole($role);
+            }
+        };
 
-        // --- Buat user Admin BJM ---
-        $admin = User::create([
-            'nama' => 'Admin Banjarmasin',
-            'username' => 'adminbjm',
-            'email' => 'adminbanjarmasin@example.com',
-            'password' => Hash::make('password'),
-            'cabang_id' => $cabangBjm->id,
-        ]);
-        $admin->assignRole('admin');
+        // --- 3. Implementasi User A & B per Cabang ---
 
-        // --- Buat user Admin BJB ---
-        $admin = User::create([
-            'nama' => 'Admin Banjarbaru',
-            'username' => 'adminbjb',
-            'email' => 'adminbanjarbaru@example.com',
-            'password' => Hash::make('password'),
-            'cabang_id' => $cabangBjb->id,
-        ]);
-        $admin->assignRole('admin');
+        // MANAJEMEN (Di Cabang Utama)
+        $createUsers($cabangUtama, 'manajemen', 'Manajemen', 'manajemen');
 
-        // --- Buat user Operator Indoor ---
-        $operatorIndoor = User::create([
-            'nama' => 'Operator Cabang bjm',
-            'username' => 'operatorIndoor',
-            'email' => 'operatorOutdoor@example.com',
-            'password' => Hash::make('password'),
-            'cabang_id' => $cabangBjm->id,
-        ]);
-        $operatorIndoor->assignRole('operator indoor');
+        // ADMIN per Cabang
+        $createUsers($cabangBjm, 'admin', 'Admin BJM', 'adminbjm');
+        $createUsers($cabangBjb, 'admin', 'Admin BJB', 'adminbjb');
 
-        // --- Buat user Operator Outdoor ---
-        $operatorOutdoor = User::create([
-            'nama' => 'Operator Cabang bjm',
-            'username' => 'operatorOutdoor',
-            'email' => 'operatorIndoor@example.com',
-            'password' => Hash::make('password'),
-            'cabang_id' => $cabangBjm->id,
-        ]);
-        $operatorOutdoor->assignRole('operator outdoor');
+        // DESIGNER per Cabang
+        $createUsers($cabangBjm, 'designer', 'Designer BJM', 'designerbjm');
+        $createUsers($cabangBjb, 'designer', 'Designer BJB', 'designerbjb');
 
-        // --- Buat user Operator Multi ---
-        $operatorMulti = User::create([
-            'nama' => 'Operator Cabang bjm',
-            'username' => 'operatorMulti',
-            'email' => 'operatorMulti@example.com',
-            'password' => Hash::make('password'),
-            'cabang_id' => $cabangBjm->id,
-        ]);
-        $operatorMulti->assignRole('operator multi');
+        // OPERATOR INDOOR per Cabang
+        $createUsers($cabangBjm, 'operator indoor', 'Op Indoor BJM', 'opindoorbjm');
+        $createUsers($cabangBjb, 'operator indoor', 'Op Indoor BJB', 'opindoorbjb');
 
-        // --- Buat user Operator Indoor ---
-        $operatorIndoor = User::create([
-            'nama' => 'Operator Cabang bjb',
-            'username' => 'operatorIndoorbjb',
-            'email' => 'operatorOutdoorbjb@example.com',
-            'password' => Hash::make('password'),
-            'cabang_id' => $cabangBjb->id,
-        ]);
-        $operatorIndoor->assignRole('operator indoor');
+        // OPERATOR OUTDOOR per Cabang
+        $createUsers($cabangBjm, 'operator outdoor', 'Op Outdoor BJM', 'opoutdoorbjm');
+        $createUsers($cabangBjb, 'operator outdoor', 'Op Outdoor BJB', 'opoutdoorbjb');
 
-        // --- Buat user Operator Outdoor ---
-        $operatorOutdoor = User::create([
-            'nama' => 'Operator Cabang bjb',
-            'username' => 'operatorOutdoorbjb',
-            'email' => 'operatorIndoorbjb@example.com',
-            'password' => Hash::make('password'),
-            'cabang_id' => $cabangBjb->id,
-        ]);
-        $operatorOutdoor->assignRole('operator outdoor');
+        // OPERATOR MULTI per Cabang
+        $createUsers($cabangBjm, 'operator multi', 'Op Multi BJM', 'opmultibjm');
+        $createUsers($cabangBjb, 'operator multi', 'Op Multi BJB', 'opmultibjb');
 
-        // --- Buat user Operator Multi ---
-        $operatorMulti = User::create([
-            'nama' => 'Operator Cabang bjb',
-            'username' => 'operatorMultibjb',
-            'email' => 'operatorMultibjb@example.com',
-            'password' => Hash::make('password'),
-            'cabang_id' => $cabangBjb->id,
-        ]);
-        $operatorMulti->assignRole('operator multi');
 
-        // --- Buat user Designer ---
-        $operatorMulti = User::create([
-            'nama' => 'Designer',
-            'username' => 'designer',
-            'email' => 'designer@example.com',
-            'password' => Hash::make('password'),
-            'cabang_id' => $cabangBjm->id,
-        ]);
-        $operatorMulti->assignRole('designer');
+        // --- 4. INVENTORY (Tetap 1 User per Bagian) ---
 
-        // --- Buat user Gudang utama ---
-        $admin = User::create([
-            'nama' => 'gudang',
+        // Gudang Utama
+        $invUtama = User::create([
+            'nama' => 'Gudang Utama',
             'username' => 'gudang',
             'email' => 'gudang@example.com',
             'password' => Hash::make('password'),
             'cabang_id' => $cabangGDGUtama->id,
         ]);
-        $admin->assignRole('inventory utama');
+        $invUtama->assignRole('inventory utama');
 
-        // --- Buat user Gudang bjm ---
-        $admin = User::create([
-            'nama' => 'gudang bjm',
+        // Gudang BJM
+        $invBjm = User::create([
+            'nama' => 'Gudang BJM',
             'username' => 'gudangbjm',
             'email' => 'gudangbjm@example.com',
             'password' => Hash::make('password'),
             'cabang_id' => $cabangBjm->id,
         ]);
-        $admin->assignRole('inventory cabang');
+        $invBjm->assignRole('inventory cabang');
 
-        // --- Buat user Gudang bjb ---
-        $admin = User::create([
-            'nama' => 'gudang bjb',
+        // Gudang BJB
+        $invBjb = User::create([
+            'nama' => 'Gudang BJB',
             'username' => 'gudangbjb',
             'email' => 'gudangbjb@example.com',
             'password' => Hash::make('password'),
-            'cabang_id' => $cabangGDGUtama->id,
+            'cabang_id' => $cabangBjb->id,
         ]);
-        $admin->assignRole('inventory cabang');
+        $invBjb->assignRole('inventory cabang');
     }
 }

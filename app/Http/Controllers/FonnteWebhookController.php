@@ -5,176 +5,161 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
-use App\Models\MSpk; // Gunakan Model SPK
+use App\Models\MSpk;
+use App\Models\MSubSpk;
+use App\Models\MCabang;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class FonnteWebhookController extends Controller
 {
     public function handle(Request $request)
     {
-        Log::info("WEBHOOK WA", [$request->getContent()]);
-
         $data = json_decode($request->getContent(), true) ?? [];
         $pengirim = $data['sender'] ?? null;
         $pesan    = trim(strtolower($data['message'] ?? ''));
 
         if (!$pengirim) return response("NO SENDER", 200);
 
-        /** ======================================================
-         * AUTO REPLY UNTUK PENGGUNA BARU
-         * ====================================================== */
-        // Pastikan Anda membuat tabel/model ChatHistory atau hapus blok ini jika tidak perlu
-        // Disini saya contohkan session sederhana atau logic database
-
-        // Cek Pattern Perintah
-        if (preg_match('/cek spk (.+)/i', $pesan, $m)) {
-            return $this->replyCekSpk($pengirim, trim($m[1]));
+        // 1. RATE LIMITING SEDERHANA (Anti DDOS)
+        $session = DB::table('wa_sessions')->where('no_hp', $pengirim)->first();
+        if ($session && $session->last_request_at) {
+            $lastReq = Carbon::parse($session->last_request_at);
+            if ($lastReq->diffInSeconds(now()) < 3) { // Batas 3 detik per pesan
+                return response("TOO FAST", 200);
+            }
         }
 
-        if (preg_match('/cek status (.+)/i', $pesan, $m)) {
-            return $this->replyStatusSpk($pengirim, trim($m[1]));
+        // Update waktu request terakhir
+        DB::table('wa_sessions')->updateOrInsert(
+            ['no_hp' => $pengirim],
+            ['last_request_at' => now()]
+        );
+
+        // 2. LOGIKA PILIH CABANG
+        if (preg_match('/pilih cabang (\d+)/i', $pesan, $m)) {
+            $cabangId = $m[1];
+            $cabang = MCabang::find($cabangId);
+            if ($cabang) {
+                DB::table('wa_sessions')->where('no_hp', $pengirim)->update(['cabang_id' => $cabangId]);
+                return $this->sendText($pengirim, "✅ Berhasil memilih cabang: *{$cabang->nama}*\n\nSekarang Anda dapat menggunakan fitur cek status.");
+            }
+            return $this->sendText($pengirim, "❌ ID Cabang tidak valid.");
+        }
+
+        // 3. CEK APAKAH SUDAH PILIH CABANG
+        if (!$session || !$session->cabang_id) {
+            $cabangs = MCabang::where('jenis', 'cabang')->get();
+            $listCabang = "👋 Halo! Sebelum memulai, silakan pilih cabang tempat Anda melakukan order:\n\n";
+            foreach ($cabangs as $c) {
+                $listCabang .= "👉 Ketik: *PILIH CABANG {$c->id}* untuk {$c->nama}\n";
+            }
+            return $this->sendText($pengirim, $listCabang);
+        }
+
+        // 4. ROUTING PERINTAH (Hanya jalan jika sudah pilih cabang)
+        if (preg_match('/cek spk (.+)/i', $pesan, $m)) {
+            return $this->replyCekSpk($pengirim, trim($m[1]), $session->cabang_id);
         }
 
         if (preg_match('/info antrian/i', $pesan)) {
-            return $this->replyInfoAntrian($pengirim);
+            return $this->replyInfoAntrian($pengirim, $session->cabang_id);
         }
 
-        if ($pesan == 'menu' || $pesan == 'halo' || $pesan == 'help') {
+        if ($pesan == 'menu' || $pesan == 'help' || $pesan == 'halo') {
+            $cabangName = MCabang::find($session->cabang_id)->nama;
             return $this->sendText(
                 $pengirim,
-                "*Sistem Informasi SPK Digital Printing* 🖨️\n\n" .
+                "*Sistem Informasi SPK ($cabangName)* 🖨️\n\n" .
                     "Gunakan perintah berikut:\n" .
                     "👉 *CEK SPK <nomor>*\n" .
-                    "   (Melihat detail pesanan)\n" .
-                    "👉 *CEK STATUS <nomor>*\n" .
-                    "   (Melihat progres produksi)\n" .
                     "👉 *INFO ANTRIAN*\n" .
-                    "   (Melihat kepadatan produksi)\n\n" .
-                    "Contoh: _CEK SPK 00001_"   
+                    "👉 *GANTI CABANG* (Untuk pindah cabang)\n\n" .
+                    "Contoh: _CEK SPK 00001_"
             );
+        }
+
+        if ($pesan == 'ganti cabang') {
+            DB::table('wa_sessions')->where('no_hp', $pengirim)->update(['cabang_id' => null]);
+            return $this->sendText($pengirim, "🔄 Silakan pilih cabang kembali.");
         }
 
         return response("OK", 200);
     }
 
-    /** ====================================================
-     * 1. CEK DETAIL SPK
-     * ==================================================== */
-    private function replyCekSpk($target, $keyword)
+    /**
+     * 1. REPLY CEK SPK (Multi Item Support)
+     */
+    private function replyCekSpk($target, $keyword, $cabangId)
     {
-        // Cari SPK berdasarkan No SPK (mirip) atau Nama Pelanggan
-        // Menggunakan LIKE %...% agar user cukup ketik angka belakangnya saja
-        $spk = MSpk::with(['bahan', 'designer', 'operator'])
-            ->where('no_spk', 'LIKE', "%{$keyword}%")
-            ->orWhere('nama_pelanggan', 'LIKE', "%{$keyword}%")
+        // Cari SPK berdasarkan cabang yang dipilih
+        $spk = MSpk::with(['items.bahan', 'items.operator'])
+            ->where('cabang_id', $cabangId)
+            ->where(function ($q) use ($keyword) {
+                $q->where('no_spk', 'LIKE', "%{$keyword}%")
+                    ->orWhere('nama_pelanggan', 'LIKE', "%{$keyword}%");
+            })
             ->latest()
             ->first();
 
         if (!$spk) {
-            return $this->sendText($target, "❌ *Data tidak ditemukan!*\nPastikan Nomor SPK atau Nama Pelanggan benar.");
+            return $this->sendText($target, "❌ *Data tidak ditemukan di cabang ini!*");
         }
 
-        $ukuran = "{$spk->ukuran_panjang}x{$spk->ukuran_lebar} cm";
-        $tgl = Carbon::parse($spk->tanggal_spk)->format('d M Y');
-        $bahan = $spk->bahan->nama_bahan ?? '-';
-        $finishing = $spk->finishing ?? '-';
+        $msg = "📄 *DETAIL SPK: {$spk->no_spk}*\n";
+        $msg .= "👤 Pelanggan: {$spk->nama_pelanggan}\n";
+        $msg .= "📅 Tgl: " . Carbon::parse($spk->tanggal_spk)->format('d/m/Y') . "\n";
+        $msg .= "--------------------------------\n";
 
-        // Cek apakah ini SPK Bantuan
-        $labelBantuan = $spk->is_bantuan ? "*(SPK BANTUAN)*" : "";
+        // Loop Detail Items
+        foreach ($spk->items as $index => $item) {
+            $n = $index + 1;
+            $icon = $item->status_produksi == 'done' ? '✅' : '⏳';
+            $msg .= "$n. *{$item->nama_file}*\n";
+            $msg .= "   Mat: {$item->bahan->nama_bahan} ({$item->p}x{$item->l}cm)\n";
+            $msg .= "   Qty: {$item->qty} | Status: $icon " . strtoupper($item->status_produksi) . "\n\n";
+        }
 
-        $msg = "📄 *DETAIL SPK* $labelBantuan\n" .
-            "--------------------------------\n" .
-            "No SPK    : *{$spk->no_spk}*\n" .
-            "Tanggal   : $tgl\n" .
-            "Pelanggan : {$spk->nama_pelanggan}\n" .
-            "File      : {$spk->nama_file}\n" .
-            "--------------------------------\n" .
-            "Bahan     : $bahan\n" .
-            "Ukuran    : $ukuran\n" .
-            "Qty       : {$spk->kuantitas}\n" .
-            "Finishing : $finishing\n" .
-            "--------------------------------\n" .
-            "Status Admin : " . strtoupper($spk->status_spk) . "\n" .
-            "Produksi     : " . strtoupper($spk->status_produksi);
+        $msg .= "--------------------------------\n";
+        $msg .= "Status SPK: *" . strtoupper($spk->status_spk) . "*";
 
         return $this->sendText($target, $msg);
     }
 
-    /** ====================================================
-     * 2. CEK STATUS PRODUKSI
-     * ==================================================== */
-    private function replyStatusSpk($target, $keyword)
+    /**
+     * 2. INFO ANTRIAN (Per Cabang)
+     */
+    private function replyInfoAntrian($target, $cabangId)
     {
-        $spk = MSpk::where('no_spk', 'LIKE', "%{$keyword}%")->first();
+        // Hitung antrian berdasarkan item di cabang tersebut
+        $antrian = MSubSpk::whereHas('spk', function ($q) use ($cabangId) {
+            $q->where('cabang_id', $cabangId)->where('status_spk', 'acc');
+        })
+            ->whereIn('status_produksi', ['pending', 'ripping', 'ongoing'])
+            ->count();
 
-        if (!$spk) {
-            return $this->sendText($target, "❌ *SPK tidak ditemukan!*");
-        }
+        $doneToday = MSubSpk::whereHas('spk', function ($q) use ($cabangId) {
+            $q->where('cabang_id', $cabangId);
+        })
+            ->where('status_produksi', 'done')
+            ->whereDate('updated_at', Carbon::today())
+            ->count();
 
-        // Mapping Emoticon Status
-        $icon = match ($spk->status_produksi) {
-            'pending' => '⏳',
-            'ripping' => '🖥️',
-            'ongoing' => '🖨️',
-            'finishing' => '✂️',
-            'done' => '✅',
-            default => '❓'
-        };
-
-        $operator = $spk->operator->nama ?? 'Belum ada';
-
-        $msg = "🔍 *STATUS PRODUKSI*\n\n" .
-            "No SPK: *{$spk->no_spk}*\n" .
-            "File: {$spk->nama_file}\n\n" .
-            "Status Saat Ini:\n" .
-            "$icon *" . strtoupper($spk->status_produksi) . "*\n\n" .
-            "Operator: $operator\n" .
-            "Catatan: {$spk->keterangan}";
-
-        if ($spk->status_produksi == 'done') {
-            $msg .= "\n\n_Barang sudah selesai dan siap diambil/dikirim._";
-        }
+        $msg = "📊 *KONDISI PRODUKSI CABANG*\n\n";
+        $msg .= "⏳ Antrian Aktif: *{$antrian}* file\n";
+        $msg .= "✅ Selesai Hari Ini: *{$doneToday}* file\n\n";
+        $msg .= "Status kepadatan: " . ($antrian > 10 ? "🔴 *PADAT*" : "🟢 *NORMAL*");
 
         return $this->sendText($target, $msg);
     }
 
-    /** ====================================================
-     * 3. INFO ANTRIAN (Fitur Tambahan)
-     * ==================================================== */
-    private function replyInfoAntrian($target)
-    {
-        // Hitung jumlah antrian ongoing dan pending
-        $ongoing = MSpk::where('status_produksi', 'ongoing')->count();
-        $pending = MSpk::where('status_produksi', 'pending')->count();
-        $finishing = MSpk::where('status_produksi', 'finishing')->count();
-
-        $msg = "📊 *INFO ANTRIAN SAAT INI*\n\n" .
-            "🖨️ Sedang Cetak: *$ongoing* file\n" .
-            "✂️ Finishing: *$finishing* file\n" .
-            "⏳ Menunggu: *$pending* file\n\n" .
-            "_Estimasi waktu hubungi Admin._";
-
-        return $this->sendText($target, $msg);
-    }
-
-    /** ====================================================
-     * KIRIM KE API FONNTE
-     * ==================================================== */
     private function sendText($target, $msg)
     {
-        $token = "bnTxfJGZWyYGxSNt1wGL"; // Ganti dengan Token Fonnte Anda
-
-        try {
-            Http::withHeaders([
-                "Authorization" => $token
-            ])->post("https://api.fonnte.com/send", [
-                "target"  => $target,
-                "message" => $msg
-            ]);
-        } catch (\Exception $e) {
-            Log::error("Fonnte Error: " . $e->getMessage());
-        }
-
-        return "OK";
+        $token = "bnTxfJGZWyYGxSNt1wGL";
+        Http::withHeaders(["Authorization" => $token])->post("https://api.fonnte.com/send", [
+            "target"  => $target,
+            "message" => $msg
+        ]);
+        return response("OK", 200);
     }
 }
