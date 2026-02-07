@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('m_spks', function (Blueprint $table) {
             $table->id();
             $table->string('no_spk')->unique();
-            $table->date('tanggal_spk');
+            $table->timestamp('tanggal_spk');
 
             // Info Pelanggan
             $table->string('nama_pelanggan');

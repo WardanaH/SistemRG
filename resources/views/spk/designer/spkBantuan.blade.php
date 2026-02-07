@@ -58,7 +58,7 @@
                         <div class="col-md-6">
                             <div class="input-group input-group-outline is-filled">
                                 <label class="form-label">Tanggal</label>
-                                <input type="text" name="tanggal" class="form-control" value="{{ date('d-m-Y') }}" readonly>
+                                <input type="text" name="tanggal" class="form-control" value="{{ date('d-m-Y H:i:s') }}" readonly>
                             </div>
                         </div>
                     </div>

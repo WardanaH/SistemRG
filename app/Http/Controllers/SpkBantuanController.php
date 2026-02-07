@@ -123,7 +123,11 @@ class SpkBantuanController extends Controller
 
                 $nextNumber = $lastSpk ? ((int) Str::afterLast($lastSpk->no_spk, '-') + 1) : 1;
                 $newNoSpk = $finalPrefix . '-' . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
-                $tgl = $request->tanggal ? Carbon::createFromFormat('d-m-Y', $request->tanggal) : now();
+                try {
+                    $tgl = Carbon::createFromFormat('d-m-Y H:i:s', $request->tanggal);
+                } catch (\Exception $e) {
+                    $tgl = now();
+                }
 
                 // B. SIMPAN HEADER (M_SPK)
                 // Note: Kolom detail di m_spks dikosongkan/null karena pindah ke sub

@@ -156,9 +156,9 @@ class MSpkController extends Controller
 
                 // Format Tanggal
                 try {
-                    $tgl = Carbon::createFromFormat('d-m-Y', $request->tanggal)->format('Y-m-d');
+                    $tgl = Carbon::createFromFormat('d-m-Y H:i:s', $request->tanggal);
                 } catch (\Exception $e) {
-                    $tgl = now()->format('Y-m-d');
+                    $tgl = now();
                 }
 
                 // 3. SIMPAN HEADER (M_SPK)

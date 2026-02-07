@@ -32,7 +32,7 @@
                         <h6 class="text-white text-capitalize mb-0">Daftar SPK Bantuan (Eksternal)</h6>
 
                         @hasrole('manajemen|designer')
-                        <a href="{{ route('spk') }}" class="btn btn-sm btn-white text-dark ms-3 mb-0 d-flex align-items-center">
+                        <a href="{{ route('spk-bantuan') }}" class="btn btn-sm btn-white text-dark ms-3 mb-0 d-flex align-items-center">
                             <i class="material-icons text-sm me-1">add</i> Input Bantuan Baru
                         </a>
                         @endhasrole
@@ -87,7 +87,7 @@
                                         <div class="d-flex flex-column justify-content-center">
                                             <h6 class="mb-0 text-sm">{{ $spk->no_spk }}</h6>
                                             <p class="text-xs text-secondary mb-0">
-                                                {{ \Carbon\Carbon::parse($spk->tanggal_spk)->format('d/m/Y') }}
+                                                {{ \Carbon\Carbon::parse($spk->tanggal_spk)->format('d/m/Y H:i:s') }}
                                             </p>
                                         </div>
                                     </div>
