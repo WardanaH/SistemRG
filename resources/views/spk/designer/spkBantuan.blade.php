@@ -6,12 +6,23 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 @if (session('success'))
 <script>
-    Swal.fire({ icon: "success", title: "Berhasil!", text: "{{ session('success') }}", timer: 2000, showConfirmButton: false });
+    Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "{{ session('success') }}",
+        timer: 2000,
+        showConfirmButton: false
+    });
 </script>
 @endif
 @if (session('error'))
 <script>
-    Swal.fire({ icon: "error", title: "Gagal!", text: "{{ session('error') }}", showConfirmButton: true });
+    Swal.fire({
+        icon: "error",
+        title: "Gagal!",
+        text: "{{ session('error') }}",
+        showConfirmButton: true
+    });
 </script>
 @endif
 
@@ -20,7 +31,7 @@
         <div class="card my-4">
             <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
                 <div class="bg-gradient-dark shadow-dark border-radius-lg pt-4 pb-3">
-                    <h6 class="text-white text-capitalize ps-3">Input SPK Bantuan (Multi Item)</h6>
+                    <h6 class="text-white text-capitalize ps-3">{{ $title }}</h6>
                 </div>
             </div>
 
@@ -29,18 +40,17 @@
                     @csrf
 
                     {{-- HEADER: INFO CABANG & TANGGAL --}}
-                    <div class="alert alert-info text-white text-sm mb-3" role="alert">
-                        <strong>Mode Multi-Item:</strong> Anda dapat memasukkan banyak file dalam satu Nomor SPK.
-                    </div>
-
                     <div class="row mb-4">
                         <div class="col-md-6">
                             <div class="input-group input-group-outline is-filled">
-                                <label class="form-label">Asal Order (Dari Cabang Mana?)</label>
-                                <select name="asal_cabang_id" class="form-control" required style="appearance: auto;">
+                                <select name="asal_cabang_id"
+                                    class="form-control select2"
+                                    data-placeholder="Cari & Pilih Cabang..."
+                                    style="appearance: auto;"
+                                    required>
                                     <option value="" disabled selected>-- Pilih Cabang Pengirim --</option>
                                     @foreach($cabangLain as $cb)
-                                        <option value="{{ $cb->id }}">{{ $cb->nama }}</option>
+                                    <option value="{{ $cb->id }}">{{ $cb->nama }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -94,7 +104,7 @@
                                 <tbody id="tabelItemBody">
                                     <tr id="row-kosong">
                                         <td colspan="6" class="text-center text-secondary text-sm py-4">
-                                            <i class="material-icons opacity-10" style="font-size: 3rem;">shopping_cart</i><br>
+                                            <i class="material-icons opacity-10" style="font-size: 3rem;">add_shopping_cart</i><br>
                                             Belum ada item. Klik tombol <b>+ Tambah Item</b> di atas kanan.
                                         </td>
                                     </tr>
@@ -148,11 +158,13 @@
                     </div>
                     <div class="col-md-6">
                         <div class="input-group input-group-outline is-filled">
-                            <label class="form-label">Operator (Penanggung Jawab Item Ini)</label>
-                            <select id="modal_operator" class="form-control" style="appearance: auto;">
+                            <select id="modal_operator"
+                                class="form-control select2"
+                                data-placeholder="Cari & Pilih Operator Produksi..."
+                                style="appearance: auto;">
                                 <option value="" disabled selected>Pilih Operator...</option>
                                 @foreach($operators as $op)
-                                    <option value="{{ $op->id }}" data-nama="{{ $op->nama }}">{{ $op->nama }}</option>
+                                <option value="{{ $op->id }}" data-nama="{{ $op->nama }}">{{ $op->nama }} - {{ $op->roles()->pluck('name')->implode(', ') }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -185,16 +197,19 @@
                     </div>
                     <div class="col-md-4">
                         <div class="input-group input-group-outline">
-                            <select id="modal_bahan" class="form-control" style="appearance: auto;">
+                            <select id="modal_bahan"
+                                class="form-control select2"
+                                data-placeholder="Cari & Pilih Bahan..."
+                                style="appearance: auto;">
                                 <option value="" disabled selected>Pilih Bahan</option>
                                 @foreach($bahans as $b)
-                                    <option value="{{ $b->id }}" data-nama="{{ $b->nama_bahan }}">{{ $b->nama_bahan }}</option>
+                                <option value="{{ $b->id }}" data-nama="{{ $b->nama_bahan }}">{{ $b->nama_bahan }}</option>
                                 @endforeach
                             </select>
                         </div>
                     </div>
                     <div class="col-md-2">
-                        <div class="input-group input-group-outline">
+                        <div class="input-group input-group-outline is-filled">
                             <label class="form-label">Qty</label>
                             <input type="number" id="modal_qty" class="form-control" value="1">
                         </div>
@@ -205,10 +220,13 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="input-group input-group-outline">
-                            <select id="modal_finishing" class="form-control" style="appearance: auto;">
+                            <select id="modal_finishing"
+                                class="form-control select2"
+                                data-placeholder="Cari & Pilih Finishing..."
+                                style="appearance: auto;">
                                 <option value="" disabled selected>Pilih Finishing...</option>
                                 @foreach($finishings as $f)
-                                    <option value="{{ $f->nama_finishing }}">{{ $f->nama_finishing }}</option>
+                                <option value="{{ $f->nama_finishing }}">{{ $f->nama_finishing }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -256,14 +274,14 @@
         let catatan = document.getElementById('modal_catatan').value;
 
         // VALIDASI
-        if(!file || !p || !l || !bahanId || !operatorId || !qty) {
+        if (!file || !p || !l || !bahanId || !operatorId || !qty) {
             Swal.fire("Data Belum Lengkap", "Pastikan Operator, Nama File, Ukuran, Bahan, dan Qty sudah diisi.", "warning");
             return;
         }
 
         // HAPUS ROW KOSONG
         let rowKosong = document.getElementById('row-kosong');
-        if(rowKosong) rowKosong.remove();
+        if (rowKosong) rowKosong.remove();
 
         // RENDER KE TABEL
         let badgeColor = (jenis === 'outdoor') ? 'danger' : 'success';
@@ -329,7 +347,7 @@
     function hapusItem(id) {
         document.getElementById('item-' + id).remove();
         // Cek jika kosong, tampilkan row kosong lagi
-        if(document.getElementById('tabelItemBody').children.length === 0) {
+        if (document.getElementById('tabelItemBody').children.length === 0) {
             document.getElementById('tabelItemBody').innerHTML = `
                 <tr id="row-kosong">
                     <td colspan="6" class="text-center text-secondary text-sm py-4">
@@ -347,10 +365,10 @@
         let hasData = false;
 
         items.forEach(tr => {
-            if(tr.id !== 'row-kosong') hasData = true;
+            if (tr.id !== 'row-kosong') hasData = true;
         });
 
-        if(!hasData) {
+        if (!hasData) {
             e.preventDefault();
             Swal.fire("Gagal", "Anda belum memasukkan Item apapun ke dalam tabel.", "error");
         }

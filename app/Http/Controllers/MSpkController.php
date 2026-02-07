@@ -330,40 +330,28 @@ class MSpkController extends Controller
     {
         $user = Auth::user();
 
-        // 1. Query ke Tabel ITEM (MSubSpk), bukan Header SPK
-        // Eager Load relasi ke parent SPK, Bahan, dan Designer
+        // 1. Query ke Tabel ITEM (MSubSpk)
         $query = MSubSpk::with(['spk', 'spk.designer', 'bahan'])
             ->whereHas('spk', function ($q) use ($user) {
-                // Filter Cabang (Hanya ambil item dari SPK yang masuk ke cabang ini)
+                // Filter Cabang (Hanya di cabang user login)
                 if ($user->cabang->jenis !== 'pusat') {
                     $q->where('cabang_id', $user->cabang_id);
                 }
 
-                // Filter Status SPK Header Harus ACC
+                // Filter Header: Harus ACC dan BUKAN bantuan (untuk reguler index)
                 $q->where('status_spk', 'acc')
-                    ->where('is_bantuan', false); // Filter hanya SPK Bantuan
+                    ->where('is_bantuan', false);
             });
 
-        // 2. FILTER ROLE OPERATOR (Tampilkan item sesuai keahlian operator)
-        $allowedTypes = [];
-        if ($user->hasRole('operator indoor'))  $allowedTypes[] = 'indoor';
-        if ($user->hasRole('operator outdoor')) $allowedTypes[] = 'outdoor';
-        // 'multi' jarang dipakai di level item, biasanya item itu tegas indoor/outdoor
-        // tapi kalau ada, masukkan saja
-        if ($user->hasRole('operator multi'))   $allowedTypes[] = 'multi';
+        // 2. PERBAIKAN: FILTER SPESIFIK PER USER
+        // Kita tidak lagi memfilter berdasarkan "Role", tapi langsung berdasarkan "operator_id"
+        // agar Operator A tidak melihat kerjaan Operator B meski role-nya sama.
+        $query->where('operator_id', $user->id);
 
-        $query->where(function ($q) use ($allowedTypes, $user) {
-            // Tampilkan item jika jenisnya sesuai role operator
-            $q->whereIn('jenis_order', $allowedTypes)
-                // ATAU jika operator ini ditunjuk langsung secara spesifik untuk item tersebut
-                ->orWhere('operator_id', $user->id);
-        });
-
-        // 3. FILTER STATUS PRODUKSI (Hanya yang aktif)
-        // Sembunyikan yang sudah 'done' agar list tidak penuh (opsional, bisa dibuat tab history nanti)
+        // 3. Filter Status Produksi (Hanya yang masih aktif)
         $query->whereIn('status_produksi', ['pending', 'ripping', 'ongoing', 'finishing']);
 
-        // 4. PENCARIAN
+        // 4. Pencarian
         if ($request->has('search') && $request->search != '') {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -375,12 +363,11 @@ class MSpkController extends Controller
             });
         }
 
-        // Urutkan berdasarkan deadline / tanggal SPK terlama dulu (FIFO)
         $items = $query->oldest()->paginate(15);
 
         return view('spk.operator.indexSpk', [
-            'title' => 'Antrian Operator',
-            'items' => $items // Kirim variable $items, bukan $spks
+            'title' => 'Produksi SPK',
+            'items' => $items
         ]);
     }
 

@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <title>{{ $title }} - Sistem SPK RG</title>
+    <link rel="shortcut icon" href="{{ asset('image-company/icon.webp') }}">
 
     <!-- Fonts & Icons -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,900">
@@ -101,10 +102,15 @@
 
     <script>
         $(function() {
-            $('.select2').select2({
-                width: '100%',
-                placeholder: 'Pilih data',
-                allowClear: true
+            $('.select2').each(function() {
+                $(this).select2({
+                    width: '100%',
+                    // Mengambil placeholder dari atribut data-placeholder atau default ke 'Pilih data'
+                    placeholder: $(this).data('placeholder') || 'Pilih data',
+                    allowClear: true,
+                    // Jika select2 berada di dalam Modal, tambahkan ini agar tidak error fokus
+                    dropdownParent: $(this).closest('.modal').length ? $(this).closest('.modal') : null
+                });
             });
         });
     </script>
@@ -128,7 +134,7 @@
         });
 
         // Status Admin
-        const isAdmin = {{ Auth::check() && Auth::user() -> hasRole('admin') ? 'true' : 'false' }};
+        const isAdmin = {{Auth::check() && Auth::user() -> hasRole('admin') ? 'true' : 'false'}};
         console.log("Status Admin:", isAdmin);
 
         var channel = pusher.subscribe('channel-admin');
@@ -139,12 +145,10 @@
             console.log("EVENT DITERIMA:", data);
 
             if (isAdmin) {
-                // A. Update Angka di Lonceng Navbar
-                updateBadgeNavbar();
-
                 // B. Mainkan Suara (File Custom Kamu)
                 playNotificationSound();
-
+                // A. Update Angka di Lonceng Navbar
+                updateBadgeNavbar();
                 // C. Tampilkan SweetAlert (Auto Close 5 Detik)
                 Swal.fire({
                     title: 'SPK Baru Masuk!',

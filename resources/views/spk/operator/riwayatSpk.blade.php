@@ -105,7 +105,7 @@
                                 <td class="align-middle text-end pe-4">
                                     <a href="{{ $item->spk->is_bantuan ? route('spk-bantuan.cetak-spk-bantuan', $item->spk->id) : route('manajemen.spk.cetak-spk', $item->spk->id) }}"
                                         target="_blank"
-                                        class="btn btn-sm btn-outline-primary mb-0"
+                                        class="btn btn-sm btn-primary mb-0"
                                         data-toggle="tooltip"
                                         title="Cetak Ulang Nota">
                                         <i class="material-icons text-sm">print</i>

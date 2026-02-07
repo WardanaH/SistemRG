@@ -273,7 +273,7 @@ class SpkBantuanController extends Controller
         $items = $query->oldest()->paginate(15);
 
         return view('spk.operator.indexSpk', [
-            'title' => 'Antrian Operator',
+            'title' => 'Produksi SPK Bantuan',
             'items' => $items // Kirim variable $items, bukan $spks
         ]);
     }
