@@ -387,6 +387,7 @@ MODAL PROSES PERMINTAAN
                 <th>Jumlah</th>
                 <th>Satuan</th>
                 <th>Stok</th>
+                <th>Keterangan</th>
               </tr>
             </thead>
             <tbody id="listBarang">
@@ -483,12 +484,17 @@ $(document).on('click', '.btn-detail', function () {
     let catGudang     = $(this).data('catatan-gudang');
     let catTerima     = $(this).data('catatan-terima');
 
-    if (Array.isArray(catPermintaan)) catPermintaan = catPermintaan.join(', ');
-    if (Array.isArray(catGudang))     catGudang     = catGudang.join(', ');
-    if (Array.isArray(catTerima))     catTerima     = catTerima.join(', ');
+    // 🔥 anti JSON string
+    if (typeof catPermintaan === 'string') {
+        try { catPermintaan = JSON.parse(catPermintaan); } catch {}
+    }
+
+    if (typeof catTerima === 'string') {
+        try { catTerima = JSON.parse(catTerima); } catch {}
+    }
 
     // =============================
-    // HEADER INFO (CARD STYLE)
+    // HEADER
     // =============================
     let html = `
     <div class="card shadow-sm border-0 mb-3">
@@ -507,24 +513,21 @@ $(document).on('click', '.btn-detail', function () {
     </div>
     `;
 
-
-
     // =============================
-    // FOTO LAMPIRAN
+    // FOTO
     // =============================
     if (foto) {
         html += `
         <div class="card shadow-sm mb-3">
             <div class="card-body">
                 <div class="fw-bold mb-2">Foto Penerimaan</div>
-                <img src="/storage/${foto}"
-                     class="img-fluid rounded border">
+                <img src="/storage/${foto}" class="img-fluid rounded border">
             </div>
         </div>`;
     }
 
     // =============================
-    // TABEL DETAIL BARANG
+    // DETAIL BARANG
     // =============================
     html += `
     <div class="card shadow-sm">
@@ -533,7 +536,7 @@ $(document).on('click', '.btn-detail', function () {
         </div>
 
         <div class="table-responsive">
-            <table class="table align-items-center mb-0">
+            <table class="table">
                 <thead class="bg-light">
                     <tr>
                         <th>No</th>
@@ -558,16 +561,17 @@ $(document).on('click', '.btn-detail', function () {
         `;
     });
 
-    html += `
-                </tbody>
-            </table>
-        </div>
-    </div>
-    `;
-        // =============================
-    // CATATAN
+    html += `</tbody></table></div></div>`;
+
     // =============================
-    if (catPermintaan) {
+    // CATATAN PERMINTAAN
+    // =============================
+    if (catPermintaan && catPermintaan !== '') {
+
+        if (Array.isArray(catPermintaan)) {
+            catPermintaan = catPermintaan.join('<br>');
+        }
+
         html += `
         <div class="alert border-0 shadow-sm">
             <b>Catatan Permintaan</b><br>
@@ -575,7 +579,11 @@ $(document).on('click', '.btn-detail', function () {
         </div>`;
     }
 
-    if (catGudang) {
+    // =============================
+    // CATATAN GUDANG
+    // =============================
+    if (catGudang && catGudang.trim() !== '') {
+
         html += `
         <div class="alert border-0 shadow-sm">
             <b>Catatan Pengiriman Gudang</b><br>
@@ -583,17 +591,34 @@ $(document).on('click', '.btn-detail', function () {
         </div>`;
     }
 
-    if (catTerima) {
-        html += `
-        <div class="alert border-0 shadow-sm">
-            <b>Catatan Penerimaan Cabang</b><br>
-            ${catTerima}
-        </div>`;
+    // =============================
+    // CATATAN PENERIMAAN (🔥 penting)
+    // =============================
+    if (Array.isArray(catTerima)) {
+
+        let list = '';
+
+        catTerima.forEach(item => {
+            if(item.keterangan && item.keterangan.trim() !== ''){
+                list += `• ${item.nama_barang} : ${item.keterangan}<br>`;
+            }
+        });
+
+        // tampil hanya kalau ADA isi
+        if(list !== ''){
+            html += `
+                <div class="alert border-0 shadow-sm">
+                    <b>Catatan Penerimaan Cabang</b><br>
+                    ${list}
+                </div>
+            `;
+        }
     }
 
     $('#notaContent').html(html);
     new bootstrap.Modal(document.getElementById('modalDetail')).show();
 });
+
 </script>
 
 <script>
@@ -636,6 +661,8 @@ $(document).on('click', '.btn-proses', function () {
                     <input type="hidden" name="barang[${index}][gudang_barang_id]" value="${item.gudang_barang_id}">
                     <input type="hidden" name="barang[${index}][jumlah]" value="${item.jumlah}">
                     <input type="hidden" name="barang[${index}][checked]" value="1">
+                    <td>${item.keterangan ?? '-'}</td>
+
                 </tr>
                 `;
             });

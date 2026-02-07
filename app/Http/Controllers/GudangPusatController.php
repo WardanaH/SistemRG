@@ -329,10 +329,26 @@ class GudangPusatController extends Controller
             ? json_decode($pengiriman->keterangan, true)
             : $pengiriman->keterangan;
 
+        $result = [];
+
+        foreach ($detail ?? [] as $item) {
+
+            $barang = MGudangBarang::find($item['gudang_barang_id']);
+
+            $result[] = [
+                'gudang_barang_id' => $item['gudang_barang_id'],
+                'nama_barang'      => $item['nama_barang'],
+                'jumlah'           => $item['jumlah'],
+                'satuan'           => $item['satuan'],
+                'keterangan'       => $item['keterangan'] ?? '',
+                'stok'             => $barang->stok ?? 0,
+            ];
+        }
+
         return response()->json([
-            'id'    => $pengiriman->id,
-            'kode'  => $pengiriman->kode_pengiriman,
-            'detail'=> $detail
+            'id'     => $pengiriman->id,
+            'kode'   => $pengiriman->kode_pengiriman,
+            'detail' => $result
         ]);
     }
 
@@ -372,7 +388,7 @@ class GudangPusatController extends Controller
                     'nama_barang'      => $lama['nama_barang'],
                     'jumlah'           => $jumlah,
                     'satuan'           => $lama['satuan'],
-                    'keterangan'       => $lama['keterangan'] ?? null,
+                    'keterangan'       => $item['keterangan'] ?? null,
                 ];
             }
 
@@ -544,6 +560,7 @@ class GudangPusatController extends Controller
                 'nama_barang'      => $barang->nama_bahan,
                 'jumlah'           => $item['jumlah'],
                 'satuan'           => $barang->satuan,
+                'keterangan'       => $item['keterangan'] ?? '',
                 'stok'             => $barang->stok,
             ];
         }
@@ -782,6 +799,11 @@ class GudangPusatController extends Controller
         $barangFilter = $request->barang_id ?? [];
         if (!is_array($barangFilter)) $barangFilter = $barangFilter ? [$barangFilter] : [];
 
+        $cabangFilter = $request->cabang_id ?? [];
+        if (!is_array($cabangFilter)) {
+            $cabangFilter = $cabangFilter ? [$cabangFilter] : [];
+        }
+
         // =====================
         // FILTER PENGIRIMAN BERDASARKAN BARANG
         // =====================
@@ -795,6 +817,10 @@ class GudangPusatController extends Controller
                 $pengiriman->push($kirim);
                 continue;
             }
+
+                if ($cabangFilter && !in_array($kirim->cabang_tujuan_id, $cabangFilter)) {
+        continue;
+    }
 
             foreach ($detail ?? [] as $d) {
                 if (in_array($d['gudang_barang_id'], $barangFilter)) {
@@ -851,6 +877,8 @@ class GudangPusatController extends Controller
             }
         }
 
+        $allCabang = MCabang::orderBy('nama')->get();
+
         return view('inventaris.gudangpusat.detaillaporan', compact(
             'pengiriman',
             'bulan',
@@ -859,7 +887,8 @@ class GudangPusatController extends Controller
             'semuaCabang',
             'semuaBarang',
             'periodeLabel',
-            'filterPeriode'
+            'filterPeriode',
+            'allCabang'
         ));
     }
 
@@ -878,7 +907,6 @@ public function laporanDownload(Request $request)
     if (!is_array($barangFilter)) {
         $barangFilter = $barangFilter ? [$barangFilter] : [];
     }
-
     // =====================
     // REKAP (TIDAK DIUBAH)
     // =====================

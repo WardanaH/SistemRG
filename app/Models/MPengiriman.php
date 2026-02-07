@@ -25,7 +25,7 @@ class MPengiriman extends Model
 
     protected $casts = [
         'keterangan' => 'array',
-        // 'keterangan_terima'  => 'array',
+        'keterangan_terima'  => 'array',
         'tanggal_pengiriman' => 'date',
         'tanggal_diterima' => 'date',
         'read_at' => 'datetime'

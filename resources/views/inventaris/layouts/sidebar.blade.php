@@ -20,8 +20,8 @@
         $pageTitle = 'Update Stok';
     } elseif (request()->routeIs('gudangcabang.penerimaan*')) {
         $pageTitle = 'Penerimaan Barang';
-    } elseif (request()->routeIs('gudangcabang.laporan*')) {
-        $pageTitle = 'Laporan Penerimaan';
+    // } elseif (request()->routeIs('gudangcabang.laporan*')) {
+    //     $pageTitle = 'Laporan Penerimaan';
     } elseif (request()->routeIs('gudangcabang.inventaris*')) {
         $pageTitle = 'Inventaris Kantor';
     } elseif (request()->routeIs('gudangcabang.permintaan*')) {
@@ -158,7 +158,7 @@
             {{-- =====================
             LAPORAN PENERIMAAN (HANYA UNTUK CABANG)
             ===================== --}}
-            <li class="nav-item">
+            {{-- <li class="nav-item">
                 <a class="nav-link text-white {{ request()->routeIs('gudangcabang.laporan*') ? 'active bg-gradient-primary' : '' }}"
                 href="{{ route('gudangcabang.laporan.index') }}">
                     <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
@@ -166,7 +166,7 @@
                     </div>
                     <span class="nav-link-text ms-1">Laporan Penerimaan</span>
                 </a>
-            </li>
+            </li> --}}
             @endhasrole
 
             {{-- =====================

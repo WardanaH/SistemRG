@@ -68,6 +68,19 @@
                         @endif
 
                         <div class="row mb-4">
+
+                            <div class="col-md-4">
+                                <label class="form-label">Filter Cabang</label>
+                                <select name="cabang_id[]" id="filterCabang" class="form-control" multiple>
+                                    @foreach($allCabang as $cabang)
+                                        <option value="{{ $cabang->id }}"
+                                            {{ collect(request('cabang_id'))->contains($cabang->id) ? 'selected' : '' }}>
+                                            {{ $cabang->nama }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
                             {{-- FILTER BARANG --}}
                             <div class="col-md-4">
                                 <label class="form-label">Filter Barang</label>
@@ -82,20 +95,20 @@
                             </div>
 
                             {{-- TANGGAL AWAL --}}
-                            <div class="col-md-3">
+                            {{-- <div class="col-md-3">
                                 <label class="form-label">Tanggal Awal</label>
                                 <input type="date" name="tanggal_awal"
                                     value="{{ request('tanggal_awal') }}"
                                     class="form-control">
-                            </div>
+                            </div> --}}
 
                             {{-- TANGGAL AKHIR --}}
-                            <div class="col-md-3">
+                            {{-- <div class="col-md-3">
                                 <label class="form-label">Tanggal Akhir</label>
                                 <input type="date" name="tanggal_akhir"
                                     value="{{ request('tanggal_akhir') }}"
                                     class="form-control">
-                            </div>
+                            </div> --}}
 
                             {{-- BUTTON --}}
                             <div class="col-md-2">
@@ -302,6 +315,13 @@ $(document).ready(function() {
         allowClear: true,
         width: '100%'
     });
+
+    $('#filterCabang').select2({
+    placeholder: "Pilih cabang...",
+    allowClear: true,
+    width: '100%'
+});
+
 });
 </script>
 @endpush

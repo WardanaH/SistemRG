@@ -329,9 +329,26 @@ $(document).on('click', '.btn-detail', function () {
         catGudang = catGudang.join(', ');
     }
 
-    if (Array.isArray(catTerima)) {
-        catTerima = catTerima.join(', ');
+if (Array.isArray(catTerima) && catTerima.length > 0) {
+
+    let list = '';
+
+    catTerima.forEach(item => {
+        if(item.keterangan){
+            list += `• ${item.nama_barang} : ${item.keterangan}<br>`;
+        }
+    });
+
+    if(list){
+        html += `
+            <div class="alert border-0 shadow-sm">
+                <b>Catatan Penerimaan Cabang</b><br>
+                ${list}
+            </div>
+        `;
     }
+}
+
 
     let html = `
 
@@ -429,14 +446,27 @@ $(document).on('click', '.btn-detail', function () {
         `;
     }
 
-    if (catTerima) {
+if (Array.isArray(catTerima)) {
+
+    let list = '';
+
+    catTerima.forEach(item => {
+        if(item.keterangan && item.keterangan.trim() !== ''){
+            list += `• ${item.nama_barang} : ${item.keterangan}<br>`;
+        }
+    });
+
+    // ✅ hanya tampil kalau ADA isi catatan
+    if(list !== ''){
         html += `
             <div class="alert border-0 shadow-sm">
                 <b>Catatan Penerimaan Cabang</b><br>
-                ${catTerima}
+                ${list}
             </div>
         `;
     }
+}
+
 
     $('#notaContent').html(html);
     new bootstrap.Modal(document.getElementById('modalDetail')).show();
