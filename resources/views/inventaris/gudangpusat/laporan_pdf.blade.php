@@ -13,7 +13,31 @@
 <body>
     <div class="header">
         <h3><b>LAPORAN PENGIRIMAN BARANG</b></h3>
-        <p>Bulan {{ \Carbon\Carbon::create()->month((int) $bulan)->translatedFormat('F') }} Tahun {{ $tahun }}</p>
+        <p>
+@switch($filterPeriode)
+
+    @case('hari')
+        Periode
+        {{ \Carbon\Carbon::parse($tanggal_awal)->translatedFormat('d F Y') }}
+        s/d
+        {{ \Carbon\Carbon::parse($tanggal_akhir)->translatedFormat('d F Y') }}
+    @break
+
+    @case('bulan')
+        Bulan
+        {{ \Carbon\Carbon::create()->month((int)$bulan)->translatedFormat('F') }}
+        Tahun {{ $tahun }}
+    @break
+
+    @case('tahun')
+        Tahun {{ $tahun }}
+    @break
+
+    @default
+        Semua Periode
+@endswitch
+</p>
+
     </div>
 
     <table class="table">

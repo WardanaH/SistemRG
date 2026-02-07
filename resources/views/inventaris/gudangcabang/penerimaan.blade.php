@@ -359,32 +359,6 @@ $(document).on('click', '.btn-detail', function () {
     </div>
     `;
 
-    if (catPermintaan) {
-        html += `
-            <div class="alert alert-info border-0 shadow-sm">
-                <b>Catatan Permintaan</b><br>
-                ${catPermintaan}
-            </div>
-        `;
-    }
-
-    if (catGudang) {
-        html += `
-            <div class="alert alert-success border-0 shadow-sm">
-                <b>Catatan Pengiriman Gudang</b><br>
-                ${catGudang}
-            </div>
-        `;
-    }
-
-    if (catTerima) {
-        html += `
-            <div class="alert alert-success border-0 shadow-sm">
-                <b>Catatan Penerimaan Cabang</b><br>
-                ${catTerima}
-            </div>
-        `;
-    }
 
     if (foto) {
         html += `
@@ -400,7 +374,7 @@ $(document).on('click', '.btn-detail', function () {
 
     html += `
     <div class="card shadow-sm">
-        <div class="card-header bg-light fw-bold">
+        <div class="card-header bg-info fw-bold">
             Detail Barang Dikirim
         </div>
 
@@ -436,6 +410,33 @@ $(document).on('click', '.btn-detail', function () {
         </div>
     </div>
     `;
+
+        if (catPermintaan) {
+        html += `
+            <div class="alert border-0 shadow-sm">
+                <b>Catatan Permintaan</b><br>
+                ${catPermintaan}
+            </div>
+        `;
+    }
+
+    if (catGudang) {
+        html += `
+            <div class="alert border-0 shadow-sm">
+                <b>Catatan Pengiriman Gudang</b><br>
+                ${catGudang}
+            </div>
+        `;
+    }
+
+    if (catTerima) {
+        html += `
+            <div class="alert border-0 shadow-sm">
+                <b>Catatan Penerimaan Cabang</b><br>
+                ${catTerima}
+            </div>
+        `;
+    }
 
     $('#notaContent').html(html);
     new bootstrap.Modal(document.getElementById('modalDetail')).show();

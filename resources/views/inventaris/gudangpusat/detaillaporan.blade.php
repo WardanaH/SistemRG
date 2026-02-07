@@ -264,24 +264,12 @@
                     </a>
 
                     <div class="d-flex gap-3">
-                        @php
-                            // Default pakai bulan/tahun
-                            $excelRoute = route('laporan.pengiriman.excel', [$bulan ?? '', $tahun ?? '']);
-                            $pdfRoute   = route('laporan.pengiriman.download', [$bulan ?? '', $tahun ?? '']);
+@php
+$query = http_build_query(request()->all());
 
-                            // Kalau filter hari atau semua, pakai query string
-                            if ($filterPeriode == 'hari' || $filterPeriode == 'semua') {
-                                $query = http_build_query([
-                                    'filter_periode' => $filterPeriode,
-                                    'tanggal_awal' => request('tanggal_awal'),
-                                    'tanggal_akhir' => request('tanggal_akhir'),
-                                    'barang_id' => request('barang_id')
-                                ]);
-
-                                $excelRoute = route('laporan.pengiriman.excel', [$bulan ?? '', $tahun ?? '']) . '?' . $query;
-                                $pdfRoute   = route('laporan.pengiriman.download', [$bulan ?? '', $tahun ?? '']) . '?' . $query;
-                            }
-                        @endphp
+$excelRoute = route('laporan.pengiriman.excel') . '?' . $query;
+$pdfRoute   = route('laporan.pengiriman.download') . '?' . $query;
+@endphp
 
                         {{-- EXCEL --}}
                         <a href="{{ $excelRoute }}"
