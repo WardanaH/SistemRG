@@ -37,75 +37,90 @@
                     {{-- HEADER LAPORAN --}}
                     <div class="text-center mb-4">
                         <h4 class="mb-1"><b>LAPORAN PENGIRIMAN BARANG</b></h4>
-                        <p class="mb-0">
-                            Bulan
-                            {{ \Carbon\Carbon::create()->month((int) $bulan)->translatedFormat('F') }}
-                            Tahun {{ $tahun }}
-                        </p>
+                            <p class="mb-0">
+                                @switch($filterPeriode)
+                                    @case('hari')
+                                        Periode {{ \Carbon\Carbon::parse(request('tanggal_awal'))->translatedFormat('d F Y') }}
+                                        s/d {{ \Carbon\Carbon::parse(request('tanggal_akhir'))->translatedFormat('d F Y') }}
+                                    @break
+                                    @case('bulan')
+                                        Bulan {{ \Carbon\Carbon::create()->month((int)$bulan)->translatedFormat('F') }} Tahun {{ (int)$tahun }}
+                                    @break
+                                    @case('tahun')
+                                        Tahun {{ $tahun }}
+                                    @break
+                                    @case('semua')
+                                        Semua Periode
+                                    @break
+                                @endswitch
+                            </p>
                     </div>
 
-<hr>
+                    <hr>
 
-<form method="GET">
-    <div class="row mb-4">
+                    <form method="GET">
+                        <input type="hidden" name="filter_periode" value="{{ $filterPeriode }}">
+                        @if($filterPeriode == 'bulan')
+                            <input type="hidden" name="bulan" value="{{ $bulan }}">
+                            <input type="hidden" name="tahun" value="{{ $tahun }}">
+                        @elseif($filterPeriode == 'tahun')
+                            <input type="hidden" name="tahun" value="{{ $tahun }}">
+                        @endif
 
-        {{-- FILTER BARANG --}}
-        <div class="col-md-4">
-            <label class="form-label">Filter Barang</label>
-<select name="barang_id[]" id="filterBarang" class="form-control" multiple>
-    @foreach($semuaBarang as $barang)
-        <option value="{{ $barang->id }}"
-            {{ collect(request('barang_id'))->contains($barang->id) ? 'selected' : '' }}>
-            {{ $barang->nama_bahan }}
-        </option>
-    @endforeach
-</select>
-        </div>
+                        <div class="row mb-4">
+                            {{-- FILTER BARANG --}}
+                            <div class="col-md-4">
+                                <label class="form-label">Filter Barang</label>
+                                <select name="barang_id[]" id="filterBarang" class="form-control" multiple>
+                                    @foreach($semuaBarang as $barang)
+                                        <option value="{{ $barang->id }}"
+                                            {{ collect(request('barang_id'))->contains($barang->id) ? 'selected' : '' }}>
+                                            {{ $barang->nama_bahan }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
 
-        {{-- TANGGAL AWAL --}}
-        <div class="col-md-3">
-            <label class="form-label">Tanggal Awal</label>
-            <input type="date" name="tanggal_awal"
-                value="{{ request('tanggal_awal') }}"
-                class="form-control">
-        </div>
+                            {{-- TANGGAL AWAL --}}
+                            <div class="col-md-3">
+                                <label class="form-label">Tanggal Awal</label>
+                                <input type="date" name="tanggal_awal"
+                                    value="{{ request('tanggal_awal') }}"
+                                    class="form-control">
+                            </div>
 
-        {{-- TANGGAL AKHIR --}}
-        <div class="col-md-3">
-            <label class="form-label">Tanggal Akhir</label>
-            <input type="date" name="tanggal_akhir"
-                value="{{ request('tanggal_akhir') }}"
-                class="form-control">
-        </div>
+                            {{-- TANGGAL AKHIR --}}
+                            <div class="col-md-3">
+                                <label class="form-label">Tanggal Akhir</label>
+                                <input type="date" name="tanggal_akhir"
+                                    value="{{ request('tanggal_akhir') }}"
+                                    class="form-control">
+                            </div>
 
-        {{-- BUTTON --}}
-<div class="col-md-2">
+                            {{-- BUTTON --}}
+                            <div class="col-md-2">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <label class="form-label">Filter</label>
+                                        <button type="submit"
+                                            class="btn bg-gradient-info btn-filter-custom w-100"
+                                            title="Filter">
+                                            <i class="material-icons">search</i>
+                                        </button>
+                                    </div>
 
-    <div class="row">
-        {{-- FILTER --}}
-        <div class="col-6">
-            <label class="form-label">Filter</label>
-            <button type="submit"
-                class="btn bg-gradient-info btn-filter-custom w-100"
-                title="Filter">
-                <i class="material-icons">search</i>
-            </button>
-        </div>
-
-        {{-- RESET --}}
-        <div class="col-6">
-            <label class="form-label">Reset</label>
-            <a href="{{ route('laporan.pengiriman.detail', [$bulan, $tahun]) }}"
-                class="btn btn-outline-secondary btn-filter-custom w-100"
-                title="Reset Filter">
-                <i class="material-icons">restart_alt</i>
-            </a>
-        </div>
-    </div>
-
-</div>
-    </div>
-</form>
+                                    <div class="col-6">
+                                        <label class="form-label">Reset</label>
+                                        <a href="{{ route('laporan.pengiriman.detail', [$bulan ?? '', $tahun ?? '']) }}?filter_periode={{ $filterPeriode }}"
+                                            class="btn btn-outline-secondary btn-filter-custom w-100"
+                                            title="Reset Filter">
+                                            <i class="material-icons">restart_alt</i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
 
                     <h5 class="mt-4"><b>Rekap Total Pengiriman Per Barang</b></h5>
 
@@ -241,29 +256,48 @@
                     <hr>
 
 
-                    {{-- TOMBOL DOWNLOAD --}}
-                    <div class="mt-4 d-flex justify-content-between align-items-center">
-                        <a href="{{ route('laporan.pengiriman.index') }}"
-                        class="btn btn-secondary">
-                            Kembali
+                {{-- TOMBOL DOWNLOAD --}}
+                <div class="mt-4 d-flex justify-content-between align-items-center">
+                    <a href="{{ route('laporan.pengiriman.index') }}"
+                    class="btn btn-secondary">
+                        Kembali
+                    </a>
+
+                    <div class="d-flex gap-3">
+                        @php
+                            // Default pakai bulan/tahun
+                            $excelRoute = route('laporan.pengiriman.excel', [$bulan ?? '', $tahun ?? '']);
+                            $pdfRoute   = route('laporan.pengiriman.download', [$bulan ?? '', $tahun ?? '']);
+
+                            // Kalau filter hari atau semua, pakai query string
+                            if ($filterPeriode == 'hari' || $filterPeriode == 'semua') {
+                                $query = http_build_query([
+                                    'filter_periode' => $filterPeriode,
+                                    'tanggal_awal' => request('tanggal_awal'),
+                                    'tanggal_akhir' => request('tanggal_akhir'),
+                                    'barang_id' => request('barang_id')
+                                ]);
+
+                                $excelRoute = route('laporan.pengiriman.excel', [$bulan ?? '', $tahun ?? '']) . '?' . $query;
+                                $pdfRoute   = route('laporan.pengiriman.download', [$bulan ?? '', $tahun ?? '']) . '?' . $query;
+                            }
+                        @endphp
+
+                        {{-- EXCEL --}}
+                        <a href="{{ $excelRoute }}"
+                        class="btn btn-success px-2 py-1"
+                        title="Download Excel">
+                            <i class="material-icons fs-1">table_view</i>
                         </a>
 
-                        <div class="d-flex gap-3">
-                            {{-- EXCEL --}}
-                            <a href="{{ route('laporan.pengiriman.excel', [$bulan, $tahun]) }}"
-                            class="btn btn-success px-2 py-1"
-                            title="Download Excel">
-                                <i class="material-icons fs-1">table_view</i>
-                            </a>
-
-                            {{-- PDF --}}
-                            <a href="{{ route('laporan.pengiriman.download', [$bulan, $tahun]) }}"
-                            class="btn btn-danger px-2 py-1"
-                            title="Download PDF">
-                                <i class="material-icons fs-1">picture_as_pdf</i>
-                            </a>
-                        </div>
+                        {{-- PDF --}}
+                        <a href="{{ $pdfRoute }}"
+                        class="btn btn-danger px-2 py-1"
+                        title="Download PDF">
+                            <i class="material-icons fs-1">picture_as_pdf</i>
+                        </a>
                     </div>
+                </div>
                 </div>
             </div>
 
@@ -283,3 +317,4 @@ $(document).ready(function() {
 });
 </script>
 @endpush
+

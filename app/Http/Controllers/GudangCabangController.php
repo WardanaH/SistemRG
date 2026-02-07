@@ -153,12 +153,29 @@ class GudangCabangController extends Controller
             $fotoPath = $request->file('foto')
                 ->store('penerimaan', 'public');
 
+$detailTerima = [];
+
+foreach ($barangDiterima as $item) {
+    if (empty($item['checked'])) continue;
+
+    $barang = MGudangBarang::find($item['gudang_barang_id']);
+    if (!$barang) continue;
+
+    $detailTerima[] = [
+        'gudang_barang_id' => $barang->id,
+        'nama_barang'     => $barang->nama_bahan,
+        'jumlah'          => (float) $item['jumlah'],
+        'satuan'          => $barang->satuan,
+        'keterangan'      => $item['keterangan'] ?? null
+    ];
+}
+
             $pengiriman->update([
                 'status_pengiriman'  => 'Diterima',
                 'status_kelengkapan' => $statusKelengkapan,
                 'tanggal_diterima'   => now(),
                 'foto_penerimaan'    => $fotoPath,
-                'keterangan_terima'  => $request->keterangan_terima,
+                'keterangan_terima'  => $detailTerima,
             ]);
 
             $pengiriman->permintaan->update([

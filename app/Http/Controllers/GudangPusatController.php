@@ -619,52 +619,174 @@ class GudangPusatController extends Controller
     }
 
 //4. LAPORAN CATATAN PENGIRIMAN PERBULAN
-    public function laporanIndex()
+    public function laporanIndex(Request $request)
     {
-        $laporan = MPengiriman::whereNotNull('tanggal_pengiriman')
-            ->selectRaw('
-                MONTH(tanggal_pengiriman) as bulan,
-                YEAR(tanggal_pengiriman) as tahun
-            ')
-            ->groupByRaw('YEAR(tanggal_pengiriman), MONTH(tanggal_pengiriman)')
-            ->orderByRaw('YEAR(tanggal_pengiriman) DESC, MONTH(tanggal_pengiriman) DESC')
-            ->paginate(10);
+        $filterPeriode = $request->filter_periode ?? 'bulan';
 
-        return view('inventaris.gudangpusat.laporan', compact('laporan'));
+        $tanggalAwal  = $request->tanggal_awal;
+        $tanggalAkhir = $request->tanggal_akhir;
+
+        $bulanAwal  = $request->bulan_awal ? explode('-', $request->bulan_awal) : [now()->year, now()->month];
+        $bulanAkhir = $request->bulan_akhir ? explode('-', $request->bulan_akhir) : [now()->year, now()->month];
+
+        $tahunAwal  = $request->tahun_awal ?? now()->year;
+        $tahunAkhir = $request->tahun_akhir ?? now()->year;
+
+        $query = MPengiriman::query();
+
+        // Filter rentang periode
+        switch ($filterPeriode) {
+            case 'hari':
+                if ($tanggalAwal && $tanggalAkhir) {
+                    $query->whereBetween('tanggal_pengiriman', [$tanggalAwal, $tanggalAkhir]);
+                } else {
+                    $query->whereDate('tanggal_pengiriman', now());
+                }
+                break;
+
+            case 'bulan':
+                $startMonth = $bulanAwal[1];
+                $startYear  = $bulanAwal[0];
+                $endMonth   = $bulanAkhir[1];
+                $endYear    = $bulanAkhir[0];
+
+                $query->where(function($q) use ($startYear, $startMonth, $endYear, $endMonth) {
+                    $q->whereYear('tanggal_pengiriman', '>', $startYear)
+                    ->orWhere(function($q2) use ($startYear, $startMonth) {
+                        $q2->whereYear('tanggal_pengiriman', $startYear)
+                            ->whereMonth('tanggal_pengiriman', '>=', $startMonth);
+                    });
+                })->where(function($q) use ($endYear, $endMonth) {
+                    $q->whereYear('tanggal_pengiriman', '<', $endYear)
+                    ->orWhere(function($q2) use ($endYear, $endMonth) {
+                        $q2->whereYear('tanggal_pengiriman', $endYear)
+                            ->whereMonth('tanggal_pengiriman', '<=', $endMonth);
+                    });
+                });
+                break;
+
+            case 'tahun':
+                $query->whereBetween(DB::raw('YEAR(tanggal_pengiriman)'), [$tahunAwal, $tahunAkhir]);
+                break;
+
+            case 'semua':
+                // Tidak ada filter
+                break;
+        }
+
+        // Tentukan SELECT, GROUP BY, ORDER BY berdasarkan filter
+        switch ($filterPeriode) {
+            case 'hari':
+                $query->selectRaw('DATE(tanggal_pengiriman) as tanggal');
+                $query->groupByRaw('DATE(tanggal_pengiriman)');
+                $query->orderByRaw('tanggal DESC');
+                break;
+
+            case 'bulan':
+                $query->selectRaw('MONTH(tanggal_pengiriman) as bulan, YEAR(tanggal_pengiriman) as tahun');
+                $query->groupByRaw('YEAR(tanggal_pengiriman), MONTH(tanggal_pengiriman)');
+                $query->orderByRaw('tahun DESC, bulan DESC');
+                break;
+
+            case 'tahun':
+                $query->selectRaw('YEAR(tanggal_pengiriman) as tahun');
+                $query->groupByRaw('YEAR(tanggal_pengiriman)');
+                $query->orderByRaw('tahun DESC');
+                break;
+
+            case 'semua':
+                $query->orderBy('tanggal_pengiriman', 'DESC');
+                break;
+        }
+
+        // Ambil data dengan paginate
+        $laporan = $query->paginate(10)->appends($request->all());
+
+        return view('inventaris.gudangpusat.laporan', compact(
+            'laporan', 'filterPeriode',
+            'tanggalAwal', 'tanggalAkhir',
+            'bulanAwal', 'bulanAkhir',
+            'tahunAwal', 'tahunAkhir'
+        ));
     }
 
-public function laporanDetail(Request $request, $bulan, $tahun)
+public function laporanDetail(Request $request, $bulan = null, $tahun = null)
 {
-    $query = MPengiriman::with('cabangTujuan')
-        ->whereMonth('tanggal_pengiriman', $bulan)
-        ->whereYear('tanggal_pengiriman', $tahun);
+    $filterPeriode = $request->filter_periode ?? 'bulan';
 
-    // FILTER RENTANG TANGGAL
-    if ($request->tanggal_awal && $request->tanggal_akhir) {
-        $query->whereBetween('tanggal_pengiriman', [
-            $request->tanggal_awal,
-            $request->tanggal_akhir
-        ]);
+    $query = MPengiriman::with('cabangTujuan');
+
+    // =====================
+    // FILTER PERIODE
+    // =====================
+    $periodeLabel = '';
+
+    switch ($filterPeriode) {
+        case 'hari':
+            $tanggalAwal  = $request->tanggal_awal ? \Carbon\Carbon::parse($request->tanggal_awal)->format('Y-m-d') : now()->format('Y-m-d');
+            $tanggalAkhir = $request->tanggal_akhir ? \Carbon\Carbon::parse($request->tanggal_akhir)->format('Y-m-d') : now()->format('Y-m-d');
+
+            $query->whereDate('tanggal_pengiriman', '>=', $tanggalAwal)
+                ->whereDate('tanggal_pengiriman', '<=', $tanggalAkhir);
+
+            $periodeLabel = \Carbon\Carbon::parse($tanggalAwal)->translatedFormat('d F Y')
+                            .' s/d '.
+                            \Carbon\Carbon::parse($tanggalAkhir)->translatedFormat('d F Y');
+            break;
+
+        case 'bulan':
+            $bulan  = $bulan ? (int)$bulan : now()->month;
+            $tahun  = $tahun ? (int)$tahun : now()->year;
+            $query->whereMonth('tanggal_pengiriman', $bulan)
+                  ->whereYear('tanggal_pengiriman', $tahun);
+            $periodeLabel = \Carbon\Carbon::create()->month($bulan)->translatedFormat('F').' '.$tahun;
+            break;
+
+        case 'tahun':
+            $tahun = $tahun ? (int)$tahun : now()->year;
+            $query->whereYear('tanggal_pengiriman', $tahun);
+            $periodeLabel = $tahun;
+            break;
+
+        case 'semua':
+            $tanggalAwal  = $request->tanggal_awal;
+            $tanggalAkhir = $request->tanggal_akhir;
+            if ($tanggalAwal && $tanggalAkhir) {
+                $query->whereBetween('tanggal_pengiriman', [$tanggalAwal, $tanggalAkhir]);
+            }
+            $periodeLabel = 'Semua';
+            break;
+
+            default:
+
+        // 🔥 fallback biar ga pernah error lagi
+        $filterPeriode = 'bulan';
+
+        $bulan = now()->month;
+        $tahun = now()->year;
+
+        $query->whereMonth('tanggal_pengiriman', $bulan)
+              ->whereYear('tanggal_pengiriman', $tahun);
+
+        $periodeLabel = \Carbon\Carbon::create()
+                            ->month($bulan)
+                            ->translatedFormat('F') . ' ' . $tahun;
+
+        break;
     }
 
     $pengirimanRaw = $query->orderBy('tanggal_pengiriman')->get();
 
     $semuaBarang = MGudangBarang::all();
 
-    // ambil barang yg dipilih (array)
-    $barangFilter = $request->barang_id;
+    $barangFilter = $request->barang_id ?? [];
+    if (!is_array($barangFilter)) $barangFilter = $barangFilter ? [$barangFilter] : [];
 
-    if (!is_array($barangFilter)) {
-        $barangFilter = $barangFilter ? [$barangFilter] : [];
-    }
-
-    // ===============================
+    // =====================
     // FILTER PENGIRIMAN BERDASARKAN BARANG
-    // ===============================
+    // =====================
     $pengiriman = collect();
-
     foreach ($pengirimanRaw as $kirim) {
-
         $detail = is_string($kirim->keterangan)
             ? json_decode($kirim->keterangan, true)
             : $kirim->keterangan;
@@ -682,17 +804,14 @@ public function laporanDetail(Request $request, $bulan, $tahun)
         }
     }
 
-    // ===============================
-    // CABANG DARI HASIL FILTER
-    // ===============================
-    $semuaCabang = $pengiriman
-        ->pluck('cabangTujuan')
-        ->unique('id')
-        ->values();
+    // =====================
+    // CABANG
+    // =====================
+    $semuaCabang = $pengiriman->pluck('cabangTujuan')->unique('id')->values();
 
-    // ===============================
+    // =====================
     // REKAP
-    // ===============================
+    // =====================
     $rekap = [];
 
     foreach ($semuaBarang as $barang) {
@@ -701,29 +820,30 @@ public function laporanDetail(Request $request, $bulan, $tahun)
             continue;
         }
 
+        // SET DULU — jangan di dalam loop cabang!
+        $rekap[$barang->id] = [
+            'barang' => $barang->nama_bahan,
+            'satuan' => $barang->satuan,
+            'cabang' => [],
+            'total'  => 0
+        ];
+
+        // baru isi cabang
         foreach ($semuaCabang as $cabang) {
-            $rekap[$barang->id]['barang'] = $barang->nama_bahan;
-            $rekap[$barang->id]['satuan'] = $barang->satuan;
             $rekap[$barang->id]['cabang'][$cabang->id] = 0;
         }
-        $rekap[$barang->id]['total'] = 0;
     }
 
     foreach ($pengiriman as $kirim) {
-
         $detail = is_string($kirim->keterangan)
             ? json_decode($kirim->keterangan, true)
             : $kirim->keterangan;
 
         foreach ($detail ?? [] as $d) {
-
             $idBarang = $d['gudang_barang_id'];
             $jumlah   = (float) $d['jumlah'];
 
-            if ($barangFilter && !in_array($idBarang, $barangFilter)) {
-                continue;
-            }
-
+            if ($barangFilter && !in_array($idBarang, $barangFilter)) continue;
             if (!isset($rekap[$idBarang])) continue;
 
             $rekap[$idBarang]['cabang'][$kirim->cabang_tujuan_id] += $jumlah;
@@ -737,10 +857,11 @@ public function laporanDetail(Request $request, $bulan, $tahun)
         'tahun',
         'rekap',
         'semuaCabang',
-        'semuaBarang'
+        'semuaBarang',
+        'periodeLabel',
+        'filterPeriode'
     ));
 }
-
 
     //DOWNLOAD PAKAI PDF
     public function laporanDownload($bulan, $tahun)

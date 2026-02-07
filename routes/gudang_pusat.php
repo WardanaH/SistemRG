@@ -63,16 +63,13 @@ Route::middleware(['auth', 'role:inventory utama'])
         Route::get('/laporan-pengiriman', [GudangPusatController::class, 'laporanIndex'])
             ->name('laporan.pengiriman.index');
 
-        Route::get('/laporan-pengiriman/{bulan}/{tahun}', [GudangPusatController::class, 'laporanDetail'])
-            ->name('laporan.pengiriman.detail');
+        Route::get('laporan/pengiriman/detail', [GudangPusatController::class, 'laporanDetail'])->name('laporan.pengiriman.detail');
 
-        Route::get('/laporan-pengiriman/{bulan}/{tahun}/download', [GudangPusatController::class, 'laporanDownload'])
+        Route::get('/laporan-pengiriman/download/{bulan?}/{tahun?}', [GudangPusatController::class, 'laporanDownload'])
             ->name('laporan.pengiriman.download');
 
-        Route::get(
-            '/laporan/pengiriman/excel/{bulan}/{tahun}',
-            [GudangPusatController::class, 'laporanExcel']
-        )->name('laporan.pengiriman.excel');
+        Route::get('/laporan/pengiriman/excel/{bulan?}/{tahun?}', [GudangPusatController::class, 'laporanExcel'])
+            ->name('laporan.pengiriman.excel');
 
         // UPDATE STOK
         Route::get('/update-stok', [GudangPusatController::class, 'updateStokIndex'])
