@@ -269,50 +269,71 @@ class GudangPusatController extends Controller
         }
     }
 
-    public function pengirimanUpdateStatus(Request $request, $id)
-    {
-        $request->validate([
-            'status_pengiriman' => 'required|in:Dikemas,Dikirim,Diterima'
-        ]);
+public function pengirimanUpdateStatus(Request $request, $id)
+{
+    $request->validate([
+        'status_pengiriman' => 'required|in:Dikemas,Dikirim,Diterima'
+    ]);
 
-        $pengiriman = MPengiriman::findOrFail($id);
+    $pengiriman = MPengiriman::findOrFail($id);
 
-        if (
-            ($pengiriman->status_pengiriman === 'Dikemas' && $request->status_pengiriman !== 'Dikirim') ||
-            ($pengiriman->status_pengiriman === 'Dikirim' && $request->status_pengiriman !== 'Diterima') ||
-            ($pengiriman->status_pengiriman === 'Diterima')
-        ) {
-            return back()->with('error', 'Perubahan status tidak valid.');
+    if (
+        ($pengiriman->status_pengiriman === 'Dikemas' && $request->status_pengiriman !== 'Dikirim') ||
+        ($pengiriman->status_pengiriman === 'Dikirim' && $request->status_pengiriman !== 'Diterima') ||
+        ($pengiriman->status_pengiriman === 'Diterima')
+    ) {
+        // 🔥 kalau AJAX → balikin JSON error
+        if ($request->ajax()) {
+            return response()->json([
+                'message' => 'Perubahan status tidak valid'
+            ], 422);
         }
 
-        $pengiriman->status_pengiriman = $request->status_pengiriman;
-        $pengiriman->save();
-
-        if ($request->status_pengiriman === 'Dikirim') {
-
-            $permintaan = MPermintaanPengiriman::with('cabang')
-                ->findOrFail($pengiriman->permintaan_id);
-
-            $permintaan->load('cabang');
-
-            event(new NotifikasiInventarisCabang(
-                $permintaan->id,
-                'Permintaan pengiriman baru',
-                'inventory utama',
-                'permintaan',
-            ));
-        }
-
-        if ($request->status_pengiriman === 'Diterima') {
-            MPermintaanPengiriman::where('id', $pengiriman->permintaan_id)
-                ->update(['status' => 'Selesai']);
-        } else {
-            $this->updateStatusPermintaan($pengiriman->permintaan_id);
-        }
-
-        return back()->with('success', 'Status pengiriman berhasil diperbarui.');
-
+        return back()->with('error', 'Perubahan status tidak valid.');
     }
+
+    $pengiriman->status_pengiriman = $request->status_pengiriman;
+    $pengiriman->save();
+
+if ($request->status_pengiriman === 'Dikirim') {
+    try {
+        $permintaan = MPermintaanPengiriman::with('cabang')
+            ->findOrFail($pengiriman->permintaan_id);
+
+        event(new NotifikasiInventarisCabang(
+            $permintaan->id,
+            'Permintaan pengiriman baru',
+            'inventory utama',
+            'permintaan',
+        ));
+    } catch (\Throwable $e) {
+        \Log::error('Notifikasi pengiriman gagal', [
+            'pengiriman_id' => $pengiriman->id,
+            'error' => $e->getMessage()
+        ]);
+    }
+
+    if ($request->status_pengiriman === 'Diterima') {
+        MPermintaanPengiriman::where('id', $pengiriman->permintaan_id)
+            ->update(['status' => 'Selesai']);
+    } else {
+        $this->updateStatusPermintaan($pengiriman->permintaan_id);
+    }
+
+    // 🔥 INI KUNCI UTAMANYA
+    if ($request->ajax()) {
+        return response()->json([
+            'status' => 'ok'
+        ]);
+    }
+
+    return response()->json([
+    'status'  => 'success',
+    'message' => 'Status pengiriman berhasil diperbarui'
+]);
+
+}
+}
 
     private function updateStatusPermintaan($permintaanId)
     {
@@ -370,67 +391,31 @@ class GudangPusatController extends Controller
         return response()->json([
             'id'     => $pengiriman->id,
             'kode'   => $pengiriman->kode_pengiriman,
+            'cabang'             => $pengiriman->cabang->nama ?? '-',
+            'catatan_permintaan' => $pengiriman->permintaan->catatan ?? null,
             'detail' => $result
         ]);
     }
 
-    public function pengirimanUpdate(Request $request, $id)
-    {
-        $pengiriman = MPengiriman::findOrFail($id);
+public function pengirimanUpdate(Request $request, $id)
+{
+    $pengiriman = MPengiriman::findOrFail($id);
 
-        if ($pengiriman->status_pengiriman !== 'Dikemas') {
-            return back()->with('error', 'Pengiriman sudah dikirim, tidak bisa diedit.');
-        }
-
-        $request->validate([
-            'barang' => 'required|array|min:1',
-            'catatan_gudang' => 'nullable|string',
-        ]);
-
-        DB::beginTransaction();
-
-        try {
-            $detailLama = is_string($pengiriman->keterangan)
-                ? json_decode($pengiriman->keterangan, true)
-                : $pengiriman->keterangan;
-
-            $detailBaru = [];
-
-            foreach ($request->barang as $item) {
-
-                if (!isset($item['checked'])) continue;
-
-                $lama = collect($detailLama)->firstWhere('gudang_barang_id', $item['gudang_barang_id']);
-                if (!$lama) continue;
-
-                $jumlah = $lama['jumlah'];
-
-                $detailBaru[] = [
-                    'gudang_barang_id' => $lama['gudang_barang_id'],
-                    'nama_barang'      => $lama['nama_barang'],
-                    'jumlah'           => $jumlah,
-                    'satuan'           => $lama['satuan'],
-                    'keterangan'       => $item['keterangan'] ?? null,
-                ];
-            }
-
-            if (count($detailBaru) === 0) {
-                throw new \Exception('Tidak ada barang yang dicentang.');
-            }
-
-            $pengiriman->keterangan = $detailBaru;
-            $pengiriman->catatan_gudang = $request->catatan_gudang;
-            $pengiriman->save();
-
-            DB::commit();
-
-            return back()->with('success', 'Pengiriman berhasil diperbarui (hanya catatan & centang).');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->with('error', $e->getMessage());
-        }
+    if ($pengiriman->status_pengiriman !== 'Dikemas') {
+        return back()->with('error', 'Pengiriman sudah dikirim, tidak bisa diedit.');
     }
+
+    $request->validate([
+        'catatan_gudang' => 'nullable|string',
+    ]);
+
+    $pengiriman->update([
+        'catatan_gudang' => $request->catatan_gudang
+    ]);
+
+    return back()->with('success', 'Catatan pengiriman berhasil diperbarui.');
+}
+
 
     public function pengirimanDestroy($id)
     {
@@ -587,7 +572,10 @@ class GudangPusatController extends Controller
             ];
         }
 
-        return response()->json($result);
+        return response()->json([
+            'detail'  => $result,
+            'catatan' => $permintaan->catatan
+        ]);
     }
 
     public function permintaanProses(Request $request)

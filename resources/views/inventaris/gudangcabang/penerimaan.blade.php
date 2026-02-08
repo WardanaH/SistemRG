@@ -73,11 +73,12 @@
                         </thead>
                         <tbody>
                         @foreach($riwayat as $index => $r)
-                        @php
-                            $detail = is_array(optional($r->permintaan)->detail_barang)
-                                ? $r->permintaan->detail_barang
-                                : json_decode(optional($r->permintaan)->detail_barang, true) ?? [];
-                        @endphp
+@php
+    $detail = is_array($r->keterangan)
+        ? $r->keterangan
+        : json_decode($r->keterangan, true) ?? [];
+@endphp
+
                         <tr>
 
                             {{-- NO --}}

@@ -195,13 +195,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     <tbody>
                     @forelse($pengiriman as $index => $item)
-                    @php
-                    $detail = $item->permintaan && $item->permintaan->detail_barang
-                        ? (is_array($item->permintaan->detail_barang)
-                            ? $item->permintaan->detail_barang
-                            : json_decode($item->permintaan->detail_barang, true))
-                        : [];
-                    @endphp
+@php
+$detail = is_array($item->keterangan)
+    ? $item->keterangan
+    : json_decode($item->keterangan, true);
+@endphp
+
                         <tr>
                             <td class="text-center">{{ $pengiriman->firstItem() + $index }}</td>
                             <td>
@@ -395,6 +394,11 @@ MODAL PROSES PERMINTAAN
             </tbody>
           </table>
 
+        <div class="alert border-0 shadow-sm" id="catatanPermintaanBox" style="display:none">
+            <b>Catatan Permintaan Cabang</b><br>
+            <span id="catatanPermintaan"></span>
+        </div>
+
           <div class="mt-3">
             <label>Catatan Gudang</label>
             <textarea name="catatan"
@@ -435,23 +439,26 @@ MODAL EDIT PENGIRIMAN (PERBAIKAN)
                     <p><b>Cabang Tujuan:</b> <span id="edit_cabang"></span></p>
 
                     <table class="table table-bordered mt-3">
-                        <thead class="table-light">
-                            <tr>
-                                {{-- <th width="50">✔</th> --}}
-                                <th>Nama Barang</th>
-                                <th>Jumlah</th>
-                                <th>Satuan</th>
-                                <th>Stok</th>
-                            </tr>
-                        </thead>
-                        <tbody id="editListBarang">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nama Barang</th>
+                            <th>Jumlah</th>
+                            <th>Satuan</th>
+                            <th>Stok</th>
+                            <th>Keterangan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="editListBarang">
                             <tr><td colspan="5" class="text-center text-muted">Memuat data...</td></tr>
                         </tbody>
                     </table>
-
+                    <div class="alert alert-info mt-3" id="editCatatanPermintaanBox" style="display:none">
+                        <b>Catatan Permintaan Cabang</b><br>
+                        <span id="editCatatanPermintaan"></span>
+                    </div>
                     <div class="mt-3">
                         <label>Catatan Gudang</label>
-                        <textarea name="catatan" class="form-control" placeholder="Catatan jika ada barang tidak dikirim"></textarea>
+                        <textarea name="catatan_gudang" class="form-control"></textarea>
                     </div>
 
                 </div>
@@ -640,8 +647,16 @@ $(document).on('click', '.btn-proses', function () {
         success: function (res) {
 
             let rows = '';
+            let detail = res.detail || [];
+            let catatan = res.catatan || '';
+            if (catatan && catatan.trim() !== '') {
+                $('#catatanPermintaan').html(catatan);
+                $('#catatanPermintaanBox').show();
+            } else {
+                $('#catatanPermintaanBox').hide();
+            }
 
-            res.forEach((item, index) => {
+            detail.forEach((item, index) => {
 
                 let rowClass = item.stok <= 0 ? 'text-muted' : '';
                 let statusStok = item.stok <= 0
@@ -690,29 +705,50 @@ $(document).ready(function () {
         width: '100%'
     });
 
-    $('.select-status').on('change', function () {
-        let select = $(this);
-        let form = select.closest('form');
-        let status = select.val();
-        let kode = select.data('kode');
+$('.select-status').on('change', function () {
+    let select = $(this);
+    let form = select.closest('form');
 
-        if (status === 'Dikirim') {
-            Swal.fire({
-                title: 'Kirim Barang?',
-                text: 'Status akan diubah menjadi DIKIRIM dan tidak bisa dikembalikan.',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Ya, Kirim',
-                cancelButtonText: 'Batal'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    form.submit();
-                } else {
-                    select.val('Dikemas').trigger('change.select2');
-                }
-            });
-        }
+    if (select.val() === 'Dikirim') {
+        Swal.fire({
+            title: 'Kirim Barang?',
+            text: 'Status akan diubah menjadi DIKIRIM',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Kirim',
+        }).then((res) => {
+            if (res.isConfirmed) {
+                $.ajax({
+                    url: form.attr('action'),
+                    method: 'POST',
+                    data: form.serialize() + '&_method=PUT',
+                        headers: {
+        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+    },
+success: function (res) {
+    Swal.fire({
+        icon: 'success',
+        title: 'Berhasil',
+        text: res.message || 'Status pengiriman berhasil diperbarui',
+        timer: 1500,
+        showConfirmButton: false
+    }).then(() => {
+        location.reload();
     });
+},
+
+                    error: () => {
+                        Swal.fire('Gagal', 'Tidak bisa mengubah status', 'error');
+                        select.val('Dikemas').trigger('change.select2');
+                    }
+                });
+            } else {
+                select.val('Dikemas').trigger('change.select2');
+            }
+        });
+    }
+});
+
 
     $('.form-delete').on('submit', function (e) {
         e.preventDefault();
@@ -746,16 +782,26 @@ $(document).on('click', '.btn-edit', function () {
 
         $('#edit_kode').text(res.kode);
         $('#edit_cabang').text(res.cabang || '-');
-
+        if (res.catatan_permintaan && res.catatan_permintaan.trim() !== '') {
+            $('#editCatatanPermintaan').html(res.catatan_permintaan);
+            $('#editCatatanPermintaanBox').show();
+        } else {
+            $('#editCatatanPermintaanBox').hide();
+        }
         let html = '';
         res.detail.forEach((item, i) => {
             html += `
                 <tr>
-
                     <td>${item.nama_barang}</td>
                     <td>${item.jumlah}</td>
                     <td>${item.satuan}</td>
                     <td>${item.stok}</td>
+                    <td>
+  <input type="text"
+    name="barang[${i}][keterangan]"
+    value="${item.keterangan ?? ''}"
+    class="form-control">
+</td>
                 </tr>
             `;
         });
