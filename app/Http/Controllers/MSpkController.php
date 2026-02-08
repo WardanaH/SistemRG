@@ -206,7 +206,8 @@ class MSpkController extends Controller
     public function edit($id)
     {
         // 1. Ambil Data SPK beserta Items-nya
-        $spk = MSpk::with(['items'])->findOrFail($id);
+        $spk = MSpk::with(['items.operator', 'items.bahan'])->findOrFail($id);
+        // dd($spk);
 
         // 2. Validasi Akses Cabang
         if (Auth::user()->cabang->jenis !== 'pusat' && $spk->cabang_id !== Auth::user()->cabang_id) {
@@ -310,7 +311,7 @@ class MSpkController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
-            'status_spk' => 'required|in:pending,acc,reject',
+            'status_spk' => 'required|in:pending,acc,rejected',
         ]);
 
         $spk = MSpk::findOrFail($id);

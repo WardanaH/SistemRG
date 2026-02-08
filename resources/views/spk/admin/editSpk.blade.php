@@ -211,6 +211,16 @@
     document.addEventListener("DOMContentLoaded", function() {
         // Load data lama ke tabel
         existingItems.forEach(item => {
+
+            let opNama = 'Unknown';
+            if (item.operator) {
+                opNama = item.operator.nama; // Sesuaikan dengan kolom nama di tabel users
+            }
+
+            let bhnNama = 'Unknown';
+            if (item.bahan) {
+                bhnNama = item.bahan.nama_bahan;
+            }
             addItemToTable({
                 jenis: item.jenis_order,
                 file: item.nama_file,

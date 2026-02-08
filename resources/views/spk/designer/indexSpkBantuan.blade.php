@@ -211,7 +211,7 @@
                         <select name="status_spk" id="selectStatus" class="form-control" style="appearance: auto; padding-left: 10px;">
                             <option value="pending">Pending</option>
                             <option value="acc">ACC (Setujui)</option>
-                            <option value="reject">Reject (Tolak)</option>
+                            <option value="rejected">Reject (Tolak)</option>
                         </select>
                     </div>
                 </div>
