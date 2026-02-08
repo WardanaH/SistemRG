@@ -277,13 +277,12 @@
                     </a>
 
                     <div class="d-flex gap-3">
-@php
-$query = http_build_query(request()->all());
+                        @php
+                            $query = http_build_query(request()->all());
 
-$excelRoute = route('laporan.pengiriman.excel') . '?' . $query;
-$pdfRoute   = route('laporan.pengiriman.download') . '?' . $query;
-@endphp
-
+                            $excelRoute = route('laporan.pengiriman.excel') . '?' . $query;
+                            $pdfRoute   = route('laporan.pengiriman.download') . '?' . $query;
+                        @endphp
                         {{-- EXCEL --}}
                         <a href="{{ $excelRoute }}"
                         class="btn btn-success px-2 py-1"

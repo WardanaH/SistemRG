@@ -11,6 +11,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Models\MGudangBarang;
 use App\Models\MPengiriman;
 use App\Models\MCabang;
+use App\Models\MCabangBarang;
 use App\Models\MPermintaanPengiriman;
 use Illuminate\Support\Facades\Auth;
 use App\Events\NotifikasiInventarisCabang;
@@ -49,24 +50,45 @@ class GudangPusatController extends Controller
             'kategori_id' => 'nullable|integer',
             'nama_bahan'  => 'required|string|max:255|unique:gudang_barangs,nama_bahan',
             'satuan'      => 'required|string|max:50',
-            'stok' => 'required',
-            'batas_stok' => 'required',
+            'stok'        => 'required',
+            'batas_stok'  => 'required',
             'keterangan'  => 'nullable|string',
         ]);
 
-        MGudangBarang::create([
-            'kategori_id' => $request->kategori_id,
-            'nama_bahan'  => $request->nama_bahan,
-            'satuan'      => $request->satuan,
-            'stok'        => $this->toDecimal($request->stok),
-            'batas_stok'  => $this->toDecimal($request->batas_stok),
-            'keterangan'  => $request->keterangan,
-        ]);
+        DB::beginTransaction();
+        try {
 
+            // ✅ WAJIB disimpan ke variabel
+            $barang = MGudangBarang::create([
+                'kategori_id' => $request->kategori_id,
+                'nama_bahan'  => $request->nama_bahan,
+                'satuan'      => $request->satuan,
+                'stok'        => $this->toDecimal($request->stok),
+                'batas_stok'  => $this->toDecimal($request->batas_stok),
+                'keterangan'  => $request->keterangan,
+            ]);
 
-        return redirect()
-            ->route('barang.pusat')
-            ->with('tambah', 'Barang berhasil ditambahkan');
+            // 🔥 AUTO INSERT KE SEMUA CABANG
+            $cabangs = MCabang::all();
+
+            foreach ($cabangs as $cabang) {
+                MCabangBarang::create([
+                    'cabang_id'        => $cabang->id,
+                    'gudang_barang_id' => $barang->id,
+                    'stok'             => 0
+                ]);
+            }
+
+            DB::commit();
+
+            return redirect()
+                ->route('barang.pusat')
+                ->with('tambah', 'Barang berhasil ditambahkan');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', $e->getMessage());
+        }
     }
 
     public function update(Request $request, $id)
@@ -818,10 +840,6 @@ class GudangPusatController extends Controller
                 continue;
             }
 
-                if ($cabangFilter && !in_array($kirim->cabang_tujuan_id, $cabangFilter)) {
-        continue;
-    }
-
             foreach ($detail ?? [] as $d) {
                 if (in_array($d['gudang_barang_id'], $barangFilter)) {
                     $pengiriman->push($kirim);
@@ -892,151 +910,155 @@ class GudangPusatController extends Controller
         ));
     }
 
-public function laporanDownload(Request $request)
-{
-    $pengiriman = $this->getFilteredPengiriman($request);
+    public function laporanDownload(Request $request)
+    {
+        $pengiriman = $this->getFilteredPengiriman($request);
 
-    $semuaBarang = MGudangBarang::all();
+        $semuaBarang = MGudangBarang::all();
 
-    $semuaCabang = $pengiriman
-        ->pluck('cabangTujuan')
-        ->unique('id')
-        ->values();
+        $semuaCabang = $pengiriman
+            ->pluck('cabangTujuan')
+            ->unique('id')
+            ->values();
 
-    $barangFilter = $request->barang_id ?? [];
-    if (!is_array($barangFilter)) {
-        $barangFilter = $barangFilter ? [$barangFilter] : [];
-    }
-    // =====================
-    // REKAP (TIDAK DIUBAH)
-    // =====================
-
-    $rekap = [];
-
-    foreach ($semuaBarang as $barang) {
-
-        if ($barangFilter && !in_array($barang->id, $barangFilter)) continue;
-
-        $rekap[$barang->id] = [
-            'barang' => $barang->nama_bahan,
-            'satuan' => $barang->satuan,
-            'cabang' => [],
-            'total'  => 0
-        ];
-
-        foreach ($semuaCabang as $cabang) {
-            $rekap[$barang->id]['cabang'][$cabang->id] = 0;
+        $barangFilter = $request->barang_id ?? [];
+        if (!is_array($barangFilter)) {
+            $barangFilter = $barangFilter ? [$barangFilter] : [];
         }
-    }
+        // =====================
+        // REKAP (TIDAK DIUBAH)
+        // =====================
 
-    foreach ($pengiriman as $kirim) {
+        $rekap = [];
 
-        $detail = is_string($kirim->keterangan)
-            ? json_decode($kirim->keterangan, true)
-            : $kirim->keterangan;
+        foreach ($semuaBarang as $barang) {
 
-        foreach ($detail ?? [] as $d) {
+            if ($barangFilter && !in_array($barang->id, $barangFilter)) continue;
 
-            $idBarang = $d['gudang_barang_id'];
-            $jumlah   = (float) $d['jumlah'];
+            $rekap[$barang->id] = [
+                'barang' => $barang->nama_bahan,
+                'satuan' => $barang->satuan,
+                'cabang' => [],
+                'total'  => 0
+            ];
 
-            if ($barangFilter && !in_array($idBarang, $barangFilter)) continue;
-            if (!isset($rekap[$idBarang])) continue;
-
-            $rekap[$idBarang]['cabang'][$kirim->cabang_tujuan_id] += $jumlah;
-            $rekap[$idBarang]['total'] += $jumlah;
+            foreach ($semuaCabang as $cabang) {
+                $rekap[$barang->id]['cabang'][$cabang->id] = 0;
+            }
         }
-    }
 
-    $pdf = \PDF::loadView('inventaris.gudangpusat.laporan_pdf', [
-        'pengiriman'     => $pengiriman,
-        'rekap'          => $rekap,
-        'semuaCabang'    => $semuaCabang,
-        'filterPeriode'  => $request->filter_periode,
-        'tanggal_awal'   => $request->tanggal_awal,
-        'tanggal_akhir'  => $request->tanggal_akhir,
-        'bulan'          => $request->bulan,
-        'tahun'          => $request->tahun,
-    ]);
+        foreach ($pengiriman as $kirim) {
 
-    return $pdf->download(
-        'laporan_pengiriman_' . now()->format('Ymd_His') . '.pdf'
-    );
-}
+            $detail = is_string($kirim->keterangan)
+                ? json_decode($kirim->keterangan, true)
+                : $kirim->keterangan;
 
-public function laporanExcel(Request $request)
-{
-    $pengiriman = $this->getFilteredPengiriman($request);
+            foreach ($detail ?? [] as $d) {
 
-    $semuaBarang = MGudangBarang::all();
+                $idBarang = $d['gudang_barang_id'];
+                $jumlah   = (float) $d['jumlah'];
 
-    $semuaCabang = $pengiriman
-        ->pluck('cabangTujuan')
-        ->unique('id')
-        ->values();
+                if ($barangFilter && !in_array($idBarang, $barangFilter)) continue;
+                if (!isset($rekap[$idBarang])) continue;
 
-    $barangFilter = $request->barang_id ?? [];
-    if (!is_array($barangFilter)) {
-        $barangFilter = $barangFilter ? [$barangFilter] : [];
-    }
-
-    $rekap = [];
-
-    foreach ($semuaBarang as $barang) {
-
-        if ($barangFilter && !in_array($barang->id, $barangFilter)) continue;
-
-        $rekap[$barang->id] = [
-            'barang' => $barang->nama_bahan,
-            'satuan' => $barang->satuan,
-            'cabang' => [],
-            'total'  => 0
-        ];
-
-        foreach ($semuaCabang as $cabang) {
-            $rekap[$barang->id]['cabang'][$cabang->id] = 0;
+                $rekap[$idBarang]['cabang'][$kirim->cabang_tujuan_id] += $jumlah;
+                $rekap[$idBarang]['total'] += $jumlah;
+            }
         }
+
+        $pdf = \PDF::loadView('inventaris.gudangpusat.laporan_pdf', [
+            'pengiriman'     => $pengiriman,
+            'rekap'          => $rekap,
+            'semuaCabang'    => $semuaCabang,
+            'filterPeriode'  => $request->filter_periode,
+            'tanggal_awal'   => $request->tanggal_awal,
+            'tanggal_akhir'  => $request->tanggal_akhir,
+            'bulan'          => $request->bulan,
+            'tahun'          => $request->tahun,
+        ]);
+
+        return $pdf->download(
+            'laporan_pengiriman_' . now()->format('Ymd_His') . '.pdf'
+        );
     }
 
-    foreach ($pengiriman as $kirim) {
+    public function laporanExcel(Request $request)
+    {
+        $pengiriman = $this->getFilteredPengiriman($request);
 
-        $detail = is_string($kirim->keterangan)
-            ? json_decode($kirim->keterangan, true)
-            : $kirim->keterangan;
+        $semuaBarang = MGudangBarang::all();
 
-        foreach ($detail ?? [] as $d) {
+        $semuaCabang = $pengiriman
+            ->pluck('cabangTujuan')
+            ->unique('id')
+            ->values();
 
-            $idBarang = $d['gudang_barang_id'];
-            $jumlah   = (float) $d['jumlah'];
-
-            if ($barangFilter && !in_array($idBarang, $barangFilter)) continue;
-            if (!isset($rekap[$idBarang])) continue;
-
-            $rekap[$idBarang]['cabang'][$kirim->cabang_tujuan_id] += $jumlah;
-            $rekap[$idBarang]['total'] += $jumlah;
+        $barangFilter = $request->barang_id ?? [];
+        if (!is_array($barangFilter)) {
+            $barangFilter = $barangFilter ? [$barangFilter] : [];
         }
-    }
 
-    return Excel::download(
-        new LaporanPengirimanExport(
-            $pengiriman,
-            $rekap,
-            $semuaCabang,
-            $request->filter_periode,
-            $request->tanggal_awal,
-            $request->tanggal_akhir,
-            $request->bulan,
-            $request->tahun
-        ),
-        'laporan_pengiriman_' . now()->format('Ymd_His') . '.xlsx'
-    );
-}
+        $rekap = [];
+
+        foreach ($semuaBarang as $barang) {
+
+            if ($barangFilter && !in_array($barang->id, $barangFilter)) continue;
+
+            $rekap[$barang->id] = [
+                'barang' => $barang->nama_bahan,
+                'satuan' => $barang->satuan,
+                'cabang' => [],
+                'total'  => 0
+            ];
+
+            foreach ($semuaCabang as $cabang) {
+                $rekap[$barang->id]['cabang'][$cabang->id] = 0;
+            }
+        }
+
+        foreach ($pengiriman as $kirim) {
+
+            $detail = is_string($kirim->keterangan)
+                ? json_decode($kirim->keterangan, true)
+                : $kirim->keterangan;
+
+            foreach ($detail ?? [] as $d) {
+
+                $idBarang = $d['gudang_barang_id'];
+                $jumlah   = (float) $d['jumlah'];
+
+                if ($barangFilter && !in_array($idBarang, $barangFilter)) continue;
+                if (!isset($rekap[$idBarang])) continue;
+
+                $rekap[$idBarang]['cabang'][$kirim->cabang_tujuan_id] += $jumlah;
+                $rekap[$idBarang]['total'] += $jumlah;
+            }
+        }
+
+        return Excel::download(
+            new LaporanPengirimanExport(
+                $pengiriman,
+                $rekap,
+                $semuaCabang,
+                $request->filter_periode,
+                $request->tanggal_awal,
+                $request->tanggal_akhir,
+                $request->bulan,
+                $request->tahun
+            ),
+            'laporan_pengiriman_' . now()->format('Ymd_His') . '.xlsx'
+        );
+    }
 
     private function getFilteredPengiriman(Request $request)
     {
         $filterPeriode = $request->filter_periode ?? 'bulan';
 
         $query = MPengiriman::with('cabangTujuan');
+
+        if ($request->filled('cabang_id')) {
+            $query->whereIn('cabang_tujuan_id', (array)$request->cabang_id);
+        }
 
         switch ($filterPeriode) {
 

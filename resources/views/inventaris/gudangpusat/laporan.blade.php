@@ -65,12 +65,18 @@
                             </div>
 
                             {{-- BUTTON FILTER --}}
-                            <div class="col-md-1 text-end">
-                                <button type="submit" class="btn btn-info w-100 mt-2">
-                                    <i class="material-icons">search</i>
-                                </button>
+                            <div class="col-md-2">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <label class="form-label">Filter</label>
+                                        <button type="submit"
+                                            class="btn bg-gradient-info btn-filter-custom w-100"
+                                            title="Filter">
+                                            <i class="material-icons">search</i>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-
                         </div>
                     </form>
                 </div>
