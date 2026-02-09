@@ -120,7 +120,7 @@
 
                                             @foreach ($users as $user)
                                             <option value="{{ $user->username }}">
-                                                {{ $user->nama }} | {{ $user->username }}
+                                                {{ $user->nama }} | {{ $user->roles()->pluck('name')->implode(', ') }} | {{ $user->cabang->nama }}
                                             </option>
                                             @endforeach
                                         </select>
