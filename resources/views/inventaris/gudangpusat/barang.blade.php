@@ -100,6 +100,25 @@
                 </div>
 
                 <div class="card-body px-0 pb-2">
+                    <div class="px-3 pt-3">
+                        <form method="GET" action="{{ route('barang.pusat') }}">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <input type="text"
+                                        name="search"
+                                        class="form-control"
+                                        placeholder="Cari nama barang..."
+                                        value="{{ request('search') }}"
+                                        autofocus>
+                                </div>
+                                <div class="col-md-2">
+                                    <button class="btn bg-gradient-primary mb-0">
+                                        <i class="material-icons text-sm">search</i> Cari
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
                     <div class="table-responsive">
                         <table class="table align-items-center mb-0">
                             <thead>

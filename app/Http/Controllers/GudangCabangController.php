@@ -24,21 +24,36 @@ class GudangCabangController extends Controller
 {
 
 // 1. BARANG
-    public function barang()
+    public function barang(Request $request)
     {
         $user = Auth::user();
         $cabang = MCabang::findOrFail($user->cabang_id);
 
-        $datas = MGudangBarang::leftJoin('cabang_barangs', function ($join) use ($cabang) {
+        $query = MGudangBarang::leftJoin('cabang_barangs', function ($join) use ($cabang) {
                 $join->on('gudang_barangs.id', '=', 'cabang_barangs.gudang_barang_id')
                     ->where('cabang_barangs.cabang_id', $cabang->id);
             })
             ->select(
                 'gudang_barangs.*',
                 DB::raw('IFNULL(cabang_barangs.stok, 0) as stok_cabang')
-            )
-            ->orderBy('gudang_barangs.nama_bahan')
-            ->paginate(10);
+            );
+
+        // 🔎 SEARCH NAMA BARANG
+        if ($request->filled('search')) {
+            $search = $request->search;
+
+            $query->where('gudang_barangs.nama_bahan', 'like', '%' . $search . '%');
+
+            // hasil paling relevan di atas
+            $query->orderByRaw("CASE
+                WHEN gudang_barangs.nama_bahan LIKE '%$search%' THEN 0
+                ELSE 1
+            END");
+        }
+
+        $datas = $query->orderBy('gudang_barangs.nama_bahan')
+                    ->paginate(10)
+                    ->withQueryString();
 
         return view('inventaris.gudangcabang.barang', [
             'title'   => 'Data Barang - ' . $cabang->nama,
@@ -493,13 +508,30 @@ class GudangCabangController extends Controller
     }
 
 // 6. INVENTARIS KANTOR CABANG
-    public function inventarisIndex()
+    public function inventarisIndex(Request $request)
     {
         $cabangId = Auth::user()->cabang_id;
 
-        $data = MInventarisCabang::where('cabang_id', $cabangId)
-            ->latest()
-            ->paginate(10);
+        $query = MInventarisCabang::where('cabang_id', $cabangId);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+
+            $query->where(function ($q) use ($search) {
+                $q->where('kode_barang', 'like', '%' . $search . '%')
+                ->orWhere('nama_barang', 'like', '%' . $search . '%');
+            });
+
+            $query->orderByRaw("CASE
+                WHEN kode_barang LIKE '%$search%' THEN 0
+                WHEN nama_barang LIKE '%$search%' THEN 0
+                ELSE 1
+            END");
+        }
+
+        $data = $query->latest()
+                    ->paginate(10)
+                    ->withQueryString();
 
         return view('inventaris.gudangcabang.inventaris.index', compact('data'));
     }
