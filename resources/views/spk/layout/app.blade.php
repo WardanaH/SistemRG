@@ -137,10 +137,49 @@
         const isAdmin = {{Auth::check() && Auth::user() -> hasRole('admin') ? 'true' : 'false'}};
         // console.log("Status Admin:", isAdmin);
 
+        // Id cabang Admin
+        const cabangId = {{Auth::check() && Auth::user() -> hasRole('admin') ? Auth::user()->cabang_id : 'null'}};
+
         var channel = pusher.subscribe('channel-admin');
+        var channel_lembur = pusher.subscribe('channel-lembur-' + cabangId);
+        // console.log("Channel:", channel, channel_lembur);
 
         // 3. Binding Event (Menangani Notifikasi Masuk)
         channel.bind('spk-dibuat', function(data) {
+
+            // console.log("EVENT DITERIMA:", data);
+
+            if (isAdmin) {
+                // B. Mainkan Suara (File Custom Kamu)
+                playNotificationSound();
+                // A. Update Angka di Lonceng Navbar
+                updateBadgeNavbar();
+                // C. Tampilkan SweetAlert (Auto Close 5 Detik)
+                Swal.fire({
+                    title: 'SPK Baru Masuk!',
+                    html: `<p>${data.pesan}</p><small>No: <b>${data.no_spk}</b></small>`,
+                    icon: 'info',
+                    position: 'top-end', // Tampil di pojok kanan atas
+                    showConfirmButton: true,
+                    confirmButtonText: 'Lihat',
+                    showCancelButton: true,
+                    cancelButtonText: 'Tutup',
+                    timer: 5000, // Menutup otomatis dalam 5000ms (5 detik)
+                    timerProgressBar: true, // Ada bar progres berjalan
+                    didOpen: (toast) => {
+                        // Jika mouse diarahkan ke notif, waktu berhenti (biar bisa dibaca)
+                        toast.onmouseenter = Swal.stopTimer;
+                        toast.onmouseleave = Swal.resumeTimer;
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = "{{ url('/spk') }}?search=" + data.no_spk;
+                    }
+                });
+            }
+        });
+
+        channel_lembur.bind('spk-lembur-dibuat', function(data) {
 
             // console.log("EVENT DITERIMA:", data);
 

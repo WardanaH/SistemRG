@@ -264,10 +264,14 @@ class MSpkController extends Controller
                     ]);
                 }
 
+                if ($isLembur == true) {
+                    event(new \App\Events\NotifikasiSpkLembur($newNoSpk, 'Lembur', $targetCabangId, $user->nama));
+                } else {
+                    event(new \App\Events\NotifikasiSpkBaru($newNoSpk, 'Reguler', $user->nama));
+                }
+
                 // 5. KIRIM NOTIFIKASI
                 // Menandai jenis notifikasi apakah Reguler atau Lembur
-                $tipeSpk = $isLembur ? 'Lembur' : 'Reguler';
-                event(new \App\Events\NotifikasiSpkBaru($newNoSpk, $tipeSpk, $user->nama));
             });
 
             return redirect()->route('spk.index')
