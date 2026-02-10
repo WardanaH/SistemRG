@@ -42,7 +42,7 @@ class OperatorController extends Controller
             })->count();
 
         return view('spk.operator.index', [
-            'title' => 'Dashboard Saya',
+            'title' => 'Dashboard Operator - ' . $user->nama . ' (' . $user->cabang->nama . ')',
             'totalMasuk' => $totalMasuk,
             'totalSelesai' => $totalSelesai,
             'totalProses' => $totalProses,

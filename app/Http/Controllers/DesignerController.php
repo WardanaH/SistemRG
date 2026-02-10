@@ -29,7 +29,7 @@ class DesignerController extends Controller
 
         return view('spk.designer.index', [
             'user' => $user,
-            'title' => 'Dashboard Designer',
+            'title' => 'Dashboard Designer - ' . $user->nama . ' (' . $user->cabang->nama . ')',
             'spkRegulerHariIni' => $spkRegulerHariIni,
             'spkBantuanHariIni' => $spkBantuanHariIni,
             'totalSemuaSpk' => $totalSemuaSpk,

@@ -69,7 +69,7 @@ class AdminController extends Controller
         $countsBantuan = $dates->map(fn($date) => $dataBantuan[$date] ?? 0);
 
         return view('spk.admin.index', [
-            'title' => 'Dashboard Admin',
+            'title' => 'Dashboard Admin - ' . $user->nama . ' ( ' . $user->cabang->nama . ' )',
             // Stats Cards
             'spkRegulerToday' => $spkRegulerToday,
             'spkBantuanToday' => $spkBantuanToday,
