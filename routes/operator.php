@@ -26,4 +26,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/produksi-bantuan/riwayat', [SpkBantuanController::class, 'riwayat'])
         ->middleware('role:manajemen|admin|operator indoor|operator outdoor|operator multi')
         ->name('spk-bantuan.riwayat');
+
+    Route::get('/produksi-lembur', [MSpkController::class, 'operatorIndexLembur'])
+        ->middleware('role:manajemen|operator indoor|operator outdoor|operator multi')
+        ->name('spk-lembur.produksi');
+    Route::get('/produksi-lembur/riwayat', [MSpkController::class, 'riwayatLembur'])
+        ->middleware('role:manajemen|admin|operator indoor|operator outdoor|operator multi')
+        ->name('spk-lembur.riwayat');
 });

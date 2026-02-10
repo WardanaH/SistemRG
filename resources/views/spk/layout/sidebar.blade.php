@@ -119,6 +119,17 @@
                     <span class="nav-link-text ms-1">Data SPK Bantuan</span>
                 </a>
             </li>
+            @if (now())
+            <li class="nav-item">
+                <a class="nav-link text-white {{ request()->routeIs('spk-lembur.index') ? 'active bg-gradient-primary' : '' }}"
+                    href="{{ route('spk-lembur.index') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons opacity-10">description</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Data SPK Lembur</span>
+                </a>
+            </li>
+            @endif
             @endhasrole
 
             {{-- 5. OPERASIONAL / PRODUKSI (Operator & Manajemen) --}}
@@ -143,6 +154,15 @@
                         <i class="material-icons opacity-10">precision_manufacturing</i>
                     </div>
                     <span class="nav-link-text ms-1">Produksi Bantuan</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-white {{ request()->routeIs('spk-lembur.produksi') ? 'active bg-gradient-primary' : '' }}"
+                    href="{{ route('spk-lembur.produksi') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons opacity-10">precision_manufacturing</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Produksi Lembur</span>
                 </a>
             </li>
             @endhasrole
@@ -171,6 +191,17 @@
                     <span class="nav-link-text ms-1">Riwayat Bantuan</span>
                 </a>
             </li>
+            @if (now())
+            <li class="nav-item">
+                <a class="nav-link text-white {{ request()->routeIs('spk-lembur.riwayat') ? 'active bg-gradient-primary' : '' }}"
+                    href="{{ route('spk-lembur.riwayat') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons opacity-10">history</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Riwayat Lembur</span>
+                </a>
+            </li>
+            @endif
             @endhasrole
 
             @hasrole('manajemen|admin|operator indoor|operator outdoor|operator multi|designer')

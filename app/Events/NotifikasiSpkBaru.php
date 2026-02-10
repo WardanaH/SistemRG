@@ -7,7 +7,7 @@ use Illuminate\Broadcasting\Channel;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow; // PENTING: Pakai Now agar instan tanpa antrian
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 
 class NotifikasiSpkBaru implements ShouldBroadcastNow
 {

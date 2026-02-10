@@ -154,4 +154,19 @@ class UserController extends Controller
 
         return redirect()->route('manajemen.user')->with('success', 'User dihapus.');
     }
+
+    public function getOperatorsByCabang()
+    {
+        $operators = User::role(['operator indoor', 'operator outdoor', 'operator multi'])
+            ->get()
+            ->map(function ($user) {
+                return [
+                    'id' => $user->id,
+                    'nama' => $user->nama,
+                    'roles' => $user->getRoleNames()->implode(', ')
+                ];
+            });
+
+        return response()->json($operators);
+    }
 }

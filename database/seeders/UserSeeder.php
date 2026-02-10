@@ -75,47 +75,8 @@ class UserSeeder extends Seeder
             'jenis' => 'cabang',
         ]);
 
-        // // --- 2. Fungsi Helper untuk membuat User A & B ---
-        // $createUsers = function($cabang, $role, $prefixName, $usernameBase) {
-        //     $suffix = ['a', 'b'];
-        //     foreach ($suffix as $s) {
-        //         $user = User::create([
-        //             'nama' => $prefixName . ' ' . strtoupper($s),
-        //             'username' => $usernameBase . $s,
-        //             'email' => $usernameBase . $s . '@example.com',
-        //             'password' => Hash::make('password'),
-        //             'cabang_id' => $cabang->id,
-        //         ]);
-        //         $user->assignRole($role);
-        //     }
-        // };
 
-        // // --- 3. Implementasi User A & B per Cabang ---
-
-        // // MANAJEMEN (Di Cabang Utama)
-        // $createUsers($cabangUtama, 'manajemen', 'Manajemen', 'manajemen');
-
-        // // ADMIN per Cabang
-        // $createUsers($cabangBjm, 'admin', 'Admin BJM', 'adminbjm');
-        // $createUsers($cabangBjb, 'admin', 'Admin BJB', 'adminbjb');
-
-        // // DESIGNER per Cabang
-        // $createUsers($cabangBjm, 'designer', 'Designer BJM', 'designerbjm');
-        // $createUsers($cabangBjb, 'designer', 'Designer BJB', 'designerbjb');
-
-        // // OPERATOR INDOOR per Cabang
-        // $createUsers($cabangBjm, 'operator indoor', 'Op Indoor BJM', 'opindoorbjm');
-        // $createUsers($cabangBjb, 'operator indoor', 'Op Indoor BJB', 'opindoorbjb');
-
-        // // OPERATOR OUTDOOR per Cabang
-        // $createUsers($cabangBjm, 'operator outdoor', 'Op Outdoor BJM', 'opoutdoorbjm');
-        // $createUsers($cabangBjb, 'operator outdoor', 'Op Outdoor BJB', 'opoutdoorbjb');
-
-        // // OPERATOR MULTI per Cabang
-        // $createUsers($cabangBjm, 'operator multi', 'Op Multi BJM', 'opmultibjm');
-        // $createUsers($cabangBjb, 'operator multi', 'Op Multi BJB', 'opmultibjb');
-
-
+        // manajemen
         $manajemen = User::create([
             'nama' => 'Manajemen',
             'username' => 'manajemen',
@@ -535,7 +496,7 @@ class UserSeeder extends Seeder
             'password' => Hash::make('password'),
             'cabang_id' => $cabangLgg->id,
         ]);
-        $darian->assignRole('operator outdoor');
+        $darian->assignRole('designer');
 
 
 

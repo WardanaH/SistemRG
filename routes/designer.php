@@ -38,6 +38,7 @@ Route::middleware('auth')->group(function () {
         ->middleware('role:manajemen|designer|admin|operator indoor|operator outdoor|operator multi')
         ->name('manajemen.spk.cetak-spk');
 
+    Route::get('/spk-lembur', [MSpkController::class, 'indexLembur'])->name('spk-lembur.index');
     Route::get('/spk-bantuan', [SpkBantuanController::class, 'index'])->name('spk-bantuan.index');
     Route::get('/spk-bantuan/{id}/detail', [SpkBantuanController::class, 'show'])->name('spk-bantuan.show');
     Route::get('/spk-bantuan/buat', [SpkBantuanController::class, 'create'])->name('spk-bantuan');

@@ -90,21 +90,6 @@
             </div>
         </div>
     </div>
-
-    {{-- FOOTER --}}
-    <footer class="footer py-4">
-        <div class="container-fluid">
-            <div class="row align-items-center justify-content-lg-between">
-                <div class="col-lg-12 mb-lg-0 mb-4">
-                    <div class="copyright text-center text-sm text-muted">
-                        © {{ date('Y') }}, build with <i class="fa fa-heart text-danger"></i> by
-                        <span class="font-weight-bold">Wardans</span> &
-                        <span class="font-weight-bold text-primary">Gemini AI</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </footer>
 </div>
 
 {{-- SCRIPT CHART.JS --}}

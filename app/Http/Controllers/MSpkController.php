@@ -11,7 +11,6 @@ use App\Models\MBahanBaku;
 use App\Models\MFinishing;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use App\Events\NotifikasiSpkBaru;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
@@ -69,7 +68,8 @@ class MSpkController extends Controller
         // Tambahkan 'withCount' untuk menghitung jumlah item di tabel depan
         $query = MSpk::with(['designer', 'cabang'])
             ->withCount('items') // Menghitung jumlah item di sub_spk
-            ->where('is_bantuan', false);
+            ->where('is_bantuan', false)
+            ->where('is_lembur', false);
 
         // 1. Logika Filter Cabang
         if ($user->cabang->jenis !== 'pusat') {
@@ -93,6 +93,49 @@ class MSpkController extends Controller
         ]);
     }
 
+    public function indexLembur(Request $request)
+    {
+        $user = Auth::user();
+
+        // Eager load relasi yang dibutuhkan
+        // 'cabang' = Cabang Tujuan (Tempat lembur)
+        // 'cabangAsal' = Cabang Asal Designer (Penting untuk ditampilkan di tabel)
+        $query = MSpk::with(['designer', 'cabang', 'cabangAsal'])
+            ->withCount('items') // Menghitung jumlah item
+            ->where('is_lembur', true); // Hanya ambil data lembur
+
+        // 1. LOGIKA FILTER AKSES
+        if ($user->cabang->jenis !== 'pusat') {
+
+            if ($user->hasRole('designer')) {
+                // A. DESIGNER: Melihat riwayat lembur yang DIA kerjakan (Outgoing)
+                // Filter berdasarkan 'designer_id', bukan cabang.
+                // Karena saat lembur, cabang_id SPK = Cabang Tujuan, sedangkan user->cabang_id = Cabang Asal.
+                $query->where('designer_id', $user->id);
+            }
+        }
+
+        // 2. LOGIKA PENCARIAN
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('no_spk', 'like', "%$search%")
+                    ->orWhere('nama_pelanggan', 'like', "%$search%")
+                    // Optional: Cari berdasarkan nama designer
+                    ->orWhereHas('designer', function ($d) use ($search) {
+                        $d->where('nama', 'like', "%$search%");
+                    });
+            });
+        }
+
+        $spks = $query->latest()->paginate(10);
+
+        return view('spk.designer.indexSpkLembur', [
+            'title' => 'Manajemen SPK Lembur',
+            'spks'  => $spks
+        ]);
+    }
+
     public function show($id)
     {
         // Ambil SPK Header beserta Relasi Detail Itemnya
@@ -110,68 +153,98 @@ class MSpkController extends Controller
     {
         $user = Auth::user();
 
-        // 1. VALIDASI DATA (Mendukung Array Items)
+        // 1. VALIDASI DATA
         $request->validate([
             // Header (Data Pelanggan)
             'nama_pelanggan' => 'required|string|max:255',
-            'no_telepon'     => 'nullable|string', // Boleh kosong buat SPK Reguler
+            'no_telepon'     => 'nullable|string',
             'tanggal'        => 'required',
 
+            // Validasi Lembur
+            'is_lembur'        => 'nullable|boolean',
+            'cabang_lembur_id' => 'required_if:is_lembur,1|exists:m_cabangs,id',
+
             // Detail Items (Array)
-            'items'                 => 'required|array|min:1',
-            'items.*.jenis'         => 'required|in:outdoor,indoor,multi',
-            'items.*.file'          => 'required|string',
-            'items.*.p'             => 'required|numeric|min:0',
-            'items.*.l'             => 'required|numeric|min:0',
-            'items.*.bahan_id'      => 'required|exists:m_bahan_bakus,id',
-            'items.*.qty'           => 'required|integer|min:1',
-            'items.*.operator_id'   => 'required|exists:users,id',
-            'items.*.finishing'     => 'nullable|string',
-            'items.*.catatan'       => 'nullable|string',
+            'items'             => 'required|array|min:1',
+            'items.*.jenis'     => 'required|in:outdoor,indoor,multi',
+            'items.*.file'      => 'required|string',
+            'items.*.p'         => 'required|numeric|min:0',
+            'items.*.l'         => 'required|numeric|min:0',
+            'items.*.bahan_id'  => 'required|exists:m_bahan_bakus,id',
+            'items.*.qty'       => 'required|integer|min:1',
+            'items.*.operator_id' => 'required|exists:users,id', // ID Operator ini valid karena sudah difilter JS di view
+            'items.*.finishing' => 'nullable|string',
+            'items.*.catatan'   => 'nullable|string',
         ], [
             'items.required' => 'Mohon masukkan minimal 1 item pesanan.',
+            'cabang_lembur_id.required_if' => 'Mohon pilih cabang lokasi lembur.',
         ]);
 
         try {
             DB::transaction(function () use ($request, $user) {
 
-                // 2. GENERATE NOMOR SPK (Format: KODE-000001)
-                $cabangKode = $user->cabang->kode;
-                $prefix = Str::after($cabangKode, '-'); // Contoh: BJM
+                // A. TENTUKAN CABANG TARGET (Dimana SPK ini akan masuk?)
+                // Jika lembur = Cabang Lembur. Jika tidak = Cabang User.
+                $isLembur = $request->has('is_lembur') && $request->is_lembur == '1';
+                $targetCabangId = $isLembur ? $request->cabang_lembur_id : $user->cabang_id;
 
-                // Cari nomor terakhir untuk cabang ini (lock biar gak ganda)
-                $lastSpk = MSpk::where('cabang_id', $user->cabang_id)
-                    ->where('no_spk', 'like', $prefix . '-%')
+                // Ambil Data Cabang Target untuk Kode SPK
+                $targetCabang = MCabang::findOrFail($targetCabangId);
+                $cabangKode = $targetCabang->kode; // Misal: CAB-MTP
+                $basePrefix = \Illuminate\Support\Str::after($cabangKode, '-'); // Ambil 'MTP'
+
+                // Logika Prefix:
+                // Jika Lembur -> LMTP (L + Kode Cabang)
+                // Jika Reguler -> MTP (Kode Cabang saja)
+                if ($isLembur) {
+                    $prefix = 'L' . $basePrefix; // Contoh: LMTP
+                } else {
+                    $prefix = $basePrefix; // Contoh: MTP
+                }
+
+                // Cari nomor terakhir berdasarkan PREFIX yang spesifik ini
+                // Jadi sequence LMTP tidak akan mengganggu sequence MTP biasa
+                $lastSpk = MSpk::where('cabang_id', $targetCabangId)
+                    ->where('no_spk', 'like', $prefix . '-%') // Cari yang depannya LMTP- atau MTP-
                     ->lockForUpdate()
                     ->orderBy('id', 'desc')
                     ->first();
 
                 $nextNumber = 1;
                 if ($lastSpk) {
-                    $lastNumber = (int) Str::afterLast($lastSpk->no_spk, '-');
+                    // Ambil angka dibelakang strip terakhir
+                    $lastNumber = (int) \Illuminate\Support\Str::afterLast($lastSpk->no_spk, '-');
                     $nextNumber = $lastNumber + 1;
                 }
 
+                // Gabungkan menjadi format baru
                 $newNoSpk = $prefix . '-' . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
 
                 // Format Tanggal
                 try {
-                    $tgl = Carbon::createFromFormat('d-m-Y H:i:s', $request->tanggal);
+                    $tgl = \Carbon\Carbon::createFromFormat('d-m-Y H:i:s', $request->tanggal);
                 } catch (\Exception $e) {
                     $tgl = now();
                 }
 
                 // 3. SIMPAN HEADER (M_SPK)
                 $spk = MSpk::create([
-                    'no_spk'         => $newNoSpk,
-                    'tanggal_spk'    => $tgl,
-                    'nama_pelanggan' => $request->nama_pelanggan,
-                    'no_telepon'     => $request->no_telepon,
-                    'cabang_id'      => $user->cabang_id,
-                    'designer_id'    => $user->id, // User yang login adalah Designer/Admin
-                    'is_bantuan'     => false,     // Ini SPK Reguler
-                    'asal_cabang_id' => null,
-                    'status_spk'     => 'pending',
+                    'no_spk'           => $newNoSpk,
+                    'tanggal_spk'      => $tgl,
+                    'nama_pelanggan'   => $request->nama_pelanggan,
+                    'no_telepon'       => $request->no_telepon,
+
+                    // PENTING: Cabang ID diisi Cabang Target agar masuk ke Admin sana
+                    'cabang_id'        => $targetCabangId,
+
+                    // Info Designer & Lembur
+                    'designer_id'      => $user->id,
+                    'is_lembur'        => $isLembur,
+                    'cabang_lembur_id' => $isLembur ? $targetCabangId : null,
+                    'asal_cabang_id'   => $isLembur ? $user->cabang_id : null, // Mencatat asal designer
+
+                    'status_spk'       => 'pending',
+                    'is_bantuan'       => false,
                 ]);
 
                 // 4. SIMPAN ITEMS (M_SUB_SPK)
@@ -186,17 +259,19 @@ class MSpkController extends Controller
                         'qty'             => $item['qty'],
                         'finishing'       => $item['finishing'] ?? '-',
                         'catatan'         => $item['catatan'] ?? '-',
-                        'operator_id'     => $item['operator_id'], // Operator per item
+                        'operator_id'     => $item['operator_id'], // Operator yang dipilih (sudah sesuai cabang target)
                         'status_produksi' => 'pending',
                     ]);
                 }
 
                 // 5. KIRIM NOTIFIKASI
-                event(new \App\Events\NotifikasiSpkBaru($newNoSpk, 'Reguler', $user->nama));
+                // Menandai jenis notifikasi apakah Reguler atau Lembur
+                $tipeSpk = $isLembur ? 'Lembur' : 'Reguler';
+                event(new \App\Events\NotifikasiSpkBaru($newNoSpk, $tipeSpk, $user->nama));
             });
 
             return redirect()->route('spk.index')
-                ->with('success', 'SPK Reguler Berhasil Dibuat dengan ' . count($request->items) . ' Item!');
+                ->with('success', 'SPK Berhasil Dibuat!');
         } catch (\Exception $e) {
             return back()->with('error', 'Gagal membuat SPK: ' . $e->getMessage())->withInput();
         }
@@ -305,6 +380,10 @@ class MSpkController extends Controller
         $spk = MSpk::with(['designer', 'items.bahan', 'items.operator'])
             ->findOrFail($id);
 
+        if ($spk->is_lembur == true) {
+            return view('spk.nota_spk.notaLembur', compact('spk'));
+        }
+
         return view('spk.nota_spk.notaspk', compact('spk'));
     }
 
@@ -342,7 +421,8 @@ class MSpkController extends Controller
 
                 // Filter Header: Harus ACC dan BUKAN bantuan (untuk reguler index)
                 $q->where('status_spk', 'acc')
-                    ->where('is_bantuan', false);
+                    ->where('is_bantuan', false)
+                    ->where('is_lembur', false);
             });
 
         // 2. PERBAIKAN: FILTER SPESIFIK PER USER
@@ -369,6 +449,58 @@ class MSpkController extends Controller
 
         return view('spk.operator.indexSpk', [
             'title' => 'Produksi SPK',
+            'items' => $items
+        ]);
+    }
+
+    public function operatorIndexLembur(Request $request)
+    {
+        $user = Auth::user();
+
+        // 1. Mulai Query dari Item (MSubSpk)
+        $query = MSubSpk::with(['spk.designer', 'spk.cabang', 'spk.cabangAsal', 'bahan'])
+            ->whereHas('spk', function ($q) {
+
+                // --- HAPUS FILTER CABANG INI ---
+                // Masalahnya: User Cabang 6, SPK Cabang 5.
+                // Jika difilter pakai user->cabang_id (6), SPK Cabang 5 tidak akan ketemu.
+                // Karena ini LEMBUR, operator boleh mengerjakan lintas cabang.
+                /* if ($user->cabang->jenis !== 'pusat') {
+                    $q->where('cabang_id', $user->cabang_id);
+                }
+                */
+
+                // Filter Khusus Lembur & Status
+                // Gunakan whereIn status 'pending' & 'acc' supaya data muncul
+                // walaupun admin belum klik tombol ACC (untuk testing).
+                $q->whereIn('status_spk', ['pending', 'acc'])
+                    ->where('is_lembur', true);
+            });
+
+        // 2. FILTER UTAMA: Spesifik Item milik Operator yang Login
+        // Ini kuncinya. Budi (ID 41) hanya akan melihat item dimana dia ditugaskan.
+        $query->where('operator_id', $user->id);
+
+        // 3. Filter Status Produksi Aktif
+        $query->whereIn('status_produksi', ['pending', 'ripping', 'ongoing', 'finishing']);
+
+        // 4. Logika Pencarian
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_file', 'like', "%$search%")
+                    ->orWhereHas('spk', function ($sq) use ($search) {
+                        $sq->where('no_spk', 'like', "%$search%")
+                            ->orWhere('nama_pelanggan', 'like', "%$search%");
+                    });
+            });
+        }
+
+        $items = $query->oldest()->paginate(15);
+
+        // PENTING: Gunakan View Operator (Tabel Item), BUKAN View Designer (Tabel Header)
+        return view('spk.operator.indexSpk', [
+            'title' => 'Produksi Lembur',
             'items' => $items
         ]);
     }
@@ -424,7 +556,7 @@ class MSpkController extends Controller
         $user = Auth::user();
 
         // 1. Query ke Tabel ITEM (MSubSpk)
-        $query = \App\Models\MSubSpk::with(['spk', 'spk.designer', 'bahan'])
+        $query = MSubSpk::with(['spk', 'spk.designer', 'bahan'])
             ->whereHas('spk', function ($q) use ($user) {
                 // Filter Cabang (Hanya riwayat pekerjaan di cabang sendiri)
                 if ($user->cabang->jenis !== 'pusat') {
@@ -463,6 +595,39 @@ class MSpkController extends Controller
 
         return view('spk.operator.riwayatSpk', [
             'title' => 'Riwayat Produksi Selesai',
+            'items' => $items
+        ]);
+    }
+
+    public function riwayatLembur(Request $request)
+    {
+        $user = Auth::user();
+
+        // 1. Query Item (MSubSpk)
+        $query = MSubSpk::with(['spk', 'spk.designer', 'spk.cabang', 'spk.cabangAsal', 'bahan']);
+
+        // 2. Filter Utama: Milik Operator yg Login & Status DONE
+        $query->where('operator_id', $user->id)
+            ->where('status_produksi', 'done');
+            // dd($query);
+
+        // 3. Pencarian
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_file', 'like', "%$search%")
+                    ->orWhereHas('spk', function ($sq) use ($search) {
+                        $sq->where('no_spk', 'like', "%$search%")
+                            ->orWhere('nama_pelanggan', 'like', "%$search%");
+                    });
+            });
+        }
+
+        // 4. Urutkan dari yang paling baru selesai (updated_at)
+        $items = $query->orderBy('updated_at', 'desc')->paginate(15);
+
+        return view('spk.operator.riwayatSpk', [
+            'title' => 'Riwayat Pekerjaan Selesai',
             'items' => $items
         ]);
     }
