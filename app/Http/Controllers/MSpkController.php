@@ -267,7 +267,7 @@ class MSpkController extends Controller
                 if ($isLembur == true) {
                     event(new \App\Events\NotifikasiSpkLembur($newNoSpk, 'Lembur', $targetCabangId, $user->nama));
                 } else {
-                    event(new \App\Events\NotifikasiSpkBaru($newNoSpk, 'Reguler', $user->nama));
+                    event(new \App\Events\NotifikasiSpkBaru($newNoSpk, 'Reguler', $targetCabangId, $user->nama));
                 }
 
                 // 5. KIRIM NOTIFIKASI

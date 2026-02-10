@@ -140,7 +140,7 @@
         // Id cabang Admin
         const cabangId = {{Auth::check() && Auth::user() -> hasRole('admin') ? Auth::user()->cabang_id : 'null'}};
 
-        var channel = pusher.subscribe('channel-admin');
+        var channel = pusher.subscribe('channel-admin-' + cabangId);
         var channel_lembur = pusher.subscribe('channel-lembur-' + cabangId);
         // console.log("Channel:", channel, channel_lembur);
 
