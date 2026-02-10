@@ -13,6 +13,8 @@ use App\Models\MCabang;
 use App\Models\MPengiriman;
 use App\Models\MPermintaanPengiriman;
 use App\Models\MInventarisCabang;
+use App\Models\MAmbilAntar;
+use App\Models\MPengambilan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
@@ -731,6 +733,218 @@ class GudangCabangController extends Controller
             'lastPenerimaanUpdate',
             'lastBarangUpdate'
         ));
+    }
+
+// 8. AMBIL ANTAR (SEMENTARA GA DIPAKE)
+    //ambil
+    public function ambilIndex()
+    {
+        $cabangId = Auth::user()->cabang_id;
+
+        $cabangs = MCabang::where('id', '!=', $cabangId)->get();
+
+        $permintaan = MAmbilAntar::where('jenis', 'Ambil')
+            ->where('cabang_pengirim_id', $cabangId)
+            ->latest()
+            ->get();
+
+        return view('inventaris.gudangcabang.ambil', compact('permintaan', 'cabangs'));
+    }
+
+    public function ambilStore(Request $request)
+    {
+        $request->validate([
+            'cabang_tujuan_id' => 'required',
+            'tanggal' => 'required|date',
+            'atas_nama' => 'required',
+            'keterangan' => 'required|array'
+        ]);
+
+        MAmbilAntar::create([
+            'kode' => 'AMB-' . date('Ymd') . '-' . strtoupper(Str::random(4)),
+            'cabang_pengirim_id' => Auth::user()->cabang_id,
+            'cabang_tujuan_id'   => $request->cabang_tujuan_id,
+            'jenis' => 'Ambil',
+            'tanggal' => $request->tanggal,
+            'atas_nama' => $request->atas_nama,
+            'keterangan' => array_values($request->keterangan),
+            'status' => 'Menunggu'
+        ]);
+
+        return back()->with('success', 'Permintaan ambil dibuat');
+    }
+
+    public function ambilDetail($id)
+    {
+        $data = MAmbilAntar::findOrFail($id);
+        return view('inventaris.gudangcabang.ambil-detail', compact('data'));
+    }
+
+    public function ambilEdit($id)
+    {
+        $data = MAmbilAntar::where('status', 'Menunggu')->findOrFail($id);
+        return view('inventaris.gudangcabang.ambil-edit', compact('data'));
+    }
+
+    public function ambilUpdate(Request $request, $id)
+    {
+        MAmbilAntar::findOrFail($id)->update([
+            'tanggal' => $request->tanggal,
+            'atas_nama' => $request->atas_nama,
+            'keterangan' => array_values($request->keterangan),
+        ]);
+
+        return redirect()->route('gudangcabang.ambil.index')
+            ->with('success', 'Data diperbarui');
+    }
+
+    public function ambilDestroy($id)
+    {
+        MAmbilAntar::where('status', 'Menunggu')->findOrFail($id)->delete();
+        return back()->with('success', 'Data dihapus');
+    }
+
+    public function ambilTerima(Request $request, $id)
+    {
+        $request->validate([
+            'barang_diterima' => 'required|array',
+            'foto_bukti'      => 'required|image|max:2048',
+        ]);
+
+        $data = MAmbilAntar::where('status', 'Dikirim')->findOrFail($id);
+
+        // upload foto
+        $fotoPath = $request->file('foto_bukti')
+            ->store('ambil-antar', 'public');
+
+        $data->update([
+            'keterangan_diterima' => array_values($request->barang_diterima),
+            'bukti_foto'          => $fotoPath,
+            'status'              => 'Diterima',
+        ]);
+
+        return back()->with('success', 'Barang berhasil diterima');
+    }
+
+    // antar
+    public function antarIndex()
+    {
+        $cabangId = Auth::user()->cabang_id;
+
+        $permintaan = MAmbilAntar::where('jenis', 'Ambil')
+            ->where('cabang_tujuan_id', $cabangId)
+            ->where('status', 'Menunggu')
+            ->latest()
+            ->get();
+
+        return view('inventaris.gudangcabang.antar', compact('permintaan'));
+    }
+
+    public function antarKirim($id)
+    {
+        MAmbilAntar::findOrFail($id)->update([
+            'status' => 'Dikirim'
+        ]);
+
+        return back()->with('success', 'Barang dikirim');
+    }
+
+    public function antarTerima(Request $request, $id)
+    {
+        $request->validate([
+            'keterangan_diterima' => 'required|array',
+            'bukti_foto' => 'required|image|max:2048'
+        ]);
+
+        $foto = $request->file('bukti_foto')
+            ->store('ambil-antar', 'public');
+
+        MAmbilAntar::findOrFail($id)->update([
+            'keterangan_diterima' => $request->keterangan_diterima,
+            'bukti_foto' => $foto,
+            'status' => 'Diterima'
+        ]);
+
+        return back()->with('success', 'Barang diterima');
+    }
+
+
+// 9. PENGAMBILAN
+    public function pengambilanIndex()
+    {
+        $cabangId = Auth::user()->cabang_id;
+        $datas = MPengambilan::where('cabang_id', $cabangId)
+            ->latest()
+            ->paginate(10);
+
+        return view('inventaris.gudangcabang.pengambilan', compact('datas'));
+    }
+
+
+    public function pengambilanStore(Request $request)
+    {
+        $request->validate([
+            'ambil_ke'   => 'required|string',
+            'tanggal'    => 'required|date',
+            'list_barang'=> 'required|array',
+            'list_barang.*.nama_barang' => 'required|string',
+            'list_barang.*.jumlah'     => 'required|numeric|min:1',
+            'list_barang.*.atas_nama'  => 'required|string',
+            'foto'       => 'nullable|image|max:2048',
+        ]);
+
+        $fotoPath = $request->file('foto')?->store('pengambilan', 'public');
+
+        MPengambilan::create([
+            'cabang_id'    => Auth::user()->cabang_id,
+            'ambil_ke'     => $request->ambil_ke,
+            'tanggal'      => $request->tanggal,
+            'list_barang'  => $request->list_barang,
+            'foto'         => $fotoPath,
+        ]);
+
+        return back()->with('success', 'Data pengambilan berhasil disimpan');
+    }
+
+    public function pengambilanEdit($id)
+    {
+        $data = MPengambilan::findOrFail($id);
+        return response()->json($data);
+    }
+
+    public function pengambilanUpdate(Request $request, $id)
+    {
+        $request->validate([
+            'ambil_ke'   => 'required|string',
+            'tanggal'    => 'required|date',
+            // 'atas_nama'  => 'required|string',
+            'list_barang'=> 'required|array',
+            'list_barang.*.nama_barang' => 'required|string',
+            'list_barang.*.jumlah'     => 'required|numeric|min:1',
+            'foto'       => 'nullable|image|max:2048',
+        ]);
+
+        $data = MPengambilan::findOrFail($id);
+
+        if ($request->hasFile('foto')) {
+            $fotoPath = $request->file('foto')->store('pengambilan', 'public');
+            $data->foto = $fotoPath;
+        }
+
+        $data->update([
+            'ambil_ke'    => $request->ambil_ke,
+            'tanggal'     => $request->tanggal,
+            // 'atas_nama'   => $request->atas_nama,
+            'list_barang' => $request->list_barang,
+        ]);
+
+        return response()->json(['success' => true]);
+    }
+
+    public function pengambilanDestroy($id)
+    {
+        MPengambilan::findOrFail($id)->delete();
+        return back()->with('success', 'Data pengambilan berhasil dihapus');
     }
 
 }

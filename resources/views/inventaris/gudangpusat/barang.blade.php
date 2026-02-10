@@ -50,12 +50,16 @@
                                 <label>Satuan</label>
                                 <select name="satuan" class="form-control select2" required>
                                     <option disabled selected>Pilih Satuan</option>
-                                    <option>PCS</option>
-                                    <option>PAKET</option>
-                                    <option>KG</option>
-                                    <option>METER</option>
-                                    <option>CENTIMETER</option>
-                                    <option>ROLL</option>
+                                        <option>ROLL</option>
+                                        <option>PACK</option>
+                                        <option>LEMBAR</option>
+                                        <option>METER</option>
+                                        <option>BOX</option>
+                                        <option>PCS </option>
+                                        <option>RIM</option>
+                                        <option>TANK</option>
+                                        <option>BOTOL</option>
+                                        <option>LUSIN</option>
                                 </select>
                             </div>
 
@@ -264,12 +268,16 @@ MODAL EDIT BARANG
                         <select name="satuan"
                                 id="edit_satuan"
                                 class="form-control">
-                            <option>PCS</option>
-                            <option>PAKET</option>
-                            <option>KG</option>
-                            <option>METER</option>
-                            <option>CENTIMETER</option>
                             <option>ROLL</option>
+                            <option>PACK</option>
+                            <option>LEMBAR</option>
+                            <option>METER</option>
+                            <option>BOX</option>
+                            <option>PCS </option>
+                            <option>RIM</option>
+                            <option>TANK</option>
+                            <option>BOTOL</option>
+                            <option>LUSIN</option>
                         </select>
                     </div>
 

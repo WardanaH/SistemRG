@@ -70,14 +70,63 @@ Route::middleware(['auth', 'role:inventory cabang'])
 
         Route::put('/inventaris/{id}',[GudangCabangController::class, 'inventarisUpdate'])
             ->name('inventaris.update');
-// ==============================
-// PERMINTAAN PENGIRIMAN
-// ==============================
 
-Route::get('/permintaan-pengiriman', [GudangCabangController::class, 'permintaan'])
-    ->name('permintaan.index');
+        // permintaan oengiriman
+        Route::get('/permintaan-pengiriman', [GudangCabangController::class, 'permintaan'])
+            ->name('permintaan.index');
 
-Route::post('/permintaan-pengiriman/store', [GudangCabangController::class, 'permintaanStore'])
-    ->name('permintaan.store');
+        Route::post('/permintaan-pengiriman/store', [GudangCabangController::class, 'permintaanStore'])
+            ->name('permintaan.store');
+
+        // AMBIL
+        Route::get('/ambil', [GudangCabangController::class, 'ambilIndex'])
+            ->name('ambil.index');
+
+        Route::post('/ambil/store', [GudangCabangController::class, 'ambilStore'])
+            ->name('ambil.store');
+
+        Route::get('/ambil/{id}', [GudangCabangController::class, 'ambilDetail'])
+            ->name('ambil.detail');
+
+        Route::get('/ambil/{id}/edit', [GudangCabangController::class, 'ambilEdit'])
+            ->name('ambil.edit');
+
+        Route::put('/ambil/{id}', [GudangCabangController::class, 'ambilUpdate'])
+            ->name('ambil.update');
+
+        Route::delete('/ambil/{id}', [GudangCabangController::class, 'ambilDestroy'])
+            ->name('ambil.destroy');
+
+        Route::post('/ambil/terima/{id}', [GudangCabangController::class, 'ambilTerima'])
+            ->name('ambil.terima');
+
+        // ANTAR
+        Route::get('/antar', [GudangCabangController::class, 'antarIndex'])
+            ->name('antar.index');
+
+        Route::post('/antar/kirim/{id}', [GudangCabangController::class, 'antarKirim'])
+            ->name('antar.kirim');
+
+        Route::get('/antar/{id}', [GudangCabangController::class, 'antarDetail'])
+            ->name('antar.detail');
+
+        Route::post('/antar/terima/{id}', [GudangCabangController::class, 'antarTerima'])
+            ->name('antar.terima');
+
+        //pengambilan
+        Route::post('pengambilan/store', [GudangCabangController::class, 'pengambilanStore'])
+            ->name('pengambilan.store');
+
+        Route::get('pengambilan', [GudangCabangController::class, 'pengambilanIndex'])
+            ->name('pengambilan.index');
+
+        Route::get('pengambilan/edit/{id}', [GudangCabangController::class, 'pengambilanEdit'])
+            ->name('pengambilan.edit');
+
+        Route::post('pengambilan/update/{id}', [GudangCabangController::class, 'pengambilanUpdate'])
+            ->name('pengambilan.update');
+
+        Route::delete('pengambilan/{id}', [GudangCabangController::class, 'pengambilanDestroy'])
+            ->name('pengambilan.destroy');
 
     });

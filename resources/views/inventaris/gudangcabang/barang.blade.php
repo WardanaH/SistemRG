@@ -38,7 +38,7 @@
 
                 <div class="card-body px-0 pb-2">
                     <div class="px-3 pt-3">
-                        <form method="GET" action="{{ route('gudang.cabang.barang') }}">
+                        <form method="GET" action="{{ route('gudangcabang.barang') }}">
                             <div class="row">
                                 <div class="col-md-4">
                                     <input type="text"

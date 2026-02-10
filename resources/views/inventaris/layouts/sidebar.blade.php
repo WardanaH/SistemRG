@@ -20,12 +20,18 @@
         $pageTitle = 'Update Stok';
     } elseif (request()->routeIs('gudangcabang.penerimaan*')) {
         $pageTitle = 'Penerimaan Barang';
-    // } elseif (request()->routeIs('gudangcabang.laporan*')) {
-    //     $pageTitle = 'Laporan Penerimaan';
+    } elseif (request()->routeIs('gudangcabang.laporan*')) {
+        $pageTitle = 'Laporan Penerimaan';
     } elseif (request()->routeIs('gudangcabang.inventaris*')) {
         $pageTitle = 'Inventaris Kantor';
     } elseif (request()->routeIs('gudangcabang.permintaan*')) {
         $pageTitle = 'Permintaan Pengiriman';
+    } elseif (request()->routeIs('gudangcabang.pengambilan*')) {
+        $pageTitle = 'Pengambilan Antar';
+    // } elseif (request()->routeIs('gudangcabang.ambil*')) {
+    //     $pageTitle = 'Ambil Barang';
+    // } elseif (request()->routeIs('gudangcabang.ambil*')) {
+    //     $pageTitle = 'Antar Barang';
     } else {
         $pageTitle = 'Gudang Pusat';
     }
@@ -52,7 +58,16 @@
 
     <div class="collapse navbar-collapse w-auto">
         <ul class="navbar-nav">
-
+<style>
+    .sidebar-section {
+        font-size: 11px;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        color: rgba(255,255,255,.6);
+        margin: 12px 0 6px 16px;
+        font-weight: 600;
+    }
+</style>
             {{-- =====================
             DASHBOARD
             ===================== --}}
@@ -132,6 +147,9 @@
             {{-- =====================
             PERMINTAAN PENGIRIMAN (HANYA UNTUK CABANG)
             ===================== --}}
+            <li class="nav-item mt-2">
+                <span class="sidebar-section">Pengiriman</span>
+            </li>
             <li class="nav-item">
                 <a class="nav-link text-white {{ request()->routeIs('gudangcabang.permintaan*') ? 'active bg-gradient-primary' : '' }}"
                 href="{{ route('gudangcabang.permintaan.index') }}">
@@ -156,9 +174,47 @@
             </li>
 
             {{-- =====================
+            AMBIL & ANTAR CABANG
+            ===================== --}}
+            {{-- <li class="nav-item mt-2">
+                <span class="sidebar-section">Ambil & Antar</span>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-white {{ request()->routeIs('gudangcabang.ambil*') ? 'active bg-gradient-primary' : '' }}"
+                href="{{ route('gudangcabang.ambil.index') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons-round opacity-10">download</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Ambil</span>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a class="nav-link text-white {{ request()->routeIs('gudangcabang.antar*') ? 'active bg-gradient-primary' : '' }}"
+                href="{{ route('gudangcabang.antar.index') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons-round opacity-10">local_shipping</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Antar</span>
+                </a>
+            </li> --}}
+
+            <li class="nav-item mt-2">
+                <span class="sidebar-section">Ambil & Antar</span>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-white {{ request()->routeIs('gudangcabang.pengambilan*') ? 'active bg-gradient-primary' : '' }}"
+                href="{{ route('gudangcabang.pengambilan.index') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons-round opacity-10">swap_horiz</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Pengambilan Antar</span>
+                </a>
+            </li>
+            {{-- =====================
             LAPORAN PENERIMAAN (HANYA UNTUK CABANG)
             ===================== --}}
-            {{-- <li class="nav-item">
+            <li class="nav-item">
                 <a class="nav-link text-white {{ request()->routeIs('gudangcabang.laporan*') ? 'active bg-gradient-primary' : '' }}"
                 href="{{ route('gudangcabang.laporan.index') }}">
                     <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
@@ -166,7 +222,7 @@
                     </div>
                     <span class="nav-link-text ms-1">Laporan Penerimaan</span>
                 </a>
-            </li> --}}
+            </li>
             @endhasrole
 
             {{-- =====================
