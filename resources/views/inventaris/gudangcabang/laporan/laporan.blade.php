@@ -67,7 +67,7 @@
 
                 {{-- HEADER --}}
                 <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
-                    <div class="bg-gradient-success shadow-success border-radius-lg pt-4 pb-3">
+                    <div class="bg-gradient-info shadow-info border-radius-lg pt-4 pb-3">
                         <h6 class="text-white text-capitalize ps-3">
                             Laporan Penerimaan Barang - {{ $cabang->nama }}
                         </h6>
@@ -122,14 +122,19 @@
                                 <input type="number" name="tahun_akhir" class="form-control" value="{{ $tahunAkhir ?? now()->year }}">
                             </div>
 
-                            {{-- BUTTON --}}
+                            {{-- BUTTON FILTER --}}
                             <div class="col-md-2">
-                                <label class="form-label">Filter</label>
-                                <button class="btn bg-gradient-success w-100">
-                                    <i class="material-icons">search</i>
-                                </button>
+                                <div class="row">
+                                    <div class="col-6">
+                                        <label class="form-label">Filter</label>
+                                        <button type="submit"
+                                            class="btn bg-gradient-info btn-filter-custom w-100"
+                                            title="Filter">
+                                            <i class="material-icons">search</i>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-
                         </div>
                     </form>
                 </div>
