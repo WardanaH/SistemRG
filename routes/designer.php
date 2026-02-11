@@ -38,10 +38,23 @@ Route::middleware('auth')->group(function () {
         ->middleware('role:manajemen|designer|admin|operator indoor|operator outdoor|operator multi')
         ->name('manajemen.spk.cetak-spk');
 
-    Route::get('/spk-lembur', [MSpkController::class, 'indexLembur'])->name('spk-lembur.index');
-    Route::get('/spk-bantuan', [SpkBantuanController::class, 'index'])->name('spk-bantuan.index');
-    Route::get('/spk-bantuan/{id}/detail', [SpkBantuanController::class, 'show'])->name('spk-bantuan.show');
-    Route::get('/spk-bantuan/buat', [SpkBantuanController::class, 'create'])->name('spk-bantuan');
-    Route::post('/spk-bantuan', [SpkBantuanController::class, 'store'])->name('spk-bantuan.store');
-    Route::get('/spk-bantuan/cetak/{id}', [SpkBantuanController::class, 'cetakSpkBantuan'])->name('spk-bantuan.cetak-spk-bantuan');
+    Route::get('/spk-lembur', [MSpkController::class, 'indexLembur'])
+        ->middleware('role:manajemen|designer|admin')
+        ->name('spk-lembur.index');
+    Route::get('/spk-bantuan', [SpkBantuanController::class, 'index'])
+        ->middleware('role:manajemen|designer|admin')
+        ->name('spk-bantuan.index');
+
+    Route::get('/spk-bantuan/{id}/detail', [SpkBantuanController::class, 'show'])
+        ->middleware('role:manajemen|designer|admin')
+        ->name('spk-bantuan.show');
+    Route::get('/spk-bantuan/buat', [SpkBantuanController::class, 'create'])
+        ->middleware('role:manajemen|designer|admin')
+        ->name('spk-bantuan');
+    Route::post('/spk-bantuan', [SpkBantuanController::class, 'store'])
+        ->middleware('role:manajemen|designer|admin')
+        ->name('spk-bantuan.store');
+    Route::get('/spk-bantuan/cetak/{id}', [SpkBantuanController::class, 'cetakSpkBantuan'])
+        ->middleware('role:manajemen|designer|admin')
+        ->name('spk-bantuan.cetak-spk-bantuan');
 });

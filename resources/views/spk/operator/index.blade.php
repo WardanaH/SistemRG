@@ -72,6 +72,7 @@
                 </div>
                 <div class="card-body">
                     <ul class="list-group">
+                        {{-- LIST 1: REGULER --}}
                         <li class="list-group-item border-0 d-flex justify-content-between ps-0 mb-2 border-radius-lg">
                             <div class="d-flex align-items-center">
                                 <button class="btn btn-icon-only btn-rounded btn-outline-primary mb-0 me-3 btn-sm d-flex align-items-center justify-content-center"><i class="material-icons">print</i></button>
@@ -84,21 +85,41 @@
                                 {{ $ongoingReguler }} Item
                             </div>
                         </li>
+
+                        {{-- LIST 2: BANTUAN --}}
                         <li class="list-group-item border-0 d-flex justify-content-between ps-0 mb-2 border-radius-lg">
                             <div class="d-flex align-items-center">
-                                <button class="btn btn-icon-only btn-rounded btn-outline-warning mb-0 me-3 btn-sm d-flex align-items-center justify-content-center"><i class="material-icons">handshake</i></button>
+                                <button class="btn btn-icon-only btn-rounded btn-outline-info mb-0 me-3 btn-sm d-flex align-items-center justify-content-center"><i class="material-icons">handshake</i></button>
                                 <div class="d-flex flex-column">
                                     <h6 class="mb-1 text-dark text-sm">Order Bantuan</h6>
                                     <span class="text-xs">Titipan cabang lain</span>
                                 </div>
                             </div>
-                            <div class="d-flex align-items-center text-warning text-gradient text-sm font-weight-bold">
+                            <div class="d-flex align-items-center text-info text-gradient text-sm font-weight-bold">
                                 {{ $ongoingBantuan }} Item
                             </div>
                         </li>
+
+                        {{-- LIST 3: LEMBUR (BARU) --}}
+                        <li class="list-group-item border-0 d-flex justify-content-between ps-0 mb-2 border-radius-lg">
+                            <div class="d-flex align-items-center">
+                                <button class="btn btn-icon-only btn-rounded btn-outline-warning mb-0 me-3 btn-sm d-flex align-items-center justify-content-center"><i class="material-icons">access_time_filled</i></button>
+                                <div class="d-flex flex-column">
+                                    <h6 class="mb-1 text-dark text-sm">Order Lembur</h6>
+                                    <span class="text-xs">Tugas lembur khusus</span>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center text-warning text-gradient text-sm font-weight-bold">
+                                {{ $ongoingLembur }} Item
+                            </div>
+                        </li>
                     </ul>
-                    <div class="mt-4">
-                        <a href="{{ route('spk.produksi') }}" class="btn btn-sm bg-gradient-info w-100">Buka Daftar Pekerjaan</a>
+
+                    <div class="mt-4 d-flex gap-2">
+                        <a href="{{ route('spk.produksi') }}" class="btn btn-sm bg-gradient-info w-100">Buka Reguler</a>
+                        @if($ongoingLembur > 0)
+                            <a href="{{ route('spk.produksi.lembur') }}" class="btn btn-sm bg-gradient-warning w-100">Buka Lembur</a>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -108,8 +129,15 @@
             <div class="card h-100">
                 <div class="card-body d-flex flex-column justify-content-center text-center">
                     <h5 class="font-weight-bolder">Siap Mencetak Hari Ini?</h5>
-                    <p class="text-sm">Fokus pada kualitas hasil cetak dan ketepatan ukuran. Jangan lupa update status ke <b>DONE</b> jika item sudah selesai agar admin segera tahu.</p>
-                    <div class="stats">
+                    <p class="text-sm">
+                        Fokus pada kualitas hasil cetak dan ketepatan ukuran.
+                        Pastikan untuk segera update status ke <b>DONE</b> jika item sudah selesai agar admin segera tahu.
+                        <br><br>
+                        @if($ongoingLembur > 0)
+                            <span class="text-warning font-weight-bold">PERHATIAN:</span> Ada {{ $ongoingLembur }} item lembur yang harus diselesaikan!
+                        @endif
+                    </p>
+                    <div class="stats mt-3">
                         <span class="badge badge-pill badge-md bg-gradient-secondary">Operator: {{ auth()->user()->nama }}</span>
                     </div>
                 </div>

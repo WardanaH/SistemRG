@@ -224,15 +224,15 @@
                 {{-- 3. Spesifikasi --}}
                 <div class="row mb-3">
                     <div class="col-md-3">
-                        <div class="input-group input-group-outline">
+                        <div class="input-group input-group-outline is-filled">
                             <label class="form-label">P (cm)</label>
-                            <input type="number" step="0.01" id="modal_p" class="form-control">
+                            <input type="number" step="0.01" id="modal_p" class="form-control" value="0">
                         </div>
                     </div>
                     <div class="col-md-3">
-                        <div class="input-group input-group-outline">
+                        <div class="input-group input-group-outline is-filled">
                             <label class="form-label">L (cm)</label>
-                            <input type="number" step="0.01" id="modal_l" class="form-control">
+                            <input type="number" step="0.01" id="modal_l" class="form-control" value="0">
                         </div>
                     </div>
                     <div class="col-md-4">

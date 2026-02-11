@@ -180,6 +180,8 @@ class MSpkController extends Controller
             'cabang_lembur_id.required_if' => 'Mohon pilih cabang lokasi lembur.',
         ]);
 
+        $isLemburRoute = $request->has('is_lembur') && $request->is_lembur == '1';
+
         try {
             DB::transaction(function () use ($request, $user) {
 
@@ -274,8 +276,11 @@ class MSpkController extends Controller
                 // Menandai jenis notifikasi apakah Reguler atau Lembur
             });
 
-            return redirect()->route('spk.index')
-                ->with('success', 'SPK Berhasil Dibuat!');
+            if ($isLemburRoute == true) {
+                return redirect()->route('spk-lembur.index')->with('success', 'SPK Lembur Berhasil Dibuat!');
+            } else {
+                return redirect()->route('spk.index')->with('success', 'SPK Berhasil Dibuat!');
+            }
         } catch (\Exception $e) {
             return back()->with('error', 'Gagal membuat SPK: ' . $e->getMessage())->withInput();
         }
@@ -477,7 +482,7 @@ class MSpkController extends Controller
                 // Filter Khusus Lembur & Status
                 // Gunakan whereIn status 'pending' & 'acc' supaya data muncul
                 // walaupun admin belum klik tombol ACC (untuk testing).
-                $q->whereIn('status_spk', ['pending', 'acc'])
+                $q->whereIn('status_spk', ['acc'])
                     ->where('is_lembur', true);
             });
 
@@ -568,7 +573,8 @@ class MSpkController extends Controller
                 }
 
                 // SPK Reguler
-                $q->where('is_bantuan', false);
+                $q->where('is_bantuan', false)
+                    ->where('is_lembur', false);
             });
 
         // 2. Filter Status Produksi "DONE" (Selesai)
@@ -608,12 +614,21 @@ class MSpkController extends Controller
         $user = Auth::user();
 
         // 1. Query Item (MSubSpk)
-        $query = MSubSpk::with(['spk', 'spk.designer', 'spk.cabang', 'spk.cabangAsal', 'bahan']);
+        $query = MSubSpk::with(['spk', 'spk.designer', 'spk.cabang', 'spk.cabangAsal', 'bahan'])
+            ->whereHas('spk', function ($q) use ($user) {
+                // Filter Cabang (Hanya riwayat pekerjaan di cabang sendiri)
+
+                $q->where('is_bantuan', false)
+                    ->where('is_lembur', true);
+            });
 
         // 2. Filter Utama: Milik Operator yg Login & Status DONE
-        $query->where('operator_id', $user->id)
-            ->where('status_produksi', 'done');
+        $query->where('status_produksi', 'done');
             // dd($query);
+
+        if (!$user->hasRole(['admin', 'manajemen'])) {
+            $query->where('operator_id', $user->id);
+        }
 
         // 3. Pencarian
         if ($request->has('search') && $request->search != '') {

@@ -207,7 +207,7 @@
                     }
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        window.location.href = "{{ url('/spk') }}?search=" + data.no_spk;
+                        window.location.href = "{{ url('/spk-lembur') }}?search=" + data.no_spk;
                     }
                 });
             }

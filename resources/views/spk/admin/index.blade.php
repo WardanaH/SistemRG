@@ -5,6 +5,7 @@
 
     {{-- BARIS 1: STATISTIK RINGKAS --}}
     <div class="row">
+
         {{-- CARD 1: SPK MASUK --}}
         <div class="col-xl-4 col-sm-6 mb-4">
             <div class="card">
@@ -16,18 +17,19 @@
                         <p class="text-sm mb-0 text-capitalize">SPK Masuk Hari Ini</p>
                         <h4 class="mb-0">
                             {{ $spkRegulerToday }} <span class="text-xs text-secondary font-weight-normal">Reg</span> |
-                            <span class="text-warning">{{ $spkBantuanToday }}</span> <span class="text-xs text-secondary font-weight-normal">Ban</span>
+                            <span class="text-info">{{ $spkBantuanToday }}</span> <span class="text-xs text-secondary font-weight-normal">Ban</span> |
+                            <span class="text-warning">{{ $spkLemburToday }}</span> <span class="text-xs text-secondary font-weight-normal">Lbr</span>
                         </h4>
                     </div>
                 </div>
                 <hr class="dark horizontal my-0">
                 <div class="card-footer p-3">
-                    <p class="mb-0 text-sm"><span class="text-success text-sm font-weight-bolder">Total: {{ $spkRegulerToday + $spkBantuanToday }} </span> order baru</p>
+                    <p class="mb-0 text-sm"><span class="text-success text-sm font-weight-bolder">Total: {{ $spkRegulerToday + $spkBantuanToday + $spkLemburToday }} </span> order baru</p>
                 </div>
             </div>
         </div>
 
-        {{-- CARD 2: ANTRIAN --}}
+        {{-- CARD 2: ANTRIAN (ITEM) --}}
         <div class="col-xl-4 col-sm-6 mb-4">
             <div class="card">
                 <div class="card-header p-3 pt-2">
@@ -38,7 +40,8 @@
                         <p class="text-sm mb-0 text-capitalize">Item Dalam Antrian</p>
                         <h4 class="mb-0">
                             {{ $antrianReguler }} <span class="text-xs text-secondary font-weight-normal">Reg</span> |
-                            <span class="text-info">{{ $antrianBantuan }}</span> <span class="text-xs text-secondary font-weight-normal">Ban</span>
+                            <span class="text-info">{{ $antrianBantuan }}</span> <span class="text-xs text-secondary font-weight-normal">Ban</span> |
+                            <span class="text-warning">{{ $antrianLembur }}</span> <span class="text-xs text-secondary font-weight-normal">Lbr</span>
                         </h4>
                     </div>
                 </div>
@@ -49,7 +52,7 @@
             </div>
         </div>
 
-        {{-- CARD 3: SELESAI --}}
+        {{-- CARD 3: SELESAI (DONE) --}}
         <div class="col-xl-4 col-sm-6 mb-4">
             <div class="card">
                 <div class="card-header p-3 pt-2">
@@ -60,7 +63,8 @@
                         <p class="text-sm mb-0 text-capitalize">Total Produksi Selesai</p>
                         <h4 class="mb-0">
                             {{ $selesaiReguler }} <span class="text-xs text-secondary font-weight-normal">Reg</span> |
-                            <span class="text-warning">{{ $selesaiBantuan }}</span> <span class="text-xs text-secondary font-weight-normal">Ban</span>
+                            <span class="text-info">{{ $selesaiBantuan }}</span> <span class="text-xs text-secondary font-weight-normal">Ban</span> |
+                            <span class="text-warning">{{ $selesaiLembur }}</span> <span class="text-xs text-secondary font-weight-normal">Lbr</span>
                         </h4>
                     </div>
                 </div>
@@ -85,7 +89,11 @@
                 </div>
                 <div class="card-body">
                     <h6 class="mb-0">Komparasi Tren Order (30 Hari)</h6>
-                    <p class="text-sm">Perbandingan input SPK <span class="text-info font-weight-bold">Reguler</span> vs <span class="text-warning font-weight-bold">Bantuan</span></p>
+                    <p class="text-sm">
+                        <span class="text-primary font-weight-bold">Reguler</span> vs
+                        <span class="text-info font-weight-bold">Bantuan</span> vs
+                        <span class="text-warning font-weight-bold">Lembur</span>
+                    </p>
                 </div>
             </div>
         </div>
@@ -99,6 +107,7 @@
     var labels = JSON.parse('{!! json_encode($chartLabels) !!}');
     var dataReguler = JSON.parse('{!! json_encode($chartReguler) !!}');
     var dataBantuan = JSON.parse('{!! json_encode($chartBantuan) !!}');
+    var dataLembur  = JSON.parse('{!! json_encode($chartLembur) !!}');
 
     var ctx = document.getElementById("chart-spk").getContext("2d");
 
@@ -107,32 +116,43 @@
         data: {
             labels: labels,
             datasets: [
-                // DATASET 1: SPK REGULER (Biru/Putih)
+                // DATASET 1: REGULER (Biru)
                 {
-                    label: "SPK Reguler",
+                    label: "Reguler",
                     tension: 0.4,
                     borderWidth: 3,
                     pointRadius: 4,
-                    pointBackgroundColor: "#1A73E8", // Biru Google
-                    pointBorderColor: "transparent",
+                    pointBackgroundColor: "#1A73E8",
                     borderColor: "#1A73E8",
                     backgroundColor: "transparent",
                     fill: false,
                     data: dataReguler,
                     maxBarLength: 6
                 },
-                // DATASET 2: SPK BANTUAN (Kuning/Oranye)
+                // DATASET 2: BANTUAN (Cyan/Biru Muda)
                 {
-                    label: "SPK Bantuan",
+                    label: "Bantuan",
                     tension: 0.4,
                     borderWidth: 3,
                     pointRadius: 4,
-                    pointBackgroundColor: "#FB8C00", // Oranye Material
-                    pointBorderColor: "transparent",
-                    borderColor: "#FB8C00",
+                    pointBackgroundColor: "#17c1e8", // Cyan
+                    borderColor: "#17c1e8",
                     backgroundColor: "transparent",
                     fill: false,
                     data: dataBantuan,
+                    maxBarLength: 6
+                },
+                // DATASET 3: LEMBUR (Kuning/Oranye)
+                {
+                    label: "Lembur",
+                    tension: 0.4,
+                    borderWidth: 3,
+                    pointRadius: 4,
+                    pointBackgroundColor: "#FB8C00", // Oranye
+                    borderColor: "#FB8C00",
+                    backgroundColor: "transparent",
+                    fill: false,
+                    data: dataLembur,
                     maxBarLength: 6
                 }
             ],
@@ -142,10 +162,8 @@
             maintainAspectRatio: false,
             plugins: {
                 legend: {
-                    display: true, // Tampilkan Legend agar tau mana reguler mana bantuan
-                    labels: {
-                        color: '#ffffff'
-                    } // Warna text legend putih (karena background gelap)
+                    display: true,
+                    labels: { color: '#ffffff' }
                 }
             },
             interaction: {
@@ -166,12 +184,7 @@
                         display: true,
                         color: '#f8f9fa',
                         padding: 10,
-                        font: {
-                            size: 14,
-                            family: "Roboto",
-                            style: 'normal',
-                            lineHeight: 2
-                        },
+                        font: { size: 14, family: "Roboto", style: 'normal', lineHeight: 2 },
                     }
                 },
                 x: {
@@ -186,12 +199,7 @@
                         display: true,
                         color: '#f8f9fa',
                         padding: 10,
-                        font: {
-                            size: 12,
-                            family: "Roboto",
-                            style: 'normal',
-                            lineHeight: 2
-                        },
+                        font: { size: 12, family: "Roboto", style: 'normal', lineHeight: 2 },
                     }
                 },
             },

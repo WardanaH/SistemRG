@@ -45,12 +45,13 @@
                         <thead>
                             <tr>
                                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-3">Info SPK (Parent)</th>
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-3">Operator</th>
                                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">File Item</th>
                                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Spesifikasi</th>
                                 <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Qty</th>
                                 <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Status</th>
                                 <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Tanggal Selesai</th>
-                                <th class="text-secondary opacity-7 text-end pe-4">Aksi</th>
+                                <!-- <th class="text-secondary opacity-7 text-end pe-4">Aksi</th> -->
                             </tr>
                         </thead>
                         <tbody>
@@ -65,6 +66,14 @@
                                         @if($item->spk->is_bantuan)
                                         <span class="badge badge-sm bg-gradient-info text-xxs mt-1 w-auto">BANTUAN</span>
                                         @endif
+                                    </div>
+                                </td>
+
+                                {{-- Kolom 2: OPERATOR --}}
+                                <td class="ps-2">
+                                    <div class="d-flex flex-column justify-content-center">
+                                        <h6 class="mb-0 text-sm font-weight-bold">{{ $item->operator->nama }}</h6>
+                                        <p class="text-xs text-secondary mb-0">{{ $item->operator->roles()->pluck('name')->implode(', ') }}</p>
                                     </div>
                                 </td>
 
@@ -102,7 +111,7 @@
                                 </td>
 
                                 {{-- Kolom 7: AKSI --}}
-                                <td class="align-middle text-end pe-4">
+                                <!-- <td class="align-middle text-end pe-4">
                                     <a href="{{ $item->spk->is_bantuan ? route('spk-bantuan.cetak-spk-bantuan', $item->spk->id) : route('manajemen.spk.cetak-spk', $item->spk->id) }}"
                                         target="_blank"
                                         class="btn btn-sm btn-primary mb-0"
@@ -110,7 +119,7 @@
                                         title="Cetak Ulang Nota">
                                         <i class="material-icons text-sm">print</i>
                                     </a>
-                                </td>
+                                </td> -->
                             </tr>
                             @empty
                             <tr>
