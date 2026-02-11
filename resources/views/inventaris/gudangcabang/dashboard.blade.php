@@ -68,7 +68,8 @@
         <div class="col-xl-3 col-sm-6">
             <div class="card">
                 <div class="card-header p-3 pt-2">
-                <div class="icon icon-lg icon-shape bg-gradient-info shadow-info text-center border-radius-xl mt-n4 position-absolute">
+                <div class="icon icon-lg icon-shape shadow-primary text-center border-radius-xl mt-n4 position-absolute"
+                    style="background: linear-gradient(195deg, #ec407a, #d81b60);">
                     <i class="material-icons opacity-10">category</i>
                 </div>
                 <div class="text-end pt-1">
@@ -147,11 +148,12 @@
         <div class="col-lg-4 mt-4 mb-3">
           <div class="card z-index-2 ">
             <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
-              <div class="bg-gradient-dark shadow-dark border-radius-lg py-3 pe-1">
+            <div class="border-radius-lg py-3 pe-1"
+                style="background: linear-gradient(195deg, #ec407a, #d81b60); box-shadow: 0 4px 20px rgba(216,27,96,.4);">
                 <div class="chart">
-                  <canvas id="chart-line-tasks" class="chart-canvas" height="170"></canvas>
+                    <canvas id="chart-line-tasks" class="chart-canvas" height="170"></canvas>
                 </div>
-              </div>
+            </div>
             </div>
             <div class="card-body">
             <h6 class="mb-0">Barang Masuk</h6>
@@ -172,7 +174,7 @@
         </div>
       </div>
 
-    
+
       </div>
     {{-- </div> --}}
 @endsection

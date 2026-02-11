@@ -260,20 +260,21 @@
                         </thead>
                         <tbody>
                             @foreach($rekap as $row)
+                                @if($row['total'] > 0)
                             <tr>
                                 <td>{{ $row['barang'] }}</td>
                                 <td class="text-center">{{ $row['satuan'] }}</td>
 
                                 @foreach($semuaCabang as $cabang)
+                                    @php $qtyCabang = $row['cabang'][$cabang->id] ?? 0; @endphp
                                     <td class="text-center">
-                                        {{ $row['cabang'][$cabang->id] ?? 0 }}
+                                        {{ $qtyCabang > 0 ? $qtyCabang : '' }} {{-- kosongkan jika 0 --}}
                                     </td>
                                 @endforeach
 
-                                <td class="text-center fw-bold">
-                                    {{ $row['total'] }}
-                                </td>
+                                <td class="text-center fw-bold">{{ $row['total'] }}</td>
                             </tr>
+                                @endif
                             @endforeach
                         </tbody>
                     </table>

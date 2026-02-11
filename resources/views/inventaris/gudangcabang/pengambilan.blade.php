@@ -295,72 +295,71 @@
 </div>
 {{-- MODAL EDIT --}}
 <div class="modal fade" id="modalEdit" tabindex="-1">
-<div class="modal-dialog modal-lg">
-<div class="modal-content">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content border-radius-lg shadow-sm">
 
-<form id="formEdit" method="POST" enctype="multipart/form-data">
-@csrf
+      <form id="formEdit" method="POST" enctype="multipart/form-data">
+        @csrf
 
-<div class="modal-header">
-    <h5 class="modal-title">Edit Pengambilan</h5>
-    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-</div>
-
-<div class="modal-body">
-
-    <input type="hidden" id="edit_id">
-
-    <div class="row">
-        <div class="col-md-6 mb-3">
-            <label>Ambil Ke</label>
-            <input type="text" id="edit_ambil_ke" name="ambil_ke" class="form-control" required>
+        <div class="modal-header bg-gradient-warning text-white border-radius-lg">
+          <h5 class="modal-title">Edit Pengambilan</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
-        <div class="col-md-6 mb-3">
-            <label>Tanggal</label>
-            <input type="date" id="edit_tanggal" name="tanggal" class="form-control" required>
+
+        <div class="modal-body">
+
+          <input type="hidden" id="edit_id">
+
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label>Ambil Ke</label>
+              <input type="text" id="edit_ambil_ke" name="ambil_ke" class="form-control" required>
+            </div>
+            <div class="col-md-6">
+              <label>Tanggal</label>
+              <input type="date" id="edit_tanggal" name="tanggal" class="form-control" required>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label>List Barang</label>
+            <div id="edit_list_barang"></div>
+          </div>
+
+          <div class="mb-3">
+            <label>Foto</label>
+            <input type="file" name="foto" class="form-control">
+          </div>
+
         </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Update</button>
+        </div>
+
+      </form>
+
     </div>
-
-    <div class="mb-3">
-        <label>List Barang</label>
-        <div id="edit_list_barang"></div>
-    </div>
-
-    <div class="mb-3">
-        <label>Foto</label>
-        <input type="file" name="foto" class="form-control">
-    </div>
-
-</div>
-
-<div class="modal-footer">
-    <button type="submit" class="btn btn-success">Update</button>
-</div>
-
-</form>
-
-</div>
-</div>
+  </div>
 </div>
 
 {{-- MODAL DETAIL --}}
 <div class="modal fade" id="modalDetail" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content border-radius-lg shadow-sm">
 
-            <div class="modal-header">
-                <h5 class="modal-title">Detail Pengambilan</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
+      <div class="modal-header bg-gradient-primary text-white border-radius-lg">
+        <h5 class="modal-title">Detail Pengambilan</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
 
-            <div class="modal-body" id="detailContent">
-                {{-- isi detail dari JS --}}
-            </div>
+      <div class="modal-body" id="detailContent">
+        {{-- isi detail dari JS --}}
+      </div>
 
-        </div>
     </div>
+  </div>
 </div>
-
 
 @endsection
 

@@ -42,16 +42,17 @@
         <i class="fas fa-times p-3 cursor-pointer text-white opacity-5 position-absolute end-0 top-0 d-none d-xl-none"
             id="iconSidenav"></i>
 
-        <a class="navbar-brand m-0" href="{{ route('gudangpusat.dashboard') }}">
-            <img src="{{ asset('assets/img/logo-ct.png') }}" class="navbar-brand-img h-100">
-            <span class="ms-1 font-weight-bold text-white">
-                @hasrole('inventory cabang')
-                    Gudang Cabang
-                @else
-                    Gudang Pusat
-                @endhasrole
-            </span>
-        </a>
+            @php
+                $user = Auth::user();
+                $cabangNama = $user->cabang ? $user->cabang->nama : 'Gudang Pusat';
+            @endphp
+
+            <a class="navbar-brand m-0 d-flex align-items-center" href="{{ route('gudangpusat.dashboard') }}">
+                <img src="{{ asset('storage/RGlogo.webp') }}" class="navbar-brand-img h-100 me-2" style="height:40px; width:40px; object-fit:contain;">
+                <span class="ms-1 font-weight-bold text-white">
+                    {{ $cabangNama }}
+                </span>
+            </a>
     </div>
 
     <hr class="horizontal light mt-0 mb-2">

@@ -274,7 +274,7 @@
   <div class="modal-dialog modal-xl modal-dialog-centered">
     <div class="modal-content">
 
-      <div class="modal-header">
+      <div class="modal-header" style="background:linear-gradient(135deg,#3b82f6,#2563eb); color:white;">
         <h5 class="modal-title">Detail Pengiriman</h5>
         <button class="btn-close" data-bs-dismiss="modal"></button>
       </div>
@@ -286,33 +286,35 @@
     </div>
   </div>
 </div>
+
 <!-- modal terima -->
 <div class="modal fade" id="modalTerima">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
 
-      <form method="POST" id="formTerima"
-            enctype="multipart/form-data">
+      <form method="POST" id="formTerima" enctype="multipart/form-data">
         @csrf
 
-        <div class="modal-header">
-          <h5 class="modal-title">Penerimaan Barang</h5>
+        <div class="modal-header" style="background:linear-gradient(135deg,#22c55e,#16a34a); color:white;">
+          <h5 class="modal-title">Terima Pengiriman</h5>
           <button class="btn-close" data-bs-dismiss="modal"></button>
         </div>
 
         <div class="modal-body">
 
-          <table class="table table-modern">
-            <thead>
-              <tr>
-                <th>✔</th>
-                <th>Barang</th>
-                <th>Dikirim</th>
-                <th>Diterima</th>
-              </tr>
-            </thead>
-            <tbody id="bodyTerima"></tbody>
-          </table>
+          <div class="table-responsive">
+            <table class="table table-modern">
+              <thead>
+                <tr>
+                  <th>✔</th>
+                  <th>Barang</th>
+                  <th>Dikirim</th>
+                  <th>Diterima</th>
+                </tr>
+              </thead>
+              <tbody id="bodyTerima"></tbody>
+            </table>
+          </div>
 
           <div class="mb-2">
             <label>Foto Penerimaan</label>
@@ -336,6 +338,7 @@
     </div>
   </div>
 </div>
+
 
 @endsection
 
@@ -470,7 +473,7 @@ if (Array.isArray(catTerima) && catTerima.length > 0) {
     html += `
     <div class="card shadow-sm">
         <div class="card-header fw-bold"
-            style="background:linear-gradient(135deg,#ff5f9e,#ff3d7f); color:white;">
+            style="background:linear-gradient(135deg,#3b82f6,#2563eb); color:white;">
             Detail Barang Dikirim
         </div>
 

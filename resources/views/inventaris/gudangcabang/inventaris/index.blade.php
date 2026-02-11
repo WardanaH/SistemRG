@@ -65,6 +65,32 @@
     background: linear-gradient(135deg, #ff4d88, #ff2e63);
 }
 
+/* Header Animasi Gradient */
+.animated-header {
+    background: linear-gradient(270deg, #FFD54F, #FFA726, #FFB74D);
+    background-size: 600% 600%;
+    animation: gradientMove 8s ease infinite;
+    color: #fff;
+    border-bottom: none;
+    border-radius: 0.5rem 0.5rem 0 0;
+}
+
+@keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Modal title */
+.animated-header .modal-title {
+    font-size: 1.25rem;
+}
+
+/* Tombol close tetap putih */
+.animated-header .btn-close {
+    filter: brightness(0) invert(1);
+}
+
 </style>
 @section('content')
 <div class="container-fluid py-4">
@@ -338,34 +364,62 @@ MODAL EDIT INVENTARIS
 
             <input type="hidden" id="edit_id">
 
-            <div class="modal-header">
-                <h5>Edit Inventaris</h5>
-                <button class="btn-close" data-bs-dismiss="modal"></button>
+            {{-- Modal Header dengan animasi gradient --}}
+            <div class="modal-header animated-header">
+                <h5 class="modal-title fw-bold">Edit Inventaris</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
             <div class="modal-body">
-                <input type="text" name="nama_barang" id="edit_nama" class="form-control mb-2" required>
-                <input type="number" name="jumlah" id="edit_jumlah" class="form-control mb-2" required>
-                <select name="kondisi" id="edit_kondisi" class="form-control mb-2">
-                    <option>Baik</option>
-                    <option>Rusak Ringan</option>
-                    <option>Rusak Berat</option>
-                </select>
-                <input type="text" name="lokasi" id="edit_lokasi" class="form-control">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="edit_nama" class="form-label fw-semibold">Nama Barang</label>
+                        <input type="text" name="nama_barang" id="edit_nama" class="form-control" required>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="edit_jumlah" class="form-label fw-semibold">Jumlah</label>
+                        <input type="number" name="jumlah" id="edit_jumlah" class="form-control" required>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="edit_kondisi" class="form-label fw-semibold">Kondisi</label>
+                        <select name="kondisi" id="edit_kondisi" class="form-control">
+                            <option>Baik</option>
+                            <option>Rusak Ringan</option>
+                            <option>Rusak Berat</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="edit_lokasi" class="form-label fw-semibold">Lokasi</label>
+                        <input type="text" name="lokasi" id="edit_lokasi" class="form-control">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="edit_foto" class="form-label fw-semibold">Foto Barang (Opsional)</label>
+                        <input type="file" name="foto" id="edit_foto" class="form-control" accept="image/*">
+                        <small class="text-muted">Biarkan kosong jika tidak ingin mengganti foto.</small>
+                        <div class="mt-2">
+                            <img id="previewFoto" src="" class="img-fluid rounded" style="max-height:100px; display:none;">
+                        </div>
+                    </div>
+
+                </div>
             </div>
 
             <div class="modal-footer">
-                <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                <button class="btn bg-gradient-primary">Update</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" class="btn bg-gradient-primary">Update Inventaris</button>
             </div>
         </form>
     </div>
 </div>
-
 @endsection
 
 @push('scripts')
 <script>
+// Script preview foto & AJAX sama seperti sebelumnya
 function editInventaris(id){
     fetch(`/gudang-cabang/inventaris/${id}/edit`)
     .then(res => res.json())
@@ -376,6 +430,14 @@ function editInventaris(id){
         edit_kondisi.value = d.kondisi;
         edit_lokasi.value = d.lokasi ?? '';
         formEdit.action = `/gudang-cabang/inventaris/${id}`;
+
+        if(d.foto){
+            previewFoto.src = `/storage/${d.foto}`;
+            previewFoto.style.display = 'block';
+        } else {
+            previewFoto.style.display = 'none';
+        }
+
         new bootstrap.Modal(modalEdit).show();
     });
 }
@@ -387,6 +449,14 @@ document.getElementById('formEdit').addEventListener('submit', function(e){
         headers:{'X-CSRF-TOKEN':'{{ csrf_token() }}'},
         body:new FormData(this)
     }).then(()=>location.reload());
+});
+
+document.getElementById('edit_foto').addEventListener('change', function(){
+    const file = this.files[0];
+    if(file){
+        previewFoto.src = URL.createObjectURL(file);
+        previewFoto.style.display = 'block';
+    }
 });
 </script>
 @endpush

@@ -98,6 +98,28 @@
     border-radius:0 12px 12px 0;
 }
 
+.animated-header {
+    background: linear-gradient(270deg, #FFD54F, #FFA726, #FFB74D);
+    background-size: 600% 600%;
+    animation: gradientMove 8s ease infinite;
+    color: #fff;
+    border-bottom: none;
+    border-radius: 0.5rem 0.5rem 0 0;
+}
+
+@keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.animated-header .modal-title {
+    font-size: 1.25rem;
+}
+
+.animated-header .btn-close {
+    filter: brightness(0) invert(1);
+}
 </style>
 
 @section('content')
@@ -376,17 +398,20 @@ MODAL EDIT BARANG
 <div class="modal fade" id="modalEditBarang">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <form method="POST" id="formEditBarang" class="modal-content">
-            @csrf @method('PUT')
+            @csrf
+            @method('PUT')
 
-            <div class="modal-header">
-                <h5>Edit Barang</h5>
-                <button class="btn-close" data-bs-dismiss="modal"></button>
+            {{-- Modal Header Animasi --}}
+            <div class="modal-header animated-header">
+                <h5 class="modal-title fw-bold">Edit Barang</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
             <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Nama Bahan</label>
+                <div class="row g-3">
+
+                    <div class="col-md-6">
+                        <label for="edit_nama" class="form-label fw-semibold">Nama Bahan</label>
                         <input type="text"
                             name="nama_bahan"
                             id="edit_nama"
@@ -394,11 +419,11 @@ MODAL EDIT BARANG
                             required>
                     </div>
 
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Satuan</label>
+                    <div class="col-md-6">
+                        <label for="edit_satuan" class="form-label fw-semibold">Satuan</label>
                         <select name="satuan"
                                 id="edit_satuan"
-                                class="form-control">
+                                class="form-control select2">
                             <option>ROLL</option>
                             <option>PACK</option>
                             <option>LEMBAR</option>
@@ -412,8 +437,8 @@ MODAL EDIT BARANG
                         </select>
                     </div>
 
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Stok</label>
+                    <div class="col-md-6">
+                        <label for="edit_stok" class="form-label fw-semibold">Stok</label>
                         <input type="text"
                             name="stok"
                             id="edit_stok"
@@ -421,8 +446,8 @@ MODAL EDIT BARANG
                             required>
                     </div>
 
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">Batas Stok Maksimal</label>
+                    <div class="col-md-6">
+                        <label for="edit_batas" class="form-label fw-semibold">Batas Stok Maksimal</label>
                         <input type="text"
                             name="batas_stok"
                             id="edit_batas"
@@ -430,20 +455,21 @@ MODAL EDIT BARANG
                             required>
                     </div>
 
-                    <div class="col-md-12 mb-3">
-                        <label class="form-label">Keterangan</label>
+                    <div class="col-md-12">
+                        <label for="edit_keterangan" class="form-label fw-semibold">Keterangan</label>
                         <textarea name="keterangan"
                                 id="edit_keterangan"
                                 class="form-control"
                                 rows="2"
                                 placeholder="Opsional"></textarea>
                     </div>
+
                 </div>
             </div>
 
             <div class="modal-footer">
-                <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                <button class="btn bg-gradient-primary">Simpan</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" class="btn bg-gradient-primary">Simpan</button>
             </div>
         </form>
     </div>
@@ -459,12 +485,23 @@ function editBarang(id,nama,satuan,stok,batas,ket){
     edit_stok.value = stok;
     edit_batas.value = batas;
     edit_keterangan.value = ket ?? '';
+
     formEditBarang.action = '/gudang-pusat/barang/update/' + id;
+
+    // Initialize select2 di modal
+    $(edit_satuan).select2({
+        dropdownParent: $('#modalEditBarang'),
+        width: '100%'
+    });
+
+    // Set value setelah select2 aktif
+    $(edit_satuan).val(satuan).trigger('change');
+
     new bootstrap.Modal(modalEditBarang).show();
 }
-</script>
 
-<script>
+
+// Hapus data
 function hapusData(id){
     Swal.fire({
         title:'Yakin hapus?',
@@ -474,18 +511,12 @@ function hapusData(id){
         if(r.isConfirmed) document.getElementById('hapus-'+id).submit();
     })
 }
-</script>
 
-<script>
-$('.select2').select2({ width:'100%' });
-</script>
-<script>
+// Format number
 function formatNumberID(value) {
     value = value.replace(/[^0-9,]/g, '');
-
     let parts = value.split(',');
     parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-
     return parts.length > 1
         ? parts[0] + ',' + parts[1].slice(0, 2)
         : parts[0];
@@ -496,6 +527,8 @@ document.querySelectorAll('.number-format').forEach(input => {
         this.value = formatNumberID(this.value);
     });
 });
+
+$('.select2').select2({ width:'100%' });
 </script>
 
 @endsection

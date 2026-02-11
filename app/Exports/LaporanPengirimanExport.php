@@ -16,9 +16,10 @@ class LaporanPengirimanExport implements FromView, ShouldAutoSize
     protected $tanggalAkhir;
     protected $bulan;
     protected $tahun;
+    protected $transaksi;
 
     public function __construct(
-        $pengiriman,
+        $transaksi,
         $rekap,
         $semuaCabang,
         $filterPeriode = null,
@@ -27,7 +28,7 @@ class LaporanPengirimanExport implements FromView, ShouldAutoSize
         $bulan = null,
         $tahun = null
     ){
-        $this->pengiriman = $pengiriman;
+        $this->transaksi = $transaksi;
         $this->rekap = $rekap;
         $this->semuaCabang = $semuaCabang;
         $this->filterPeriode = $filterPeriode;
@@ -40,7 +41,7 @@ class LaporanPengirimanExport implements FromView, ShouldAutoSize
     public function view(): View
     {
         return view('inventaris.gudangpusat.laporan_excel', [
-            'pengiriman'      => $this->pengiriman,
+            'transaksi'      => $this->transaksi,
             'rekap'           => $this->rekap,
             'semuaCabang'     => $this->semuaCabang,
             'filterPeriode'   => $this->filterPeriode,

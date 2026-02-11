@@ -46,6 +46,13 @@ TABLE MODERN
     border-radius:0 14px 14px 0;
 }
 
+/* table di modal proses & detail */
+.table-modern.modal-table td {
+    padding: 12px !important;
+}
+.table-modern.modal-table th {
+    font-size: 12px;
+}
 
 /* =============================
 STATUS BADGE (biar ga norak)
@@ -467,7 +474,7 @@ MODAL DETAIL
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
 
-            <div class="modal-header">
+            <div class="modal-header bg-gradient-success text-white">
                 <h5 class="modal-title">Detail Pengiriman</h5>
                 <button class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -491,7 +498,7 @@ MODAL PROSES PERMINTAAN
 
         <input type="hidden" name="permintaan_id" id="permintaan_id">
 
-        <div class="modal-header">
+        <div class="modal-header bg-gradient-primary text-white">
           <h5 class="modal-title">Proses Permintaan Pengiriman</h5>
           <button class="btn-close" data-bs-dismiss="modal"></button>
         </div>
@@ -501,7 +508,7 @@ MODAL PROSES PERMINTAAN
           <p><b>Kode:</b> <span id="kode_permintaan"></span></p>
           <p><b>Cabang:</b> <span id="nama_cabang"></span></p>
 
-          <table class="table table-bordered mt-3">
+          <table class="table table-modern modal-table align-items-center mb-0">
             <thead class="table-light">
               <tr>
                 {{-- <th width="50">✔</th> --}}
@@ -552,7 +559,7 @@ MODAL EDIT PENGIRIMAN (PERBAIKAN)
                 @csrf
                 @method('PUT')
 
-                <div class="modal-header">
+                <div class="modal-header bg-gradient-warning text-white">
                     <h5 class="modal-title">Edit Pengiriman</h5>
                     <button class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
@@ -561,7 +568,7 @@ MODAL EDIT PENGIRIMAN (PERBAIKAN)
                     <p><b>Kode Pengiriman:</b> <span id="edit_kode"></span></p>
                     <p><b>Cabang Tujuan:</b> <span id="edit_cabang"></span></p>
 
-                    <table class="table table-bordered mt-3">
+                    <table class="table table-modern modal-table align-items-center mb-0">
                     <thead class="table-light">
                         <tr>
                             <th>Nama Barang</th>
@@ -660,16 +667,16 @@ $(document).on('click', '.btn-detail', function () {
     // DETAIL BARANG
     // =============================
     html += `
-    <div class="card shadow-sm">
-        <div class="card-header bg-info fw-bold">
+    <div class="card shadow-sm mt-3">
+        <div class="card-header bg-gradient-success text-white fw-bold">
             Detail Barang Dikirim
         </div>
 
-        <div class="table-responsive">
-            <table class="table">
-                <thead class="bg-light">
+        <div class="table-responsive p-3">
+            <table class="table table-modern modal-table align-items-center mb-0">
+                <thead>
                     <tr>
-                        <th>No</th>
+                        <th class="text-center">No</th>
                         <th>Barang</th>
                         <th>Jumlah</th>
                         <th>Satuan</th>
@@ -681,13 +688,13 @@ $(document).on('click', '.btn-detail', function () {
 
     detail.forEach((d, i) => {
         html += `
-            <tr>
-                <td>${i + 1}</td>
-                <td class="fw-semibold">${d.nama_barang}</td>
-                <td>${d.jumlah}</td>
-                <td>${d.satuan}</td>
-                <td class="text-muted">${d.keterangan ?? '-'}</td>
-            </tr>
+        <tr>
+            <td class="text-center">${i + 1}</td>
+            <td>${d.nama_barang}</td>
+            <td>${d.jumlah}</td>
+            <td>${d.satuan}</td>
+            <td>${d.keterangan ?? '-'}</td>
+        </tr>
         `;
     });
 
@@ -781,29 +788,28 @@ $(document).on('click', '.btn-proses', function () {
 
             detail.forEach((item, index) => {
 
-                let rowClass = item.stok <= 0 ? 'text-muted' : '';
-                let statusStok = item.stok <= 0
-                    ? `<span class="badge bg-danger">Stok Habis</span>`
-                    : `<span class="badge bg-success">Tersedia</span>`;
+            let rowClass = item.stok <= 0 ? 'text-muted' : '';
+            let statusStok = item.stok <= 0
+                ? `<span class="badge bg-danger">Stok Habis</span>`
+                : `<span class="badge bg-success">Tersedia</span>`;
 
-                rows += `
-                <tr class="${rowClass}">
-                    <td class="fw-semibold">${item.nama_barang}</td>
-                    <td>${item.jumlah}</td>
-                    <td>${item.satuan}</td>
-                    <td>
-                        ${item.stok}
-                        <div class="mt-1">${statusStok}</div>
-                    </td>
-
-                    <input type="hidden" name="barang[${index}][gudang_barang_id]" value="${item.gudang_barang_id}">
-                    <input type="hidden" name="barang[${index}][jumlah]" value="${item.jumlah}">
-                    <input type="hidden" name="barang[${index}][checked]" value="1">
-                    <td>${item.keterangan ?? '-'}</td>
-
-                </tr>
-                `;
-            });
+            rows += `
+            <tr class="${rowClass}">
+                <td>${item.nama_barang}</td>
+                <td>${item.jumlah}</td>
+                <td>${item.satuan}</td>
+                <td>
+                    ${item.stok}
+                    <div class="mt-1">${statusStok}</div>
+                </td>
+                <td>
+                    <input type="text" name="barang[${index}][keterangan]" value="${item.keterangan ?? ''}" class="form-control">
+                </td>
+                <input type="hidden" name="barang[${index}][gudang_barang_id]" value="${item.gudang_barang_id}">
+                <input type="hidden" name="barang[${index}][jumlah]" value="${item.jumlah}">
+                <input type="hidden" name="barang[${index}][checked]" value="1">
+            </tr>`;
+        });
 
             $('#listBarang').html(rows);
 

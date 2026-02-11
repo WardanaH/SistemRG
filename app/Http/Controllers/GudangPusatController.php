@@ -1107,7 +1107,13 @@ public function laporanExcel(Request $request)
     $transaksi = $this->getTransaksiFull($request);
     $semuaBarang = MGudangBarang::all();
 
-    $semuaCabang = $transaksi->pluck('cabang')->unique()->map(fn($nama) => (object)['nama' => $nama])->values();
+    $semuaCabang = $transaksi->pluck('cabang')->unique()->values()
+    ->map(function($nama, $index){
+        return (object)[
+            'id' => $index + 1, // tambahkan id
+            'nama' => $nama
+        ];
+    });
 
     $rekap = [];
     foreach ($semuaBarang as $barang) {
