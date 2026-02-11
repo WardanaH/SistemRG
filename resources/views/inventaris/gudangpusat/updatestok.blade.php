@@ -2,6 +2,47 @@
 
 @section('title', 'Update Stok Gudang Pusat')
 
+<style>
+.table-modern{
+    border-collapse: separate;
+    border-spacing: 0 8px;
+}
+
+.table-modern tbody tr{
+    background: #fff;
+    box-shadow: 0 4px 10px rgba(0,0,0,.04);
+    border-radius:12px;
+    transition:.2s;
+}
+
+.table-modern tbody tr:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(0,0,0,.06);
+}
+
+.table-modern td{
+    border-top:none !important;
+    padding:18px !important;
+}
+
+.table-modern tbody tr td:first-child{
+    border-radius:12px 0 0 12px;
+}
+
+.table-modern tbody tr td:last-child{
+    border-radius:0 12px 12px 0;
+}
+
+/* biar header ga kaku */
+.table-modern thead th{
+    border:none;
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:.5px;
+    color:#8392ab;
+}
+</style>
+
 @section('content')
 <div class="container-fluid py-4">
 
@@ -116,7 +157,7 @@
                         </form>
                     </div>
                     <div class="table-responsive">
-                        <table class="table align-items-center mb-0">
+                        <table class="table table-modern align-items-center">
                             <thead>
                                 <tr>
                                     <th class="text-center">No</th>
@@ -138,13 +179,47 @@
                                             </div>
                                             <div class="d-flex flex-column justify-content-center">
                                                 <h6 class="mb-0 text-sm">{{ $item->nama_bahan }}</h6>
-                                                <p class="text-xs text-secondary mb-0">{{ $item->satuan }}</p>
+                                                @php
+                                                $icons = [
+                                                    'ROLL'=>'refresh',
+                                                    'PACK'=>'inventory_2',
+                                                    'LEMBAR'=>'description',
+                                                    'METER'=>'straighten',
+                                                    'BOX'=>'inbox',
+                                                    'PCS'=>'widgets',
+                                                    'RIM'=>'layers',
+                                                    'TANK'=>'propane_tank',
+                                                    'BOTOL'=>'liquor',
+                                                    'LUSIN'=>'view_comfy'
+                                                ];
+                                                $icon = $icons[strtoupper(trim($item->satuan))] ?? 'inventory_2';
+                                                @endphp
+
+                                                <div class="d-flex align-items-center gap-1">
+                                                    <i class="material-icons text-secondary" style="font-size:15px">
+                                                        {{ $icon }}
+                                                    </i>
+
+                                                    <span class="text-xs text-secondary">
+                                                        {{ ucfirst(strtolower($item->satuan)) }}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
                                     </td>
 
                                     {{-- <td>{{ $item->satuan }}</td> --}}
-                                    <td>{{ $item->stok_formatted }}</td>
+                                    <td>
+                                        <span style="
+                                            background:#f1f5f9;
+                                            padding:6px 12px;
+                                            border-radius:8px;
+                                            font-weight:700;
+                                            font-size:14px;
+                                        ">
+                                            {{ $item->stok_formatted }}
+                                        </span>
+                                    </td>
                                 </tr>
                                 @empty
                                 <tr>

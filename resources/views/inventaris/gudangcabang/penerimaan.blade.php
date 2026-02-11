@@ -1,6 +1,76 @@
 @extends('inventaris.layouts.app')
 
 @section('title', 'Penerimaan Barang')
+<style>
+
+/* Pink identity biar konsisten */
+.bg-gradient-pink{
+    background:linear-gradient(135deg,#ff5f9e,#ff3d7f);
+}
+
+.shadow-pink{
+    box-shadow:0 6px 18px rgba(255,77,136,.35);
+}
+
+/* TABLE MODERN */
+.table-modern{
+    border-collapse:separate;
+    border-spacing:0 12px;
+}
+
+.table-modern tbody tr{
+    background:#fff;
+    box-shadow:0 6px 16px rgba(0,0,0,.05);
+    transition:.25s;
+}
+
+.table-modern tbody tr:hover{
+    transform:translateY(-4px);
+}
+
+/* Avatar icon lebih soft */
+.avatar-soft{
+    background:rgba(255,95,158,.12);
+    color:#ff3d7f;
+}
+
+/* Badge biar ga norak */
+.badge{
+    border-radius:8px;
+    padding:6px 10px;
+    font-weight:600;
+}
+
+/* tombol detail */
+.btn-detail{
+    background:rgba(59,130,246,.1);
+    border-radius:8px;
+}
+
+.btn-detail:hover{
+    background:#3b82f6;
+    color:white !important;
+}
+
+/* tombol terima */
+.btn-terima{
+    border-radius:10px;
+    font-weight:600;
+    box-shadow:0 4px 12px rgba(34,197,94,.3);
+}
+
+/* modal biar modern */
+.modal-content{
+    border-radius:16px;
+    border:none;
+    box-shadow:0 20px 60px rgba(0,0,0,.2);
+}
+
+.badge-status{
+    border-radius:999px;
+    padding:6px 14px;
+}
+</style>
 
 @section('content')
 <div class="container-fluid py-4">
@@ -56,7 +126,7 @@
                     @else
 
                     <div class="table-responsive p-0">
-                        <table class="table align-items-center mb-0">
+                        <table class="table table-modern align-items-center">
                         <thead>
                         <tr>
                             <th class="text-center">No</th>
@@ -88,7 +158,9 @@
                             <td>
                                 <div class="d-flex px-2 py-1">
                                     <div class="avatar avatar-sm me-3 border-radius-md
-                                                bg-gradient-primary d-flex align-items-center justify-content-center">
+                                    d-flex align-items-center justify-content-center"
+                                    style="background:linear-gradient(135deg,#ff3d7f,#ff0055);">
+
                                         <i class="material-icons text-white text-sm">inventory_2</i>
                                     </div>
                                     <div class="d-flex flex-column justify-content-center">
@@ -111,7 +183,12 @@
 
                             {{-- TANGGAL KIRIM --}}
                             <td>
-                                {{ \Carbon\Carbon::parse($r->tanggal_pengiriman)->format('d M Y') }}
+                            <div class="d-flex align-items-center">
+                                <i class="material-icons me-2 text-primary">calendar_today</i>
+                                <span class="text-sm">
+                                    {{ \Carbon\Carbon::parse($r->tanggal_pengiriman)->format('d M Y') }}
+                                </span>
+                            </div>
                             </td>
 
                             {{-- STATUS --}}
@@ -163,7 +240,7 @@
                             <td class="text-center">
                                 @if($r->status_pengiriman == 'Dikirim')
                                     <button
-                                        class="btn btn-success btn-sm btn-terima"
+                                        class="btn btn-terima btn-sm"style="background:linear-gradient(135deg,#22c55e,#16a34a); border:none; color:white;"
                                         data-id="{{ $r->id }}"
                                         data-detail='@json($detail)'>
                                         Terima
@@ -194,7 +271,7 @@
 </div>
 <!-- modal detail -->
 <div class="modal fade" id="modalDetail">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
     <div class="modal-content">
 
       <div class="modal-header">
@@ -225,7 +302,7 @@
 
         <div class="modal-body">
 
-          <table class="table table-bordered">
+          <table class="table table-modern">
             <thead>
               <tr>
                 <th>✔</th>
@@ -392,7 +469,8 @@ if (Array.isArray(catTerima) && catTerima.length > 0) {
 
     html += `
     <div class="card shadow-sm">
-        <div class="card-header bg-info fw-bold">
+        <div class="card-header fw-bold"
+            style="background:linear-gradient(135deg,#ff5f9e,#ff3d7f); color:white;">
             Detail Barang Dikirim
         </div>
 

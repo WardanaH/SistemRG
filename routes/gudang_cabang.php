@@ -43,14 +43,15 @@ Route::middleware(['auth', 'role:inventory cabang'])
         Route::get('/laporan', [GudangCabangController::class, 'laporanIndex'])
             ->name('laporan.index');
 
-        Route::get('/laporan/{bulan}/{tahun}', [GudangCabangController::class, 'laporanDetail'])
+        Route::get('/laporan/detail', [GudangCabangController::class, 'laporanDetail'])
             ->name('laporan.detail');
 
-        Route::get('/laporan/{bulan}/{tahun}/download', [GudangCabangController::class, 'laporanDownload'])
+        Route::get('/laporan/download', [GudangCabangController::class, 'laporanDownload'])
             ->name('laporan.download');
 
-        Route::get('/laporan/{bulan}/{tahun}/excel',[GudangCabangController::class, 'laporanExcel'])
+        Route::get('/laporan/excel',[GudangCabangController::class, 'laporanExcel'])
             ->name('laporan.excel');
+            
 
         //notif
         Route::post('/notif/read/{id}', [GudangCabangController::class, 'markNotifRead'])

@@ -1,7 +1,66 @@
 @extends('inventaris.layouts.app')
 
 @section('title', 'Laporan Pengiriman')
+<style>
 
+/* ===== MODERN TABLE ===== */
+.table-modern{
+    border-collapse: separate;
+    border-spacing: 0 10px;
+}
+
+.table-modern tbody tr{
+    background:#fff;
+    box-shadow:0 4px 12px rgba(0,0,0,.05);
+    transition:.25s;
+}
+
+.table-modern tbody tr:hover{
+    transform:translateY(-3px);
+    box-shadow:0 10px 22px rgba(0,0,0,.08);
+}
+
+.table-modern td{
+    border-top:none !important;
+    padding:20px !important;
+}
+
+.table-modern tbody tr td:first-child{
+    border-radius:14px 0 0 14px;
+}
+
+.table-modern tbody tr td:last-child{
+    border-radius:0 14px 14px 0;
+}
+
+/* header biar ga pucet */
+.table-modern thead th{
+    border:none;
+    font-size:11px;
+    letter-spacing:.6px;
+    text-transform:uppercase;
+    color:#94a3b8;
+    font-weight:700;
+}
+
+/* tombol detail biar premium */
+.btn-detail{
+    border-radius:10px;
+    padding:6px 14px;
+    font-weight:600;
+    transition:.2s;
+}
+
+.btn-detail:hover{
+    transform:scale(1.05);
+}
+
+/* filter section biar lebih soft */
+.card-body.border-bottom{
+    background:#fbfbfc;
+}
+
+</style>
 @section('content')
 <div class="container-fluid py-4">
 
@@ -85,7 +144,7 @@
                 <div class="card-body px-0 pb-2">
                     <div class="table-responsive p-0">
 
-                        <table class="table align-items-center mb-0">
+                        <table class="table table-modern align-items-center">
                             <thead>
                                 <tr>
                                     @if($filterPeriode == 'hari')
@@ -109,7 +168,7 @@
                                         <td>
                                             <div class="d-flex px-2 py-1">
                                                 <div>
-                                                    <div class="avatar avatar-sm me-3 border-radius-md bg-gradient-info d-flex align-items-center justify-content-center">
+                                                    <div class="avatar avatar-sm me-3 border-radius-md bg-gradient-info shadow-info d-flex align-items-center justify-content-center">
                                                         <i class="material-icons text-white text-sm">event</i>
                                                     </div>
                                                 </div>
@@ -123,7 +182,7 @@
                                         <td>
                                             <div class="d-flex px-2 py-1">
                                                 <div>
-                                                    <div class="avatar avatar-sm me-3 border-radius-md bg-gradient-info d-flex align-items-center justify-content-center">
+                                                    <div class="avatar avatar-sm me-3 border-radius-md bg-gradient-success shadow-success d-flex align-items-center justify-content-center">
                                                         <i class="material-icons text-white text-sm">event</i>
                                                     </div>
                                                 </div>
@@ -223,7 +282,7 @@
     $detailRoute = route('laporan.pengiriman.detail', $query);
 @endphp
 
-<a href="{{ $detailRoute }}" class="btn btn-sm bg-gradient-primary">
+<a href="{{ $detailRoute }}" class="btn btn-sm bg-gradient-primary btn-detail">
     <i class="material-icons text-sm">visibility</i>
     Detail
 </a>

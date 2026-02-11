@@ -1,128 +1,154 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Laporan Penerimaan</title>
+    <title>Laporan Transaksi Barang</title>
     <style>
-        body { font-family: Arial, sans-serif; }
-        .header { text-align: center; margin-bottom: 20px; }
-        .table { width: 100%; border-collapse: collapse; }
-        .table th, .table td { border: 1px solid #000; padding: 8px; font-size: 12px; }
-        .table th { background: #f0f0f0; }
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th, .table td {
+            border: 1px solid #000;
+            padding: 6px;
+            font-size: 11px;
+        }
+
+        .table th {
+            background: #f0f0f0;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .bold {
+            font-weight: bold;
+        }
+
+        .thead-blue th {
+            background-color: #84d2ff;
+            color: #000000;
+            text-align: center;
+        }
+
+        .thead-pink th {
+            background-color: #fcbed2;
+            color: #000000;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
+
     <div class="header">
-        <h3><b>LAPORAN PENERIMAAN BARANG</b></h3>
-        <p>Bulan {{ \Carbon\Carbon::create()->month((int)$bulan)->translatedFormat('F') }} Tahun {{ $tahun }}</p>
+        <h3><b>LAPORAN TRANSAKSI BARANG</b></h3>
+        <p>
+            Cabang {{ $cabang->nama }} <br>
+            Bulan {{ \Carbon\Carbon::create()->month((int)$bulan)->translatedFormat('F') }}
+            Tahun {{ $tahun }}
+        </p>
     </div>
 
+    {{-- ================================
+        TABEL DETAIL TRANSAKSI
+    ================================= --}}
     <table class="table">
         <thead class="thead-blue">
             <tr>
-                <th style="width: 12%">Tanggal Diterima</th>
+                <th style="width: 12%">Tanggal</th>
+                <th style="width: 12%">Jenis</th>
                 <th>Nama Barang</th>
-                <th style="width: 10%">Jumlah</th>
-                <th style="width: 10%">Satuan</th>
+                <th style="width: 8%">Jumlah</th>
+                <th style="width: 8%">Satuan</th>
                 <th>Keterangan</th>
-                <th style="width: 20%">Dari Cabang / Gudang</th>
+                <th style="width: 18%">Asal / Tujuan</th>
             </tr>
         </thead>
         <tbody>
-            @foreach($pengiriman as $item)
-                @php
-                    $detail = $item->keterangan_terima;
-                    if (is_string($detail)) $detail = json_decode($detail, true);
-                    if (!is_array($detail)) $detail = [];
-                @endphp
-
+            @forelse($transaksi as $row)
                 <tr>
-                    <td style="text-align:center">{{ \Carbon\Carbon::parse($item->tanggal_diterima)->format('d-m-Y') }}</td>
+                    <td class="text-center">
+                        {{ \Carbon\Carbon::parse($row['tanggal'])->format('d-m-Y') }}
+                    </td>
 
-                    {{-- Nama Barang --}}
+                    <td class="text-center bold">
+                        {{ $row['jenis'] }}
+                    </td>
+
                     <td>
-                        @if(count($detail) > 0)
-                            @foreach($detail as $d)
-                                {{ $d['nama_barang'] ?? '-' }}<br>
-                            @endforeach
-                        @else
-                            -
-                        @endif
+                        {{ $row['barang'] }}
                     </td>
 
-                    {{-- Jumlah --}}
-                    <td style="text-align:center">
-                        @if(count($detail) > 0)
-                            @foreach($detail as $d)
-                                {{ $d['jumlah'] ?? '-' }}<br>
-                            @endforeach
-                        @else
-                            -
-                        @endif
+                    <td class="text-center">
+                        {{ $row['jumlah'] }}
                     </td>
 
-                    {{-- Satuan --}}
-                    <td style="text-align:center">
-                        @if(count($detail) > 0)
-                            @foreach($detail as $d)
-                                {{ $d['satuan'] ?? '-' }}<br>
-                            @endforeach
-                        @else
-                            -
-                        @endif
+                    <td class="text-center">
+                        {{ $row['satuan'] }}
                     </td>
 
-                    {{-- Keterangan --}}
                     <td>
-                        @if(count($detail) > 0)
-                            @foreach($detail as $d)
-                                {{ $d['keterangan'] ?? '-' }}<br>
-                            @endforeach
-                        @else
-                            -
-                        @endif
+                        {{ $row['keterangan'] }}
                     </td>
 
-                    {{-- Dari Cabang / Gudang --}}
-                    <td>{{ $item->cabangAsal->nama ?? 'Gudang Pusat' }}</td>
+                    <td>
+                        {{ $row['asal_tujuan'] }}
+                    </td>
                 </tr>
-            @endforeach
+            @empty
+                <tr>
+                    <td colspan="7" class="text-center">
+                        Tidak ada data pada periode ini
+                    </td>
+                </tr>
+            @endforelse
         </tbody>
     </table>
+
     <br><br>
-    <h4 style="text-align:center">Rekap Total Penerimaan Barang</h4>
+
+    {{-- ================================
+        REKAP TOTAL
+    ================================= --}}
+    <h4 style="text-align:center">Rekap Total Barang</h4>
 
     <table class="table">
         <thead class="thead-pink">
-            <tr style="text-align:center">
+            <tr>
                 <th>Nama Barang</th>
-                <th>Satuan</th>
-                <th>Total Diterima</th>
+                <th style="width: 15%">Satuan</th>
+                <th style="width: 20%">Total</th>
             </tr>
         </thead>
         <tbody>
-            @foreach($rekap as $row)
+            @forelse($rekap as $row)
             <tr>
                 <td>{{ $row['barang'] }}</td>
-                <td style="text-align:center">{{ $row['satuan'] }}</td>
-                <td style="text-align:center; font-weight:bold">
+                <td class="text-center">{{ $row['satuan'] }}</td>
+                <td class="text-center bold">
                     {{ $row['total'] }}
                 </td>
             </tr>
-            @endforeach
+            @empty
+            <tr>
+                <td colspan="3" class="text-center">
+                    Tidak ada rekap
+                </td>
+            </tr>
+            @endforelse
         </tbody>
     </table>
-</body>
-<style>
-.thead-blue th {
-    background-color: #84d2ff;
-    color: #000000;
-    text-align: center;
-}
 
-.thead-pink th {
-    background-color: #fcbed2;
-    color: #000000;
-    text-align: center;
-}
-</style>
+</body>
 </html>

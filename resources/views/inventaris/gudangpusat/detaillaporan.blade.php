@@ -295,15 +295,19 @@
                             $pdfRoute   = route('laporan.pengiriman.download') . '?' . $query;
                         @endphp
                         {{-- EXCEL --}}
-                        <a href="{{ $excelRoute }}"
-                        class="btn btn-success px-2 py-1"
+                        <a href="#"
+                        data-url="{{ $excelRoute }}"
+                        class="btn btn-success px-2 py-1 btn-download"
+                        data-type="excel"
                         title="Download Excel">
                             <i class="material-icons fs-1">table_view</i>
                         </a>
 
                         {{-- PDF --}}
-                        <a href="{{ $pdfRoute }}"
-                        class="btn btn-danger px-2 py-1"
+                        <a href="#"
+                        data-url="{{ $pdfRoute }}"
+                        class="btn btn-danger px-2 py-1 btn-download"
+                        data-type="pdf"
                         title="Download PDF">
                             <i class="material-icons fs-1">picture_as_pdf</i>
                         </a>
@@ -334,5 +338,25 @@ $(document).ready(function() {
 
 });
 </script>
+<script>
+$(document).on('click', '.btn-download', function(e){
+    e.preventDefault();
+
+    let url = $(this).data('url');
+
+    Swal.fire({
+        title: 'Sedang menyiapkan laporan...',
+        text: 'Klik OK untuk download full laporan.',
+        icon: 'info',
+        confirmButtonText: 'OK',
+        allowOutsideClick: false
+    }).then((result) => {
+        if(result.isConfirmed){
+            window.location.href = url;
+        }
+    });
+});
+</script>
+
 @endpush
 

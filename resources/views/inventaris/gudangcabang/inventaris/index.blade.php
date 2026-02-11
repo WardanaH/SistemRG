@@ -1,7 +1,71 @@
 @extends('inventaris.layouts.app')
 
 @section('title', 'Inventaris Gudang Cabang')
+<style>
 
+/* INPUT */
+.form-control{
+    border-radius:10px;
+    border:1px solid #e0e0e0;
+}
+
+.form-control:focus{
+    border-color:#43a047;
+    box-shadow:0 0 0 2px rgba(67,160,71,0.15);
+}
+
+/* SEARCH BOX */
+.search-box{
+    border-radius:30px;
+    padding-left:20px;
+}
+
+/* TABEL BIAR GA KAKU */
+.table thead th{
+    font-size:12px;
+    color:#7b809a;
+    border-bottom:1px solid #eee;
+}
+
+.table tbody tr{
+    transition:.2s;
+}
+
+.table tbody tr:hover{
+    background:#f8f9fa;
+}
+
+/* FOTO */
+.img-inventaris{
+    width:55px;
+    height:55px;
+    object-fit:cover;
+    border-radius:12px;
+    transition:.3s;
+}
+
+.img-inventaris:hover{
+    transform:scale(1.7);
+    z-index:99;
+}
+
+/* BADGE LEBIH SOFT */
+.badge{
+    font-weight:500;
+    padding:6px 10px;
+    border-radius:8px;
+}
+
+/* BUTTON EDIT */
+.btn-edit{
+    border-radius:10px;
+}
+
+.bg-gradient-pink{
+    background: linear-gradient(135deg, #ff4d88, #ff2e63);
+}
+
+</style>
 @section('content')
 <div class="container-fluid py-4">
 
@@ -32,7 +96,8 @@
             <div class="card my-4">
                 <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
                     <div class="bg-gradient-success shadow-success border-radius-lg pt-4 pb-3">
-                        <h6 class="text-white ps-3">Tambah Inventaris Kantor Cabang</h6>
+                        <h6 class="text-white ps-3 fw-bold">+ Tambah Inventaris Kantor Cabang</h6>
+
                     </div>
                 </div>
 
@@ -111,9 +176,10 @@
                         <form method="GET" action="{{ route('gudangcabang.inventaris.index') }}">
                             <div class="row">
                                 <div class="col-md-4">
-                                    <input type="text"
-                                        name="search"
-                                        class="form-control"
+                                <input type="text"
+                                    name="search"
+                                    class="form-control search-box"
+                                    placeholder="🔍 Cari kode atau nama barang..."
                                         placeholder="Cari kode atau nama barang..."
                                         value="{{ request('search') }}">
                                 </div>
@@ -144,8 +210,16 @@
                         <tr>
 
                             {{-- KODE --}}
-                            <td class="fw-bold text-sm">
-                                {{ $item->kode_barang }}
+                            <td>
+                                <div class="d-flex px-2 py-1 align-items-center">
+                                    <div class="avatar avatar-sm me-3 bg-gradient-pink border-radius-md d-flex align-items-center justify-content-center">
+                                        <i class="material-icons text-white text-sm">qr_code</i>
+                                    </div>
+
+                                    <span class="fw-bold text-sm">
+                                        {{ $item->kode_barang }}
+                                    </span>
+                                </div>
                             </td>
 
                             {{-- NAMA BARANG (ADA IKON KOTAK MELENGKUNG) --}}
@@ -163,7 +237,9 @@
 
                             {{-- JUMLAH --}}
                             <td>
-                                {{ $item->jumlah }}
+                                <span class="badge bg-gradient-info">
+                                    {{ $item->jumlah }} pcs
+                                </span>
                             </td>
 
                             {{-- KONDISI --}}
@@ -185,9 +261,8 @@
                             {{-- foto --}}
                             <td>
                                 @if($item->foto)
-                                    <img src="{{ asset('storage/'.$item->foto) }}"
-                                        width="50"
-                                        class="rounded">
+                                <img src="{{ asset('storage/'.$item->foto) }}"
+                                    class="img-inventaris">
                                 @else
                                     <span class="text-muted">-</span>
                                 @endif

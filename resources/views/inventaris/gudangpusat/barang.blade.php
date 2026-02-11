@@ -1,6 +1,104 @@
 @extends('inventaris.layouts.app')
 
 @section('title', 'Barang Gudang Pusat')
+<style>
+
+.table-modern tbody tr{
+    transition: all .2s ease;
+}
+
+.table-modern tbody tr:hover{
+    background:#f8f9fa;
+    transform: scale(1.003);
+}
+
+/* aksi kotak */
+.action-box{
+    display:inline-flex;
+    gap:6px;
+    padding:4px;
+    background:#f1f3f4;
+    border-radius:12px;
+}
+
+.action-btn{
+    border:none;
+    width:34px;
+    height:34px;
+    border-radius:10px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:.2s;
+}
+
+.action-edit{
+    background:#e3f2fd;
+    color:#1976d2;
+}
+
+.action-edit:hover{
+    background:#1976d2;
+    color:white;
+}
+
+.action-delete{
+    background:#fdecea;
+    color:#d32f2f;
+}
+
+.action-delete:hover{
+    background:#d32f2f;
+    color:white;
+}
+
+/* chip satuan */
+.chip{
+    background:#eef2ff;
+    color:#4f46e5;
+    padding:4px 10px;
+    border-radius:999px;
+    font-size:12px;
+    font-weight:600;
+}
+
+/* stok */
+.stok-text{
+    font-weight:700;
+    font-size:15px;
+}
+.table-modern{
+    border-collapse: separate;
+    border-spacing: 0 8px;
+}
+
+.table-modern tbody tr{
+    background: #fff;
+    box-shadow: 0 4px 10px rgba(0,0,0,.04);
+    border-radius:12px;
+    transition:.2s;
+}
+
+.table-modern tbody tr:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(0,0,0,.06);
+}
+
+.table-modern td{
+    border-top:none !important;
+    padding:18px !important;
+
+}
+
+.table-modern tbody tr td:first-child{
+    border-radius:12px 0 0 12px;
+}
+
+.table-modern tbody tr td:last-child{
+    border-radius:0 12px 12px 0;
+}
+
+</style>
 
 @section('content')
 <div class="container-fluid py-4">
@@ -124,7 +222,7 @@
                         </form>
                     </div>
                     <div class="table-responsive">
-                        <table class="table align-items-center mb-0">
+                        <table class="table table-modern align-items-center">
                             <thead>
                                 <tr>
                                     <th class="text-center">No</th>
@@ -164,19 +262,50 @@
                                             </div>
                                             <div class="d-flex flex-column justify-content-center">
                                                 <h6 class="mb-0 text-sm">{{ $item->nama_bahan }}</h6>
-                                                <p class="text-xs text-secondary mb-0">{{ $item->satuan }}</p>
+                                                {{-- <p class="text-xs text-secondary mb-0">{{ $item->satuan }}</p> --}}
                                             </div>
                                         </div>
                                     </td>
 
                                     {{-- SATUAN --}}
-                                    <td>{{ $item->satuan }}</td>
+<td>
+@php
+    $icons = [
+        'ROLL' => 'refresh',            // gulungan
+        'PACK' => 'inventory_2',       // paket
+        'LEMBAR' => 'description',     // kertas
+        'METER' => 'straighten',       // pengukur
+        'BOX' => 'inbox',              // kotak
+        'PCS' => 'widgets',           // item satuan
+        'RIM' => 'layers',            // tumpukan kertas
+        'TANK' => 'propane_tank',     // tangki
+        'BOTOL' => 'liquor',          // botol
+        'LUSIN' => 'view_comfy'       // banyak item
+    ];
+
+    $icon = $icons[strtoupper(trim($item->satuan))] ?? 'inventory_2';
+@endphp
+
+<div class="d-flex align-items-center gap-2">
+    <i class="material-icons text-secondary" style="font-size:18px">
+        {{ $icon }}
+    </i>
+
+    <span class="fw-semibold text-dark">
+        {{ ucfirst(strtolower($item->satuan)) }}
+    </span>
+</div>
+</td>
+
 
                                     {{-- KETERANGAN --}}
                                     <td>{{ $item->keterangan ?? '-' }}</td>
 
                                     {{-- STOK --}}
-                                    <td>{{ $item->stok }}</td>
+                                    <td class="stok-text">
+                                        {{ number_format($item->stok,0,',','.') }}
+                                    </td>
+
 
                                     {{-- STATUS --}}
                                     <td class="text-center">
@@ -185,35 +314,37 @@
 
                                     {{-- AKSI --}}
                                     <td class="text-center">
-                                        {{-- EDIT --}}
-                                        <button class="btn btn-link text-info px-2"
-                                            onclick="editBarang(
-                                                {{ $item->id }},
-                                                '{{ $item->nama_bahan }}',
-                                                '{{ $item->satuan }}',
-                                                {{ $item->stok }},
-                                                {{ $item->batas_stok }},
-                                                '{{ $item->keterangan }}'
-                                            )">
-                                            <i class="material-icons-round">edit</i>
-                                        </button>
+    <div class="action-box">
 
-                                        {{-- HAPUS --}}
-                                        <button type="button"
-                                            class="btn btn-link text-danger px-2"
-                                            onclick="hapusData({{ $item->id }})">
-                                            <i class="material-icons-round">delete</i>
-                                        </button>
+        <button class="action-btn action-edit"
+            onclick="editBarang(
+                {{ $item->id }},
+                '{{ $item->nama_bahan }}',
+                '{{ $item->satuan }}',
+                {{ $item->stok }},
+                {{ $item->batas_stok }},
+                '{{ $item->keterangan }}'
+            )">
+            <i class="material-icons-round text-sm">edit</i>
+        </button>
 
-                                        {{-- FORM DELETE (WAJIB ADA) --}}
-                                        <form id="hapus-{{ $item->id }}"
-                                            action="{{ route('barang.pusat.destroy', $item->id) }}"
-                                            method="POST"
-                                            style="display: none;">
-                                            @csrf
-                                            @method('DELETE')
-                                        </form>
-                                    </td>
+        <button type="button"
+            class="action-btn action-delete"
+            onclick="hapusData({{ $item->id }})">
+            <i class="material-icons-round text-sm">delete</i>
+        </button>
+
+    </div>
+
+    <form id="hapus-{{ $item->id }}"
+        action="{{ route('barang.pusat.destroy', $item->id) }}"
+        method="POST"
+        style="display:none;">
+        @csrf
+        @method('DELETE')
+    </form>
+</td>
+
                                 </tr>
                             @empty
                                 <tr>
@@ -291,7 +422,7 @@ MODAL EDIT BARANG
                     </div>
 
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Batas Stok</label>
+                        <label class="form-label">Batas Stok Maksimal</label>
                         <input type="text"
                             name="batas_stok"
                             id="edit_batas"

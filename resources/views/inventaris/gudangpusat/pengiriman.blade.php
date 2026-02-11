@@ -1,6 +1,121 @@
 @extends('inventaris.layouts.app')
 
 @section('title', 'Pengiriman Barang')
+<style>
+
+/* =============================
+TABLE MODERN
+============================= */
+
+.table-modern{
+    border-collapse: separate;
+    border-spacing: 0 10px;
+}
+
+.table-modern thead th{
+    border:none;
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:.6px;
+    color:#94a3b8;
+}
+
+.table-modern tbody tr{
+    background:#fff;
+    box-shadow:0 4px 14px rgba(0,0,0,.04);
+    border-radius:14px;
+    transition:.25s;
+}
+
+.table-modern tbody tr:hover{
+    transform:translateY(-3px);
+    box-shadow:0 10px 24px rgba(0,0,0,.07);
+}
+
+.table-modern td{
+    border-top:none !important;
+    padding:20px !important;
+    vertical-align:middle;
+}
+
+.table-modern tbody tr td:first-child{
+    border-radius:14px 0 0 14px;
+}
+
+.table-modern tbody tr td:last-child{
+    border-radius:0 14px 14px 0;
+}
+
+
+/* =============================
+STATUS BADGE (biar ga norak)
+============================= */
+
+.badge{
+    padding:6px 12px;
+    font-weight:600;
+    border-radius:8px;
+}
+
+
+/* =============================
+TOMBOL AKSI BIAR MAHAL
+============================= */
+
+.action-box{
+    display:inline-flex;
+    gap:6px;
+    padding:4px;
+    background:#f1f5f9;
+    border-radius:12px;
+}
+
+.action-btn{
+    border:none;
+    width:36px;
+    height:36px;
+    border-radius:10px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:.2s;
+}
+
+.action-edit{
+    background:#e0f2fe;
+    color:#0284c7;
+}
+
+.action-edit:hover{
+    background:#0284c7;
+    color:white;
+}
+
+.action-delete{
+    background:#fee2e2;
+    color:#dc2626;
+}
+
+.action-delete:hover{
+    background:#dc2626;
+    color:white;
+}
+
+
+/* tombol proses */
+.btn-proses{
+    border-radius:10px;
+    font-weight:600;
+    padding:6px 14px;
+}
+
+
+/* select status biar ga kaku */
+.select-status{
+    border-radius:10px !important;
+}
+
+</style>
 
 @section('content')
 
@@ -73,7 +188,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         <div class="card-body px-0 pb-2">
             <div class="table-responsive p-0">
-                <table class="table align-items-center mb-0">
+                <table class="table table-modern align-items-center">
                     <thead>
                         <tr>
                             <th class="text-center">No</th>
@@ -117,7 +232,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                             <td>
                                 @if($p->status == 'Menunggu')
-                                    <span class="badge bg-warning">Menunggu</span>
+                                    <span class="badge bg-gradient-warning">Menunggu</span>
                                 @elseif($p->status == 'Diproses')
                                     <span class="badge bg-primary">Diproses</span>
                                 @elseif($p->status == 'Selesai')
@@ -168,7 +283,7 @@ document.addEventListener('DOMContentLoaded', function () {
     ====================================================== --}}
     <div class="row mt-4">
         <div class="col-12">
-            <div class="card my-4">
+            <div class="card my-4 shadow-sm border-0">
                 <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
                     <div class="bg-gradient-primary shadow-primary border-radius-lg pt-4 pb-3">
                         <h6 class="text-white ps-3">Data Pengiriman Barang</h6>
@@ -178,7 +293,7 @@ document.addEventListener('DOMContentLoaded', function () {
         <div class="card-body px-0 pb-2">
             <div class="table-responsive p-0">
 
-                <table class="table align-items-center mb-0">
+                <table class="table table-modern align-items-center">
                     <thead>
                         <tr>
                             <th class="text-center">No</th>
@@ -266,23 +381,31 @@ $detail = is_array($item->keterangan)
 
                             <td class="text-center">
                             @if($item->status_pengiriman === 'Dikemas')
-                            <a href="#"
-                            class="btn btn-sm btn-warning btn-edit"
-                            data-id="{{ $item->id }}">
-                                <i class="material-icons">edit</i>
-                            </a>
+
+                            <div class="action-box">
+
+                                <button
+                                    type="button"
+                                    class="action-btn action-edit btn-edit"
+                                    data-id="{{ $item->id }}">
+                                    <i class="material-icons">edit</i>
+                                </button>
 
                                 <form action="{{ route('pengiriman.pusat.destroy', $item->id) }}"
                                     method="POST"
-                                    class="d-inline form-delete">
+                                    class="form-delete">
                                     @csrf
                                     @method('DELETE')
-                                    <button class="btn btn-sm btn-danger">
+
+                                    <button type="submit" class="action-btn action-delete">
                                         <i class="material-icons">delete</i>
                                     </button>
                                 </form>
+
+                            </div>
+
                             @else
-                                <span class="text-muted">Terkunci</span>
+                            <span class="text-muted">Terkunci</span>
                             @endif
                             </td>
 

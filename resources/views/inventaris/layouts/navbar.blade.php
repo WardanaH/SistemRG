@@ -208,11 +208,12 @@ if ($user->hasRole('inventory utama')) {
                 </li>
 
                 {{-- LOGOUT --}}
-                <li class="nav-item">
+                <li class="nav-item ms-2">
                     <form method="POST" action="{{ route('auth.logout') }}">
                         @csrf
-                        <button class="btn btn-sm btn-outline-danger">
-                            <i class="fa fa-sign-out-alt me-1"></i> Logout
+                        <button type="submit" class="logout-btn">
+                            <i class="fa fa-sign-out-alt"></i>
+                            <span>Logout</span>
                         </button>
                     </form>
                 </li>
@@ -345,4 +346,45 @@ if ($user->hasRole('inventory utama')) {
 .notification-item.unread:hover {
     background: #fff1f1;
 }
+
+/* DEFAULT (pink) */
+.logout-btn{
+    display:flex;
+    align-items:center;
+    gap:8px;
+
+    padding:7px 16px;
+    border-radius:10px;
+    border:none;
+
+    background: linear-gradient(195deg, #ec407a, #d81b60);
+    color:#fff;
+    font-weight:600;
+    font-size:13px;
+
+    box-shadow:0 4px 14px rgba(216,27,96,.35);
+    transition: all .25s ease;
+}
+
+/* 🔥 HOVER JADI MERAH */
+.logout-btn:hover{
+    background: linear-gradient(195deg, #ef5350, #c62828);
+    box-shadow:0 8px 22px rgba(198,40,40,.45);
+    transform: translateY(-2px);
+}
+
+/* klik */
+.logout-btn:active{
+    transform: scale(.92);
+}
+
+/* icon geser dikit */
+.logout-btn i{
+    transition: transform .25s;
+}
+
+.logout-btn:hover i{
+    transform: translateX(4px);
+}
+
 </style>

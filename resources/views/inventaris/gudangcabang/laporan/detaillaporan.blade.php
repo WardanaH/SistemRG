@@ -32,224 +32,165 @@
             <div class="card">
                 <div class="card-body">
 
-                    <div class="text-center mb-4">
-                        <h4 class="mb-1"><b>LAPORAN PENERIMAAN BARANG</b></h4>
-                        <p class="mb-0">
-                            Bulan {{ \Carbon\Carbon::create()->month((int)$bulan)->translatedFormat('F') }}
-                            Tahun {{ $tahun }}
-                        </p>
-                    </div>
+                    {{-- Judul sesuai filter --}}
+<div class="text-center mb-4">
+    <h4 class="mb-1"><b>LAPORAN PENERIMAAN BARANG</b></h4>
+    <p class="mb-0">
+        @if($filterPeriode == 'hari')
+            Tanggal {{ \Carbon\Carbon::parse($tanggalAwal ?? now())->translatedFormat('d F Y') }}
+            @if($tanggalAkhir && $tanggalAwal != $tanggalAkhir)
+                s/d {{ \Carbon\Carbon::parse($tanggalAkhir)->translatedFormat('d F Y') }}
+            @endif
+        @elseif($filterPeriode == 'bulan')
+            Bulan {{ \Carbon\Carbon::create($tahun ?? now()->year, $bulan ?? now()->month, 1)->translatedFormat('F') }}
+            Tahun {{ $tahun ?? now()->year }}
+        @elseif($filterPeriode == 'tahun')
+            Tahun {{ $tahun ?? now()->year }}
+        @else
+            Semua Periode
+        @endif
+    </p>
+</div>
 
-                    <hr>
-                    <form method="GET">
-                        <div class="row mb-3">
+<hr>
 
-                            {{-- FILTER BARANG --}}
-                            <div class="col-md-4">
-                                <label class="form-label">Filter Barang</label>
-                                <select name="barang_id[]" id="filterBarang" class="form-control" multiple>
-                                    @foreach($semuaBarang as $barang)
-                                        <option value="{{ $barang->id }}"
-                                            {{ collect(request('barang_id'))->contains($barang->id) ? 'selected' : '' }}>
-                                            {{ $barang->nama_bahan }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
+{{-- FILTER --}}
+<form method="GET">
+    <div class="row mb-3">
 
-                            {{-- TANGGAL AWAL --}}
-                            <div class="col-md-3">
-                                <label class="form-label">Tanggal Awal</label>
-                                <input type="date" name="tanggal_awal" class="form-control"
-                                    value="{{ request('tanggal_awal') }}">
-                            </div>
+        {{-- Filter Barang --}}
+        <div class="col-md-4">
+            <label class="form-label">Filter Barang</label>
+            <select name="barang_id[]" id="filterBarang" class="form-control" multiple>
+                @foreach($semuaBarang as $barang)
+                    <option value="{{ $barang->id }}"
+                        {{ collect(request('barang_id'))->contains($barang->id) ? 'selected' : '' }}>
+                        {{ $barang->nama_bahan }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
 
-                            {{-- TANGGAL AKHIR --}}
-                            <div class="col-md-3">
-                                <label class="form-label">Tanggal Akhir</label>
-                                <input type="date" name="tanggal_akhir" class="form-control"
-                                    value="{{ request('tanggal_akhir') }}">
-                            </div>
+        {{-- Tanggal --}}
+        <div class="col-md-3">
+            <label class="form-label">Tanggal Awal</label>
+            <input type="date" name="tanggal_awal" class="form-control" value="{{ request('tanggal_awal') }}">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Tanggal Akhir</label>
+            <input type="date" name="tanggal_akhir" class="form-control" value="{{ request('tanggal_akhir') }}">
+        </div>
 
-                            {{-- TOMBOL --}}
-                            <div class="col-md-2">
-                                <div class="row">
+        {{-- Tombol Filter & Reset --}}
+        <div class="col-md-2">
+            <div class="row">
+                <div class="col-6">
+                    <label class="form-label">Filter</label>
+                    <button type="submit" class="btn bg-gradient-info btn-filter-custom w-100">
+                        <i class="material-icons">search</i>
+                    </button>
+                </div>
+                <div class="col-6">
+                    <label class="form-label">Reset</label>
+                    <a href="{{ route('gudangcabang.laporan.detail', request()->except('barang_id', 'tanggal_awal','tanggal_akhir')) }}"
+                        class="btn btn-outline-secondary btn-filter-custom w-100">
+                        <i class="material-icons">restart_alt</i>
+                    </a>
+                </div>
+            </div>
+        </div>
 
-                                    <div class="col-6">
-                                        <label class="form-label">Filter</label>
-                                        <button type="submit"
-                                            class="btn bg-gradient-info btn-filter-custom w-100">
-                                            <i class="material-icons">search</i>
-                                        </button>
-                                    </div>
+    </div>
+</form>
 
-                                    <div class="col-6">
-                                        <label class="form-label">Reset</label>
-                                        <a href="{{ route('gudangcabang.laporan.detail', [$bulan,$tahun]) }}"
-                                            class="btn btn-outline-secondary btn-filter-custom w-100">
-                                            <i class="material-icons">restart_alt</i>
-                                        </a>
-                                    </div>
 
-                                </div>
-                            </div>
-                        </div>
-                    </form>
+                    <h5 class="mt-4"><b>Memo Pembelian/Pengambilan Bahan/Peralatan</b></h5>
 
-                    <h5 class="mt-4"><b>Rekap Total Penerimaan Barang dari Gudang</b></h5>
                     <div class="table-responsive">
-                        <table class="table table-bordered">
-                            <thead class="thead-blue">
-                            <tr class="text-center">
-                                <th style="width: 12%">Tanggal Diterima</th>
-                                <th>Nama Barang</th>
-                                <th style="width: 10%">Jumlah</th>
-                                <th style="width: 10%">Satuan</th>
-                                <th>Keterangan</th>
-                                <th style="width: 20%">Dari Cabang / Gudang</th>
+                    <table class="table table-bordered">
+                        <thead class="thead-blue text-center">
+                            <tr>
+                                <th style="width:12%">Tanggal</th>
+                                <th style="width:12%">Jenis</th>
+                                <th>Cabang</th>
+                                <th>Barang</th>
+                                <th style="width:8%">Qty</th>
+                                <th style="width:10%">Satuan</th>
+                                {{-- <th>Keterangan</th> --}}
                             </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($pengiriman as $item)
-                                @php
-                                    $detail = $item->keterangan_terima;
-                                    if (is_string($detail)) $detail = json_decode($detail, true);
-                                    if (!is_array($detail)) $detail = [];
-                                @endphp
+                        </thead>
+                        <tbody>
+@php
+    $grouped = collect($transaksi)->groupBy(function($item){
+        return \Carbon\Carbon::parse($item['tanggal'])->format('Y-m-d');
+    });
+@endphp
 
-                                <tr>
-                                    <td class="text-center">
-                                        {{ \Carbon\Carbon::parse($item->tanggal_diterima)->format('d-m-Y') }}
-                                    </td>
+@forelse($grouped as $tanggal => $itemsTanggal)
+    @php
+        $groupJenis = collect($itemsTanggal)->groupBy('jenis');
+        $tanggalRowspan = count($itemsTanggal);
+        $printedTanggal = false;
+    @endphp
 
-                                    {{-- Nama Barang --}}
-                                    <td>
-                                        @if(count($detail) > 0)
-                                            @foreach($detail as $d)
-                                                <div>{{ $d['nama_barang'] ?? '-' }}</div>
-                                            @endforeach
-                                        @else
-                                            -
-                                        @endif
-                                    </td>
+    @foreach($groupJenis as $jenis => $itemsJenis)
+        @php
+            $jenisRowspan = count($itemsJenis);
+            $printedJenis = false;
+        @endphp
 
-                                    {{-- Jumlah --}}
-                                    <td class="text-center">
-                                        @if(count($detail) > 0)
-                                            @foreach($detail as $d)
-                                                <div>{{ $d['jumlah'] ?? '-' }}</div>
-                                            @endforeach
-                                        @else
-                                            -
-                                        @endif
-                                    </td>
+        @foreach($itemsJenis as $row)
+        <tr>
+            {{-- TANGGAL --}}
+            @if(!$printedTanggal)
+                <td rowspan="{{ $tanggalRowspan }}" class="text-center align-middle">
+                    {{ \Carbon\Carbon::parse($row['tanggal'])->format('d-m-Y') }}
+                </td>
+                @php $printedTanggal = true; @endphp
+            @endif
 
-                                    {{-- Satuan --}}
-                                    <td class="text-center">
-                                        @if(count($detail) > 0)
-                                            @foreach($detail as $d)
-                                                <div>{{ $d['satuan'] ?? '-' }}</div>
-                                            @endforeach
-                                        @else
-                                            -
-                                        @endif
-                                    </td>
+            {{-- JENIS --}}
+            @if(!$printedJenis)
+                <td rowspan="{{ $jenisRowspan }}" class="text-center align-middle">
+                    @php $jenisFix = strtolower(trim($jenis)); @endphp
+                    @if($jenisFix === 'pengiriman')
+                        <span class="badge bg-info">Pengiriman</span>
+                    @elseif($jenisFix === 'Pengambilan')
+                        <span class="badge bg-pink">Pengambilan</span>
+                    @else
+                        <span class="badge bg-secondary">{{ $jenis }}</span>
+                    @endif
+                </td>
+                @php $printedJenis = true; @endphp
+            @endif
 
-                                    {{-- Keterangan --}}
-                                    <td>
-                                        @if(count($detail) > 0)
-                                            @foreach($detail as $d)
-                                                <div>{{ $d['keterangan'] ?? '-' }}</div>
-                                            @endforeach
-                                        @else
-                                            -
-                                        @endif
-                                    </td>
+            {{-- CABANG --}}
+            <td class="align-middle">{{ $row['cabang'] }}</td>
 
-                                    {{-- Dari Cabang / Gudang --}}
-                                    <td>
-                                        {{ $item->cabangAsal->nama ?? 'Gudang Pusat' }}
-                                    </td>
-                                </tr>
+            {{-- BARANG --}}
+            <td>{{ $row['barang'] }}</td>
 
-                                @empty
-                                <tr>
-                                    <td colspan="6" class="text-center text-muted">
-                                        Tidak ada data penerimaan
-                                    </td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
+            {{-- QTY --}}
+            <td class="text-center">{{ $row['qty'] }}</td>
+
+            {{-- SATUAN --}}
+            <td class="text-center">{{ $row['satuan'] }}</td>
+
+            {{-- KETERANGAN --}}
+            {{-- <td>{{ $row['ket'] }}</td> --}}
+
+        </tr>
+        @endforeach
+    @endforeach
+@empty
+<tr>
+    <td colspan="7" class="text-center text-muted">Tidak ada transaksi</td>
+</tr>
+@endforelse
+                        </tbody>
+                    </table>
                     </div>
 
-                        <hr>
-                        <h5 class="mt-4"><b>Rekap Pengambilan Barang</b></h5>
-
-                        <div class="table-responsive">
-                            <table class="table table-bordered">
-                                <thead class="thead-pink text-center">
-                                    <tr>
-                                        <th style="width:12%">Tanggal</th>
-                                        <th>Nama Barang</th>
-                                        <th style="width:10%">Qty</th>
-                                        <th style="width:12%">Satuan</th>
-                                        <th>Atas Nama</th>
-                                        <th style="width:15%">Ambil Ke</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($pengambilan ?? [] as $item)
-                                        @php
-                                            $detail = $item->list_barang;
-                                            if (is_string($detail)) $detail = json_decode($detail, true);
-                                            if (!is_array($detail)) $detail = [];
-                                        @endphp
-
-                                        <tr>
-                                            <td class="text-center">
-                                                {{ \Carbon\Carbon::parse($item->tanggal)->format('d-m-Y') }}
-                                            </td>
-
-                                            <td>
-                                                @foreach($detail as $d)
-                                                    <div>{{ $d['nama_barang'] ?? '-' }}</div>
-                                                @endforeach
-                                            </td>
-
-                                            <td class="text-center">
-                                                @foreach($detail as $d)
-                                                    <div>{{ $d['jumlah'] ?? '-' }}</div>
-                                                @endforeach
-                                            </td>
-
-                                            <td class="text-center">
-                                                @foreach($detail as $d)
-                                                    <div>{{ $d['satuan'] ?? '-' }}</div>
-                                                @endforeach
-                                            </td>
-
-                                            <td>
-                                                @foreach($detail as $d)
-                                                    <div>{{ $d['atas_nama'] ?? '-' }}</div>
-                                                @endforeach
-                                            </td>
-
-                                            <td class="text-center">
-                                                {{ $item->ambil_ke }}
-                                            </td>
-                                        </tr>
-
-                                    @empty
-                                        <tr>
-                                            <td colspan="6" class="text-center text-muted">
-                                                Tidak ada data pengambilan
-                                            </td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
 
                         <hr>
 
@@ -282,18 +223,18 @@
                             <a href="{{ route('gudangcabang.laporan.index') }}" class="btn btn-secondary">Kembali</a>
                                 <div class="d-flex gap-3">
                                     {{-- EXCEL --}}
-                                    <a href="{{ route('gudangcabang.laporan.excel', [$bulan, $tahun]) }}"
-                                    class="btn btn-success px-2 py-1"
-                                    title="Download Excel">
+                                    <button type="button"
+                                        class="btn btn-success px-2 py-1 btn-download"
+                                        data-type="excel">
                                         <i class="material-icons fs-1">table_view</i>
-                                    </a>
+                                    </button>
 
                                     {{-- PDF --}}
-                                    <a href="{{ route('gudangcabang.laporan.download', [$bulan, $tahun]) }}"
-                                    class="btn btn-danger px-2 py-1"
-                                    title="Download PDF">
+                                    <button type="button"
+                                        class="btn btn-danger px-2 py-1 btn-download"
+                                        data-type="pdf">
                                         <i class="material-icons fs-1">picture_as_pdf</i>
-                                    </a>
+                                    </button>
                                 </div>
                         </div>
 
@@ -314,4 +255,32 @@ $(document).ready(function() {
     });
 });
 </script>
+<script>
+$(document).on('click', '.btn-download', function(e){
+    e.preventDefault();
+
+    let type = $(this).data('type');
+
+    let basePdf  = "{{ route('gudangcabang.laporan.download') }}";
+    let baseExcel = "{{ route('gudangcabang.laporan.excel') }}";
+
+    // langsung pilih URL sesuai type
+    let downloadUrl = (type === 'pdf') ? basePdf + "?mode=full" : baseExcel + "?mode=full";
+
+    Swal.fire({
+        title: 'Sedang menyiapkan laporan...',
+        text: 'Klik OK untuk download laporan.',
+        icon: 'info',
+        confirmButtonText: 'OK',
+        allowOutsideClick: false
+    }).then((result) => {
+        if(result.isConfirmed){
+            window.location.href = downloadUrl;
+        }
+    });
+
+});
+</script>
+
+
 @endpush

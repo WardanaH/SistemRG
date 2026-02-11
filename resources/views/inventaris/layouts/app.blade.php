@@ -78,11 +78,13 @@
         background: linear-gradient(195deg, #42a5f5 0%, #1e88e5 100%) !important;
     }
 
-    /* sidebar active link */
-    .sidenav .nav-link.active {
-        background: linear-gradient(195deg, #42a5f5 0%, #1e88e5 100%) !important;
-        box-shadow: 0 4px 20px rgba(30, 136, 229, 0.4);
-    }
+/* ============================
+SIDEBAR ACTIVE → PINK
+============================ */
+.sidenav .nav-link.active {
+    background: linear-gradient(195deg, #ec407a, #d81b60) !important;
+    box-shadow: 0 4px 20px rgba(216,27,96,.4) !important;
+}
 
     /* icon di menu aktif */
     .sidenav .nav-link.active i {

@@ -1,6 +1,70 @@
 @extends('inventaris.layouts.app')
 @section('title', 'Pengambilan-antar')
+<style>
 
+.bg-gradient-pink{
+    background: linear-gradient(135deg,#ff3d7f,#ff0055);
+}
+
+.shadow-pink{
+    box-shadow: 0 4px 14px rgba(255, 0, 85, .35);
+}
+
+.avatar-icon{
+    width:38px;
+    height:38px;
+}
+
+.list-barang-modern{
+    list-style:none;
+    padding-left:0;
+    margin-bottom:0;
+}
+
+.list-barang-modern li{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:4px 0;
+    font-size:14px;
+}
+
+.icon-dot{
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#ff2e63;
+}
+
+.table-modern{
+    border-collapse: separate;
+    border-spacing: 0 10px;
+}
+
+.table-modern tbody tr{
+    background: #fff;
+    box-shadow: 0 4px 14px rgba(0,0,0,.05);
+    transition:.2s;
+}
+
+.table-modern tbody tr:hover{
+    transform: translateY(-3px);
+    box-shadow: 0 10px 24px rgba(0,0,0,.08);
+}
+
+.table-modern td{
+    border-top:none !important;
+    vertical-align: middle;
+}
+
+.table-modern thead th{
+    border:none;
+    font-size:13px;
+    color:#8392ab;
+    font-weight:600;
+}
+
+</style>
 @section('content')
 <div class="container-fluid py-4">
 
@@ -45,7 +109,7 @@
                             </div>
                             <div class="col-md-3 mb-3">
                                 <label>Tanggal</label>
-                                <input type="date" name="tanggal" class="form-control" required>
+                                <input type="date"name="tanggal"class="form-control"value="{{ date('Y-m-d') }}"readonly>
                             </div>
                         </div>
 
@@ -68,7 +132,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <button type="button" class="btn btn-sm btn-info" id="btnAddBarang">Tambah Barang</button>
+                            <button type="button" class="btn btn-sm btn-primary" id="btnAddBarang">Tambah Barang</button>
                         </div>
 
                         <div class="mb-3">
@@ -100,7 +164,7 @@
                 </div>
                 <div class="card-body px-0 pb-2">
                     <div class="table-responsive px-3">
-                        <table class="table align-items-center mb-0">
+                        <table class="table table-modern align-items-center mb-0">
                             <thead>
                                 <tr>
                                     <th class="text-center">No</th>
@@ -116,24 +180,60 @@
                             <tbody>
                                 @forelse($datas as $i => $item)
                                 <tr>
-                                    <td class="text-center">{{ $i + 1 }}</td>
-                                    <td>{{ $item->tanggal->format('d-m-Y') }}</td>
-                                    <td>{{ $item->ambil_ke }}</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-gradient-dark">
+                                            {{ $i + 1 }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-gradient-info">
+                                            {{ $item->tanggal->format('d M Y') }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar avatar-icon me-2 border-radius-md
+                                                bg-gradient-pink shadow-pink d-flex align-items-center justify-content-center">
+
+                                                <i class="material-icons text-white text-sm">
+                                                    local_shipping
+                                                </i>
+                                            </div>
+
+                                            <span class="fw-semibold">{{ $item->ambil_ke }}</span>
+                                        </div>
+                                    </td>
 
                                     <td>
-                                        <ul>
-                                            @foreach($item->list_barang as $b)
-                                                <li>{{ $b['nama_barang'] }} : {{ $b['jumlah'] }} ({{ $b['atas_nama'] ?? '-' }})</li>
-                                            @endforeach
+                                        <ul class="list-barang-modern">
+                                        @foreach($item->list_barang as $b)
+                                        <li>
+                                            <span class="icon-dot"></span>
+                                            <b>{{ $b['nama_barang'] }}</b>
+                                            — {{ $b['jumlah'] }}
+                                            <span class="text-muted">({{ $b['atas_nama'] ?? '-' }})</span>
+                                        </li>
+                                        @endforeach
                                         </ul>
                                     </td>
 
                                     {{-- FOTO --}}
                                     <td>
                                         @if($item->foto)
-                                            <a href="{{ asset('storage/'.$item->foto) }}" target="_blank">Lihat Foto</a>
+                                            <a href="{{ asset('storage/'.$item->foto) }}"
+                                            target="_blank"
+                                            class="btn btn-sm bg-gradient-primary shadow-primary d-inline-flex align-items-center gap-1">
+
+                                                <i class="material-icons text-white" style="font-size:18px;">
+                                                    photo_camera
+                                                </i>
+
+                                                <span class="text-white">Foto</span>
+                                            </a>
                                         @else
-                                            -
+                                            <span class="badge bg-light text-dark">
+                                                Tidak ada
+                                            </span>
                                         @endif
                                     </td>
 
