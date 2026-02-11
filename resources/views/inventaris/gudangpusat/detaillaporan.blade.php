@@ -134,8 +134,117 @@
                             </div>
                         </div>
                     </form>
+                    <h5 class="mt-4"><b>Memo Pembelian/Pengambilan Bahan/Peralatan</b></h5>
 
-                    <h5 class="mt-4"><b>Rekap Total Pengiriman Per Barang</b></h5>
+                    <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="thead-blue text-center">
+                            <tr>
+                                <th style="width:12%">Tanggal</th>
+                                <th style="width:12%">Jenis</th>
+                                <th>Cabang</th>
+                                <th>Barang</th>
+                                <th style="width:8%">Qty</th>
+                                <th style="width:10%">Satuan</th>
+                                {{-- <th>Keterangan</th> --}}
+                            </tr>
+                        </thead>
+                        @php
+                    $grouped = collect($transaksi)
+                        ->groupBy(function($item){
+                            return \Carbon\Carbon::parse($item['tanggal'])->format('Y-m-d');
+                        });
+                    @endphp
+
+                        <tbody>
+                    @forelse($grouped as $tanggal => $itemsTanggal)
+
+                        @php
+                            $groupJenis = collect($itemsTanggal)->groupBy('jenis');
+                            $tanggalRowspan = count($itemsTanggal);
+                            $printedTanggal = false;
+                        @endphp
+
+                        @foreach($groupJenis as $jenis => $itemsJenis)
+
+                            @php
+                                $groupCabang = collect($itemsJenis)->groupBy('cabang');
+                                $jenisRowspan = count($itemsJenis);
+                                $printedJenis = false;
+                            @endphp
+
+                            @foreach($groupCabang as $cabang => $itemsCabang)
+
+                                @php
+                                    $cabangRowspan = count($itemsCabang);
+                                    $printedCabang = false;
+                                @endphp
+
+                                @foreach($itemsCabang as $row)
+                                <tr>
+
+                                    {{-- TANGGAL --}}
+                                    @if(!$printedTanggal)
+                                        <td rowspan="{{ $tanggalRowspan }}" class="text-center align-middle">
+                                            {{ \Carbon\Carbon::parse($row['tanggal'])->format('d-m-Y') }}
+                                        </td>
+                                        @php $printedTanggal = true; @endphp
+                                    @endif
+
+                                    {{-- JENIS --}}
+                                    @if(!$printedJenis)
+                                        <td rowspan="{{ $jenisRowspan }}" class="text-center align-middle">
+                    @php $jenisFix = strtolower(trim($jenis)); @endphp
+
+                    @if($jenisFix === 'pengiriman')
+                        <span class="badge bg-info">Pengiriman</span>
+                    @elseif($jenisFix === 'Pengambilan')
+                        <span class="badge bg-pink">Pengambilan</span>
+                    @else
+                        <span class="badge bg-secondary">{{ $jenis }}</span>
+                    @endif
+
+                                        </td>
+                                        @php $printedJenis = true; @endphp
+                                    @endif
+
+                                    {{-- CABANG --}}
+                                    @if(!$printedCabang)
+                                        <td rowspan="{{ $cabangRowspan }}" class="align-middle">
+                                            {{ $cabang }}
+                                        </td>
+                                        @php $printedCabang = true; @endphp
+                                    @endif
+
+                                    {{-- BARANG --}}
+                                    <td>{{ $row['barang'] }}</td>
+
+                                    {{-- QTY --}}
+                                    <td class="text-center">{{ $row['qty'] }}</td>
+
+                                    {{-- SATUAN --}}
+                                    <td class="text-center">{{ $row['satuan'] }}</td>
+
+                                </tr>
+                                @endforeach
+
+                            @endforeach
+
+                        @endforeach
+
+                    @empty
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">
+                            Tidak ada transaksi
+                        </td>
+                    </tr>
+                    @endforelse
+                    </tbody>
+
+                    </table>
+                    </div>
+                    <hr>
+                    <h5 class="mt-4"><b>Data Jumlah Barang yang dikirim (Per Barang)</b></h5>
 
                     <div class="table-responsive">
                     <table class="table table-bordered">
@@ -169,104 +278,6 @@
                         </tbody>
                     </table>
                     </div>
-
-                    {{-- TABEL LAPORAN --}}
-                    <div class="table-responsive">
-                        <table class="table table-bordered">
-                            <thead class="thead-blue">
-                                <tr class="text-center">
-                                    <th style="width: 12%">Tanggal</th>
-                                    <th>Nama Barang</th>
-                                    <th style="width: 10%">Jumlah</th>
-                                    <th style="width: 10%">Satuan</th>
-                                    {{-- <th>Keterangan</th> --}}
-                                    <th style="width: 20%">Cabang Tujuan</th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                @forelse($pengiriman as $item)
-                                    @php
-                                        $detail = $item->keterangan;
-
-                                        // Kalau bentuknya string (JSON)
-                                        if (is_string($detail)) {
-                                            $detail = json_decode($detail, true);
-                                        }
-
-                                        if (!is_array($detail)) {
-                                            $detail = [];
-                                        }
-                                    @endphp
-
-                                    <tr>
-                                        {{-- Tanggal --}}
-                                        <td class="text-center">
-                                            {{ \Carbon\Carbon::parse($item->tanggal_pengiriman)->format('d-m-Y') }}
-                                        </td>
-
-                                        {{-- Nama Barang --}}
-                                        <td>
-                                            @if(count($detail) > 0)
-                                                @foreach($detail as $d)
-                                                    <div>{{ $d['nama_barang'] ?? '-' }}</div>
-                                                @endforeach
-                                            @else
-                                                -
-                                            @endif
-                                        </td>
-
-                                        {{-- Jumlah --}}
-                                        <td class="text-center">
-                                            @if(count($detail) > 0)
-                                                @foreach($detail as $d)
-                                                    <div>{{ $d['jumlah'] ?? '-' }}</div>
-                                                @endforeach
-                                            @else
-                                                -
-                                            @endif
-                                        </td>
-
-                                        {{-- Satuan --}}
-                                        <td class="text-center">
-                                            @if(count($detail) > 0)
-                                                @foreach($detail as $d)
-                                                    <div>{{ $d['satuan'] ?? '-' }}</div>
-                                                @endforeach
-                                            @else
-                                                -
-                                            @endif
-                                        </td>
-
-                                        {{-- Keterangan --}}
-                                        {{-- <td> --}}
-                                            {{-- @if(count($detail) > 0)
-                                                @foreach($detail as $d)
-                                                    <div>{{ $d['keterangan'] ?? '-' }}</div>
-                                                @endforeach
-                                            @else
-                                                -
-                                            @endif
-                                        </td> --}}
-
-                                        {{-- Cabang Tujuan --}}
-                                        <td>
-                                            {{ $item->cabangTujuan->nama ?? '-' }}
-                                        </td>
-                                    </tr>
-
-                                @empty
-                                    <tr>
-                                        <td colspan="6" class="text-center text-muted">
-                                            Tidak ada data pengiriman
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-
-                        </table>
-                    </div>
-                    <hr>
 
 
                 {{-- TOMBOL DOWNLOAD --}}

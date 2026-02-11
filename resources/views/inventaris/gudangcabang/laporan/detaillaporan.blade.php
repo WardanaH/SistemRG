@@ -95,31 +95,8 @@
                             </div>
                         </div>
                     </form>
-                            <h5 class="mt-4"><b>Rekap Total Penerimaan Barang</b></h5>
 
-                            <div class="table-responsive">
-                            <table class="table table-bordered">
-                                <thead class="thead-pink text-center">
-                                <tr>
-                                    <th>Nama Barang</th>
-                                    <th>Satuan</th>
-                                    <th>Total Diterima</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach($rekap as $row)
-                                    <tr>
-                                        <td>{{ $row['barang'] }}</td>
-                                        <td class="text-center">{{ $row['satuan'] }}</td>
-                                        <td class="text-center fw-bold">{{ $row['total'] }}</td>
-                                    </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-
-                            <hr>
-
+                    <h5 class="mt-4"><b>Rekap Total Penerimaan Barang dari Gudang</b></h5>
                     <div class="table-responsive">
                         <table class="table table-bordered">
                             <thead class="thead-blue">
@@ -204,27 +181,121 @@
                                 @endforelse
                             </tbody>
                         </table>
-
                     </div>
 
-                    <div class="mt-4 d-flex justify-content-between">
-                        <a href="{{ route('gudangcabang.laporan.index') }}" class="btn btn-secondary">Kembali</a>
-                            <div class="d-flex gap-3">
-                                {{-- EXCEL --}}
-                                <a href="{{ route('gudangcabang.laporan.excel', [$bulan, $tahun]) }}"
-                                class="btn btn-success px-2 py-1"
-                                title="Download Excel">
-                                    <i class="material-icons fs-1">table_view</i>
-                                </a>
+                        <hr>
+                        <h5 class="mt-4"><b>Rekap Pengambilan Barang</b></h5>
 
-                                {{-- PDF --}}
-                                <a href="{{ route('gudangcabang.laporan.download', [$bulan, $tahun]) }}"
-                                class="btn btn-danger px-2 py-1"
-                                title="Download PDF">
-                                    <i class="material-icons fs-1">picture_as_pdf</i>
-                                </a>
-                            </div>
-                    </div>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead class="thead-pink text-center">
+                                    <tr>
+                                        <th style="width:12%">Tanggal</th>
+                                        <th>Nama Barang</th>
+                                        <th style="width:10%">Qty</th>
+                                        <th style="width:12%">Satuan</th>
+                                        <th>Atas Nama</th>
+                                        <th style="width:15%">Ambil Ke</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($pengambilan ?? [] as $item)
+                                        @php
+                                            $detail = $item->list_barang;
+                                            if (is_string($detail)) $detail = json_decode($detail, true);
+                                            if (!is_array($detail)) $detail = [];
+                                        @endphp
+
+                                        <tr>
+                                            <td class="text-center">
+                                                {{ \Carbon\Carbon::parse($item->tanggal)->format('d-m-Y') }}
+                                            </td>
+
+                                            <td>
+                                                @foreach($detail as $d)
+                                                    <div>{{ $d['nama_barang'] ?? '-' }}</div>
+                                                @endforeach
+                                            </td>
+
+                                            <td class="text-center">
+                                                @foreach($detail as $d)
+                                                    <div>{{ $d['jumlah'] ?? '-' }}</div>
+                                                @endforeach
+                                            </td>
+
+                                            <td class="text-center">
+                                                @foreach($detail as $d)
+                                                    <div>{{ $d['satuan'] ?? '-' }}</div>
+                                                @endforeach
+                                            </td>
+
+                                            <td>
+                                                @foreach($detail as $d)
+                                                    <div>{{ $d['atas_nama'] ?? '-' }}</div>
+                                                @endforeach
+                                            </td>
+
+                                            <td class="text-center">
+                                                {{ $item->ambil_ke }}
+                                            </td>
+                                        </tr>
+
+                                    @empty
+                                        <tr>
+                                            <td colspan="6" class="text-center text-muted">
+                                                Tidak ada data pengambilan
+                                            </td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <hr>
+
+                            <h5 class="mt-4"><b>Data Penerimaan Barang</b></h5>
+
+                            <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead class="thead-pink text-center">
+                                <tr>
+                                    <th>Nama Barang</th>
+                                    <th>Satuan</th>
+                                    <th>Total Diterima</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($rekap as $row)
+                                    <tr>
+                                        <td>{{ $row['barang'] }}</td>
+                                        <td class="text-center">{{ $row['satuan'] }}</td>
+                                        <td class="text-center fw-bold">{{ $row['total'] }}</td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <hr>
+
+                        <div class="mt-4 d-flex justify-content-between">
+                            <a href="{{ route('gudangcabang.laporan.index') }}" class="btn btn-secondary">Kembali</a>
+                                <div class="d-flex gap-3">
+                                    {{-- EXCEL --}}
+                                    <a href="{{ route('gudangcabang.laporan.excel', [$bulan, $tahun]) }}"
+                                    class="btn btn-success px-2 py-1"
+                                    title="Download Excel">
+                                        <i class="material-icons fs-1">table_view</i>
+                                    </a>
+
+                                    {{-- PDF --}}
+                                    <a href="{{ route('gudangcabang.laporan.download', [$bulan, $tahun]) }}"
+                                    class="btn btn-danger px-2 py-1"
+                                    title="Download PDF">
+                                        <i class="material-icons fs-1">picture_as_pdf</i>
+                                    </a>
+                                </div>
+                        </div>
 
                 </div>
             </div>

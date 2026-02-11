@@ -68,7 +68,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <button type="button" class="btn btn-sm btn-secondary" id="btnAddBarang">Tambah Barang</button>
+                            <button type="button" class="btn btn-sm btn-info" id="btnAddBarang">Tambah Barang</button>
                         </div>
 
                         <div class="mb-3">

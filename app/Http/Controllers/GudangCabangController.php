@@ -379,6 +379,11 @@ class GudangCabangController extends Controller
             ->whereMonth('tanggal_diterima', $bulan)
             ->whereYear('tanggal_diterima', $tahun);
 
+        $pengambilan = MPengambilan::where('cabang_id', $cabang->id)
+            ->whereMonth('tanggal', $bulan)
+            ->whereYear('tanggal', $tahun)
+            ->get();
+
         if ($tanggalAwal) {
             $query->whereDate('tanggal_diterima', '>=', $tanggalAwal);
         }
@@ -431,8 +436,27 @@ class GudangCabangController extends Controller
             }
         }
 
+        foreach ($pengambilan as $item) {
+
+            $detail = is_string($item->list_barang)
+                ? json_decode($item->list_barang, true)
+                : $item->list_barang;
+
+            foreach ($detail ?? [] as $d) {
+
+                // cari barang berdasarkan nama
+                $barang = MGudangBarang::where('nama_bahan', $d['nama_barang'])->first();
+                if (!$barang) continue;
+
+                if (!isset($rekap[$barang->id])) continue;
+
+                $rekap[$barang->id]['total'] += (float) $d['jumlah'];
+            }
+        }
+
         return view('inventaris.gudangcabang.laporan.detaillaporan', [
             'pengiriman' => $pengiriman,
+            'pengambilan'=> $pengambilan, 
             'bulan'      => $bulan,
             'tahun'      => $tahun,
             'rekap'      => $rekap,

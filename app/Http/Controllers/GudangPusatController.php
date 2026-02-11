@@ -12,6 +12,7 @@ use App\Models\MGudangBarang;
 use App\Models\MPengiriman;
 use App\Models\MCabang;
 use App\Models\MCabangBarang;
+use App\Models\MPengambilan;
 use App\Models\MPermintaanPengiriman;
 use Illuminate\Support\Facades\Auth;
 use App\Events\NotifikasiInventarisCabang;
@@ -768,58 +769,69 @@ class GudangPusatController extends Controller
         ));
     }
 
-    public function laporanDetail(Request $request, $bulan = null, $tahun = null)
-    {
-        $filterPeriode = $request->filter_periode ?? 'bulan';
+public function laporanDetail(Request $request, $bulan = null, $tahun = null)
+{
+    $filterPeriode = $request->filter_periode ?? 'bulan';
 
-        $query = MPengiriman::with('cabangTujuan');
+    $bulan = $request->bulan ?? $bulan;
+    $tahun = $request->tahun ?? $tahun;
 
-        // =====================
-        // FILTER PERIODE
-        // =====================
-        $periodeLabel = '';
+    $query = MPengiriman::with('cabangTujuan');
 
-        switch ($filterPeriode) {
-            case 'hari':
-                $tanggalAwal  = $request->tanggal_awal ? \Carbon\Carbon::parse($request->tanggal_awal)->format('Y-m-d') : now()->format('Y-m-d');
-                $tanggalAkhir = $request->tanggal_akhir ? \Carbon\Carbon::parse($request->tanggal_akhir)->format('Y-m-d') : now()->format('Y-m-d');
+    $barangFilter = $request->barang_id ?? [];
+    if (!is_array($barangFilter)) $barangFilter = $barangFilter ? [$barangFilter] : [];
 
-                $query->whereDate('tanggal_pengiriman', '>=', $tanggalAwal)
-                    ->whereDate('tanggal_pengiriman', '<=', $tanggalAkhir);
+    $cabangFilter = $request->cabang_id ?? [];
+    if (!is_array($cabangFilter)) {
+        $cabangFilter = $cabangFilter ? [$cabangFilter] : [];
+    }
 
-                $periodeLabel = \Carbon\Carbon::parse($tanggalAwal)->translatedFormat('d F Y')
-                                .' s/d '.
-                                \Carbon\Carbon::parse($tanggalAkhir)->translatedFormat('d F Y');
-                break;
+    // =====================
+    // FILTER PERIODE PENGIRIMAN
+    // =====================
+    $periodeLabel = '';
 
-            case 'bulan':
-                $bulan  = $bulan ? (int)$bulan : now()->month;
-                $tahun  = $tahun ? (int)$tahun : now()->year;
-                $query->whereMonth('tanggal_pengiriman', $bulan)
-                    ->whereYear('tanggal_pengiriman', $tahun);
-                $periodeLabel = \Carbon\Carbon::create()->month($bulan)->translatedFormat('F').' '.$tahun;
-                break;
+    switch ($filterPeriode) {
+        case 'hari':
+            $tanggalAwal  = $request->tanggal_awal ? \Carbon\Carbon::parse($request->tanggal_awal)->format('Y-m-d') : now()->format('Y-m-d');
+            $tanggalAkhir = $request->tanggal_akhir ? \Carbon\Carbon::parse($request->tanggal_akhir)->format('Y-m-d') : now()->format('Y-m-d');
 
-            case 'tahun':
-                $tahun = $tahun ? (int)$tahun : now()->year;
-                $query->whereYear('tanggal_pengiriman', $tahun);
-                $periodeLabel = $tahun;
-                break;
+            $query->whereBetween('tanggal_pengiriman', [$tanggalAwal, $tanggalAkhir]);
 
-            case 'semua':
-                $tanggalAwal  = $request->tanggal_awal;
-                $tanggalAkhir = $request->tanggal_akhir;
-                if ($tanggalAwal && $tanggalAkhir) {
-                    $query->whereBetween('tanggal_pengiriman', [$tanggalAwal, $tanggalAkhir]);
-                }
-                $periodeLabel = 'Semua';
-                break;
+            $periodeLabel = \Carbon\Carbon::parse($tanggalAwal)->translatedFormat('d F Y')
+                            .' s/d '.
+                            \Carbon\Carbon::parse($tanggalAkhir)->translatedFormat('d F Y');
+            break;
 
-                default:
+        case 'bulan':
+            $bulan  = $bulan ? (int)$bulan : now()->month;
+            $tahun  = $tahun ? (int)$tahun : now()->year;
 
-            // 🔥 fallback biar ga pernah error lagi
+            $query->whereMonth('tanggal_pengiriman', $bulan)
+                ->whereYear('tanggal_pengiriman', $tahun);
+
+            $periodeLabel = \Carbon\Carbon::create()->month($bulan)->translatedFormat('F').' '.$tahun;
+            break;
+
+        case 'tahun':
+            $tahun = $tahun ? (int)$tahun : now()->year;
+
+            $query->whereYear('tanggal_pengiriman', $tahun);
+            $periodeLabel = $tahun;
+            break;
+
+        case 'semua':
+            if ($request->tanggal_awal && $request->tanggal_akhir) {
+                $query->whereBetween('tanggal_pengiriman', [
+                    $request->tanggal_awal,
+                    $request->tanggal_akhir
+                ]);
+            }
+            $periodeLabel = 'Semua';
+            break;
+
+        default:
             $filterPeriode = 'bulan';
-
             $bulan = now()->month;
             $tahun = now()->year;
 
@@ -829,105 +841,213 @@ class GudangPusatController extends Controller
             $periodeLabel = \Carbon\Carbon::create()
                                 ->month($bulan)
                                 ->translatedFormat('F') . ' ' . $tahun;
-
             break;
-        }
-
-        $pengirimanRaw = $query->orderBy('tanggal_pengiriman')->get();
-
-        $semuaBarang = MGudangBarang::all();
-
-        $barangFilter = $request->barang_id ?? [];
-        if (!is_array($barangFilter)) $barangFilter = $barangFilter ? [$barangFilter] : [];
-
-        $cabangFilter = $request->cabang_id ?? [];
-        if (!is_array($cabangFilter)) {
-            $cabangFilter = $cabangFilter ? [$cabangFilter] : [];
-        }
-
-        // =====================
-        // FILTER PENGIRIMAN BERDASARKAN BARANG
-        // =====================
-        $pengiriman = collect();
-        foreach ($pengirimanRaw as $kirim) {
-            $detail = is_string($kirim->keterangan)
-                ? json_decode($kirim->keterangan, true)
-                : $kirim->keterangan;
-
-            if (!$barangFilter) {
-                $pengiriman->push($kirim);
-                continue;
-            }
-
-            foreach ($detail ?? [] as $d) {
-                if (in_array($d['gudang_barang_id'], $barangFilter)) {
-                    $pengiriman->push($kirim);
-                    break;
-                }
-            }
-        }
-
-        // =====================
-        // CABANG
-        // =====================
-        $semuaCabang = $pengiriman->pluck('cabangTujuan')->unique('id')->values();
-
-        // =====================
-        // REKAP
-        // =====================
-        $rekap = [];
-
-        foreach ($semuaBarang as $barang) {
-
-            if ($barangFilter && !in_array($barang->id, $barangFilter)) {
-                continue;
-            }
-
-            // SET DULU — jangan di dalam loop cabang!
-            $rekap[$barang->id] = [
-                'barang' => $barang->nama_bahan,
-                'satuan' => $barang->satuan,
-                'cabang' => [],
-                'total'  => 0
-            ];
-
-            // baru isi cabang
-            foreach ($semuaCabang as $cabang) {
-                $rekap[$barang->id]['cabang'][$cabang->id] = 0;
-            }
-        }
-
-        foreach ($pengiriman as $kirim) {
-            $detail = is_string($kirim->keterangan)
-                ? json_decode($kirim->keterangan, true)
-                : $kirim->keterangan;
-
-            foreach ($detail ?? [] as $d) {
-                $idBarang = $d['gudang_barang_id'];
-                $jumlah   = (float) $d['jumlah'];
-
-                if ($barangFilter && !in_array($idBarang, $barangFilter)) continue;
-                if (!isset($rekap[$idBarang])) continue;
-
-                $rekap[$idBarang]['cabang'][$kirim->cabang_tujuan_id] += $jumlah;
-                $rekap[$idBarang]['total'] += $jumlah;
-            }
-        }
-
-        $allCabang = MCabang::orderBy('nama')->get();
-
-        return view('inventaris.gudangpusat.detaillaporan', compact(
-            'pengiriman',
-            'bulan',
-            'tahun',
-            'rekap',
-            'semuaCabang',
-            'semuaBarang',
-            'periodeLabel',
-            'filterPeriode',
-            'allCabang'
-        ));
     }
+
+    // filter pengiriman berdasarkan cabang tujuan
+    if (!empty($cabangFilter)) {
+        $query->whereIn('cabang_tujuan_id', $cabangFilter);
+    }
+
+    $pengirimanRaw = $query->orderBy('tanggal_pengiriman')->get();
+
+    // =====================
+    // PENGAMBILAN CABANG
+    // =====================
+    $queryPengambilan = MPengambilan::with('cabang');
+
+    if (!empty($cabangFilter)) {
+        $queryPengambilan->whereIn('cabang_id', $cabangFilter);
+    }
+
+    // 🔥 FILTER PERIODE PENGAMBILAN (disamakan dengan pengiriman)
+    switch ($filterPeriode) {
+
+        case 'hari':
+            if ($request->tanggal_awal && $request->tanggal_akhir) {
+                $queryPengambilan->whereBetween('tanggal', [
+                    $request->tanggal_awal,
+                    $request->tanggal_akhir
+                ]);
+            }
+            break;
+
+        case 'bulan':
+            $queryPengambilan->whereMonth('tanggal', $bulan)
+                ->whereYear('tanggal', $tahun);
+            break;
+
+        case 'tahun':
+            $queryPengambilan->whereYear('tanggal', $tahun);
+            break;
+
+        case 'semua':
+            if ($request->tanggal_awal && $request->tanggal_akhir) {
+                $queryPengambilan->whereBetween('tanggal', [
+                    $request->tanggal_awal,
+                    $request->tanggal_akhir
+                ]);
+            }
+            break;
+    }
+
+    $pengambilan = $queryPengambilan
+        ->orderBy('tanggal')
+        ->get();
+
+    $semuaBarang = MGudangBarang::all();
+
+    // =====================
+    // FILTER PENGIRIMAN BERDASARKAN BARANG
+    // =====================
+    $pengiriman = collect();
+    foreach ($pengirimanRaw as $kirim) {
+        $detail = is_string($kirim->keterangan)
+            ? json_decode($kirim->keterangan, true)
+            : $kirim->keterangan;
+
+        if (!$barangFilter) {
+            $pengiriman->push($kirim);
+            continue;
+        }
+
+        foreach ($detail ?? [] as $d) {
+            if (in_array($d['gudang_barang_id'], $barangFilter)) {
+                $pengiriman->push($kirim);
+                break;
+            }
+        }
+    }
+
+    // =====================
+    // CABANG
+    // =====================
+    if (!empty($cabangFilter)) {
+        $semuaCabang = MCabang::whereIn('id', $cabangFilter)
+            ->orderBy('nama')
+            ->get();
+    } else {
+        $semuaCabang = $pengiriman->pluck('cabangTujuan')
+            ->unique('id')
+            ->values();
+    }
+
+    // =====================
+    // REKAP
+    // =====================
+    $rekap = [];
+
+    foreach ($semuaBarang as $barang) {
+
+        if ($barangFilter && !in_array($barang->id, $barangFilter)) {
+            continue;
+        }
+
+        $rekap[$barang->id] = [
+            'barang' => $barang->nama_bahan,
+            'satuan' => $barang->satuan,
+            'cabang' => [],
+            'total'  => 0
+        ];
+
+        foreach ($semuaCabang as $cabang) {
+            $rekap[$barang->id]['cabang'][$cabang->id] = 0;
+        }
+    }
+
+    foreach ($pengiriman as $kirim) {
+        $detail = is_string($kirim->keterangan)
+            ? json_decode($kirim->keterangan, true)
+            : $kirim->keterangan;
+
+        foreach ($detail ?? [] as $d) {
+            $idBarang = $d['gudang_barang_id'];
+            $jumlah   = (float) $d['jumlah'];
+
+            if ($barangFilter && !in_array($idBarang, $barangFilter)) continue;
+            if (!isset($rekap[$idBarang])) continue;
+
+            $rekap[$idBarang]['cabang'][$kirim->cabang_tujuan_id] += $jumlah;
+            $rekap[$idBarang]['total'] += $jumlah;
+        }
+    }
+
+    $allCabang = MCabang::orderBy('nama')->get();
+
+    // =============================
+    // GABUNG DATA PENGIRIMAN + PENGAMBILAN
+    // =============================
+    $transaksi = collect();
+
+    // PENGIRIMAN
+    foreach ($pengiriman as $item) {
+
+        $detail = is_string($item->keterangan)
+            ? json_decode($item->keterangan, true)
+            : $item->keterangan;
+
+        foreach ($detail ?? [] as $d) {
+            $transaksi->push([
+                'tanggal' => $item->tanggal_pengiriman,
+                'jenis'   => 'Pengiriman',
+                'cabang'  => $item->cabangTujuan->nama ?? '-',
+                'barang'  => $d['nama_barang'] ?? '-',
+                'qty'     => $d['jumlah'] ?? 0,
+                'satuan'  => $d['satuan'] ?? '-',
+                'ket'     => '-'
+            ]);
+        }
+    }
+
+    // PENGAMBILAN
+foreach ($pengambilan as $item) {
+
+    $detail = is_string($item->list_barang)
+        ? json_decode($item->list_barang, true)
+        : $item->list_barang;
+
+    foreach ($detail ?? [] as $d) {
+
+        // 🔥 ambil field REAL dari database pengambilan
+        $namaBarang = $d['barang'] ?? $d['nama_bahan'] ?? $d['nama_barang'] ?? '-';
+        $atasNama   = $item->atas_nama ?? $d['atas_nama'] ?? '-';
+        $ambilKe    = $item->ambil_ke ?? '-';
+        $jumlah     = $d['qty'] ?? $d['jumlah'] ?? 0;
+        $satuan     = $d['satuan'] ?? '-';
+
+        $transaksi->push([
+            'tanggal' => $item->tanggal,
+            'jenis'   => 'Pengambilan',
+            'cabang'  => $item->cabang->nama ?? '-',
+
+            // gabung sesuai permintaanmu
+            'barang'  => $namaBarang . ' - A.N ' . $atasNama . ' - Ambil ke ' . $ambilKe,
+
+            'qty'     => $jumlah,
+            'satuan'  => $satuan,
+            'ket'     => '-'
+        ]);
+    }
+}
+
+
+    // =============================
+    // SORT
+    // =============================
+    $transaksi = $transaksi->sortByDesc('tanggal')->values();
+
+    return view('inventaris.gudangpusat.detaillaporan', compact(
+        'transaksi',
+        'bulan',
+        'tahun',
+        'rekap',
+        'semuaCabang',
+        'semuaBarang',
+        'periodeLabel',
+        'filterPeriode',
+        'allCabang'
+    ));
+}
 
     public function laporanDownload(Request $request)
     {
