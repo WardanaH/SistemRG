@@ -1,16 +1,46 @@
 @php
 use Illuminate\Support\Facades\Auth;
 
-if (request()->routeIs('gudangpusat.dashboard')) {
-    $pageTitle = 'Dashboard';
-} elseif (request()->routeIs('barang.pusat*')) {
-    $pageTitle = 'Data Barang';
-} else {
-    $pageTitle = 'Gudang Pusat';
-}
-
 $user = Auth::user();
 
+/*
+|--------------------------------------------------------------------------
+| AREA TITLE (BERDASARKAN ROLE)
+|--------------------------------------------------------------------------
+*/
+if ($user->hasRole('inventory utama')) {
+    $areaTitle = 'Gudang Pusat';
+} elseif ($user->hasRole('inventory cabang')) {
+    $areaTitle = 'Gudang Cabang';
+} else {
+    $areaTitle = 'Dashboard';
+}
+
+/*
+|--------------------------------------------------------------------------
+| PAGE TITLE (BERDASARKAN ROUTE)
+|--------------------------------------------------------------------------
+*/
+$pageTitle = match (true) {
+
+    request()->routeIs('gudangpusat.dashboard') => 'Dashboard',
+    request()->routeIs('gudangcabang.dashboard') => 'Dashboard',
+
+    request()->routeIs('barang.pusat*') => 'Data Barang',
+    request()->routeIs('gudangcabang.barang*') => 'Data Barang Cabang',
+
+    request()->routeIs('pengiriman.*') => 'Pengiriman Barang',
+    request()->routeIs('gudangcabang.penerimaan*') => 'Penerimaan Barang',
+
+    request()->routeIs('permintaan.*') => 'Permintaan Pengiriman',
+    request()->routeIs('gudangcabang.permintaan.*') => 'Permintaan Pengiriman',
+
+    request()->routeIs('gudangcabang.inventaris.index') => 'Inventaris Barang',
+    request()->routeIs('gudangcabang.inventaris.create') => 'Tambah Inventaris',
+    request()->routeIs('gudangcabang.inventaris.edit') => 'Edit Inventaris',
+
+    default => null,
+};
 /*
 |--------------------------------------------------------------------------
 | NOTIFIKASI
@@ -49,13 +79,17 @@ if ($user->hasRole('inventory utama')) {
         BREADCRUMB & TITLE
         ===================== --}}
         <nav aria-label="breadcrumb">
-            <ol class="breadcrumb bg-transparent mb-0 pb-0 pt-1 px-0 me-sm-6 me-5">
-                <li class="breadcrumb-item text-sm text-dark">Pages</li>
-                <li class="breadcrumb-item text-sm text-dark active">
-                    {{ $pageTitle }}
-                </li>
-            </ol>
-            <h6 class="font-weight-bolder mb-0">{{ $pageTitle }}</h6>
+            {{-- <ol class="breadcrumb bg-transparent mb-0 pb-0 pt-1 px-0 me-sm-6 me-5">
+                @if($pageTitle)
+                    <li class="breadcrumb-item text-sm text-dark active">
+                        {{ $pageTitle }}
+                    </li>
+                @endif
+            </ol> --}}
+
+            <h6 class="font-weight-bolder mb-0">
+                {{ $pageTitle ?? $areaTitle }}
+            </h6>
         </nav>
 
         {{-- =====================
@@ -91,7 +125,7 @@ if ($user->hasRole('inventory utama')) {
                         <i class="fa fa-bell fa-lg"></i>
 
                         @if($unreadCount > 0)
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                        <span id="badge-notif" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
                             {{ $unreadCount }}
                         </span>
                         @endif
@@ -103,7 +137,7 @@ if ($user->hasRole('inventory utama')) {
                             Notifikasi
                         </div>
 
-                        <div class="notification-body">
+                        <div class="notification-body" id="notif-body" data-source="server">
 
                             @forelse($notifications as $note)
 
@@ -149,9 +183,9 @@ if ($user->hasRole('inventory utama')) {
                                     </div>
                                 @endif
                             @empty
-                                <div class="notification-empty">
-                                    Tidak ada notifikasi
-                                </div>
+                            <div class="notification-empty" id="notif-empty">
+                                Tidak ada notifikasi
+                            </div>
                             @endforelse
 
                         </div>
@@ -168,11 +202,12 @@ if ($user->hasRole('inventory utama')) {
                 </li>
 
                 {{-- LOGOUT --}}
-                <li class="nav-item">
-                    <form method="POST" action="{{ route('logout') }}">
+                <li class="nav-item ms-2">
+                    <form method="POST" action="{{ route('auth.logout') }}">
                         @csrf
-                        <button class="btn btn-sm btn-outline-danger">
-                            <i class="fa fa-sign-out-alt me-1"></i> Logout
+                        <button type="submit" class="logout-btn">
+                            <i class="fa fa-sign-out-alt"></i>
+                            <span>Logout</span>
                         </button>
                     </form>
                 </li>
@@ -182,52 +217,6 @@ if ($user->hasRole('inventory utama')) {
     </div>
 </nav>
 
-{{-- =====================
-SCRIPT NOTIFIKASI
-===================== --}}
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-
-    document.querySelectorAll('.notification-item.unread').forEach(item => {
-        item.addEventListener('click', function () {
-
-            const notifId = this.dataset.id;
-            let url = '';
-
-            @if(auth()->user()->hasRole('inventory utama'))
-                url = "{{ route('permintaan.pusat.read', ':id') }}".replace(':id', notifId);
-            @elseif(auth()->user()->hasRole('inventory cabang'))
-                url = "{{ route('gudangcabang.notif.read', ':id') }}".replace(':id', notifId);
-            @endif
-
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Content-Type': 'application/json'
-                }
-            })
-            .then(() => {
-                this.classList.remove('unread');
-
-                const badge = document.querySelector('.badge.bg-danger');
-                if (badge) {
-                    let count = parseInt(badge.innerText);
-                    count--;
-
-                    if (count <= 0) {
-                        badge.remove();
-                    } else {
-                        badge.innerText = count;
-                    }
-                }
-
-            });
-        });
-    });
-
-});
-</script>
 
 
 <style>
@@ -351,4 +340,45 @@ document.addEventListener('DOMContentLoaded', function () {
 .notification-item.unread:hover {
     background: #fff1f1;
 }
+
+/* DEFAULT (pink) */
+.logout-btn{
+    display:flex;
+    align-items:center;
+    gap:8px;
+
+    padding:7px 16px;
+    border-radius:10px;
+    border:none;
+
+    background: linear-gradient(195deg, #ec407a, #d81b60);
+    color:#fff;
+    font-weight:600;
+    font-size:13px;
+
+    box-shadow:0 4px 14px rgba(216,27,96,.35);
+    transition: all .25s ease;
+}
+
+/* 🔥 HOVER JADI MERAH */
+.logout-btn:hover{
+    background: linear-gradient(195deg, #ef5350, #c62828);
+    box-shadow:0 8px 22px rgba(198,40,40,.45);
+    transform: translateY(-2px);
+}
+
+/* klik */
+.logout-btn:active{
+    transform: scale(.92);
+}
+
+/* icon geser dikit */
+.logout-btn i{
+    transition: transform .25s;
+}
+
+.logout-btn:hover i{
+    transform: translateX(4px);
+}
+
 </style>

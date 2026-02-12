@@ -1,7 +1,97 @@
 @extends('inventaris.layouts.app')
 
 @section('title', 'Inventaris Gudang Cabang')
+<style>
 
+/* INPUT */
+.form-control{
+    border-radius:10px;
+    border:1px solid #e0e0e0;
+}
+
+.form-control:focus{
+    border-color:#43a047;
+    box-shadow:0 0 0 2px rgba(67,160,71,0.15);
+}
+
+/* SEARCH BOX */
+.search-box{
+    border-radius:30px;
+    padding-left:20px;
+}
+
+/* TABEL BIAR GA KAKU */
+.table thead th{
+    font-size:12px;
+    color:#7b809a;
+    border-bottom:1px solid #eee;
+}
+
+.table tbody tr{
+    transition:.2s;
+}
+
+.table tbody tr:hover{
+    background:#f8f9fa;
+}
+
+/* FOTO */
+.img-inventaris{
+    width:55px;
+    height:55px;
+    object-fit:cover;
+    border-radius:12px;
+    transition:.3s;
+}
+
+.img-inventaris:hover{
+    transform:scale(1.7);
+    z-index:99;
+}
+
+/* BADGE LEBIH SOFT */
+.badge{
+    font-weight:500;
+    padding:6px 10px;
+    border-radius:8px;
+}
+
+/* BUTTON EDIT */
+.btn-edit{
+    border-radius:10px;
+}
+
+.bg-gradient-pink{
+    background: linear-gradient(135deg, #ff4d88, #ff2e63);
+}
+
+/* Header Animasi Gradient */
+.animated-header {
+    background: linear-gradient(270deg, #FFD54F, #FFA726, #FFB74D);
+    background-size: 600% 600%;
+    animation: gradientMove 8s ease infinite;
+    color: #fff;
+    border-bottom: none;
+    border-radius: 0.5rem 0.5rem 0 0;
+}
+
+@keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Modal title */
+.animated-header .modal-title {
+    font-size: 1.25rem;
+}
+
+/* Tombol close tetap putih */
+.animated-header .btn-close {
+    filter: brightness(0) invert(1);
+}
+
+</style>
 @section('content')
 <div class="container-fluid py-4">
 
@@ -32,12 +122,13 @@
             <div class="card my-4">
                 <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
                     <div class="bg-gradient-success shadow-success border-radius-lg pt-4 pb-3">
-                        <h6 class="text-white ps-3">Tambah Inventaris Kantor Cabang</h6>
+                        <h6 class="text-white ps-3 fw-bold">+ Tambah Inventaris Kantor Cabang</h6>
+
                     </div>
                 </div>
 
                 <div class="card-body">
-                    <form method="POST" action="{{ route('gudangcabang.inventaris.store') }}">
+                    <form method="POST" action="{{ route('gudangcabang.inventaris.store') }}" enctype="multipart/form-data">
                         @csrf
 
                         <div class="row">
@@ -58,7 +149,7 @@
 
                             <div class="col-md-2 mb-3">
                                 <label>Kondisi</label>
-                                <select name="kondisi" class="form-control">
+                                <select name="kondisi" class="form-control select2">
                                     <option>Baik</option>
                                     <option>Rusak Ringan</option>
                                     <option>Rusak Berat</option>
@@ -73,6 +164,13 @@
                             <div class="col-md-3 mb-3">
                                 <label>Tanggal Input</label>
                                 <input type="date" name="tanggal_input" class="form-control" required>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label>Foto Barang</label>
+                                <input type="file"
+                                    name="foto"
+                                    class="form-control"
+                                    accept="image/*">
                             </div>
                         </div>
 
@@ -100,72 +198,156 @@
                 </div>
 
                 <div class="card-body px-0 pb-2">
+                    <div class="px-3 pt-3">
+                        <form method="GET" action="{{ route('gudangcabang.inventaris.index') }}">
+                            <div class="row">
+                                <div class="col-md-4">
+                                <input type="text"
+                                    name="search"
+                                    class="form-control search-box"
+                                    placeholder="🔍 Cari kode atau nama barang..."
+                                        placeholder="Cari kode atau nama barang..."
+                                        value="{{ request('search') }}">
+                                </div>
+                                <div class="col-md-2">
+                                    <button class="btn bg-gradient-primary mb-0">
+                                        <i class="material-icons text-sm">search</i> Cari
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
                     <div class="table-responsive">
                         <table class="table align-items-center mb-0">
-                            <thead>
-                                <tr>
-                                    {{-- <th>No</th> --}}
-                                    <th>Kode</th>
-                                    <th>Nama</th>
-                                    <th>Jumlah</th>
-                                    <th>Kondisi</th>
-                                    {{-- <th>Lokasi</th> --}}
-                                    <th>Tanggal</th>
-                                    <th class="text-center">QR Code</th>
-                                    <th class="text-center">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($data as $i => $item)
-                                <tr>
-                                    <td>{{ $item->kode_barang }}</td>
-                                    <td>{{ $item->nama_barang }}</td>
-                                    <td>{{ $item->jumlah }}</td>
-                                    <td>{{ $item->kondisi }}</td>
-                                    {{-- <td>{{ $item->lokasi ?? '-' }}</td> --}}
-                                    <td>{{ $item->tanggal_input }}</td>
+                        <thead>
+                        <tr>
+                            <th>Kode</th>
+                            <th>Nama Barang</th>
+                            <th>Jumlah</th>
+                            <th>Kondisi</th>
+                            <th>Tanggal</th>
+                            <th>Foto</th>
+                            <th class="text-center">QR Code</th>
+                            <th class="text-center">Aksi</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @forelse($data as $item)
+                        <tr>
 
-                                    {{-- QR CODE --}}
-                                    <td class="text-center">
-                                        @if($item->qr_code)
-                                            <img
-                                                src="{{ asset('storage/'.$item->qr_code) }}"
-                                                width="70"
-                                                class="mb-1"
-                                            >
-                                            <br>
+                            {{-- KODE --}}
+                            <td>
+                                <div class="d-flex px-2 py-1 align-items-center">
+                                    <div class="avatar avatar-sm me-3 bg-gradient-pink border-radius-md d-flex align-items-center justify-content-center">
+                                        <i class="material-icons text-white text-sm">qr_code</i>
+                                    </div>
 
-                                            <a href="{{ asset('storage/'.$item->qr_code) }}"
-                                            download
-                                            class="btn btn-sm btn-outline-primary">
-                                                Download
-                                            </a>
-                                        @else
-                                            <span class="text-muted">-</span>
-                                        @endif
-                                    </td>
+                                    <span class="fw-bold text-sm">
+                                        {{ $item->kode_barang }}
+                                    </span>
+                                </div>
+                            </td>
 
-                                    {{-- AKSI --}}
-                                    <td class="text-center">
-                                        <button class="btn btn-sm btn-warning btn-edit"
-                                                data-id="{{ $item->id }}">
-                                            Edit
-                                        </button>
-                                    </td>
-                                </tr>
+                            {{-- NAMA BARANG (ADA IKON KOTAK MELENGKUNG) --}}
+                            <td>
+                                <div class="d-flex px-2 py-1">
+                                    <div class="avatar avatar-sm me-3 border-radius-md
+                                                bg-gradient-success d-flex align-items-center justify-content-center">
+                                        <i class="material-icons text-white text-sm">inventory</i>
+                                    </div>
+                                    <div class="d-flex flex-column justify-content-center">
+                                        <h6 class="mb-0 text-sm">{{ $item->nama_barang }}</h6>
+                                    </div>
+                                </div>
+                            </td>
 
-                                @empty
-                                <tr>
-                                    <td colspan="8" class="text-center text-muted py-4">
-                                        Data inventaris belum tersedia
-                                    </td>
-                                </tr>
-                                @endforelse
-                            </tbody>
+                            {{-- JUMLAH --}}
+                            <td>
+                                <span class="badge bg-gradient-info">
+                                    {{ $item->jumlah }} pcs
+                                </span>
+                            </td>
+
+                            {{-- KONDISI --}}
+                            <td>
+                                @if($item->kondisi == 'Baik')
+                                    <span class="badge bg-success">Baik</span>
+                                @elseif($item->kondisi == 'Rusak Ringan')
+                                    <span class="badge bg-warning">Rusak Ringan</span>
+                                @else
+                                    <span class="badge bg-danger">Rusak Berat</span>
+                                @endif
+                            </td>
+
+                            {{-- TANGGAL --}}
+                            <td>
+                                {{ \Carbon\Carbon::parse($item->tanggal_input)->format('d M Y') }}
+                            </td>
+
+                            {{-- foto --}}
+                            <td>
+                                @if($item->foto)
+                                <img src="{{ asset('storage/'.$item->foto) }}"
+                                    class="img-inventaris">
+                                @else
+                                    <span class="text-muted">-</span>
+                                @endif
+                            </td>
+
+                            {{-- QR CODE --}}
+                            <td class="text-center">
+                                @if($item->qr_code)
+                                    <a href="{{ route('inventaris.qr.public', $item->kode_barang) }}"
+                                    target="_blank">
+                                        <img src="{{ asset('storage/'.$item->qr_code) }}"
+                                            width="70"
+                                            class="border-radius-md mb-1">
+                                    </a>
+
+                                    <div class="small text-muted">
+                                        Scan untuk detail
+                                    </div>
+
+                                    <br>
+                                    <a href="{{ asset('storage/'.$item->qr_code) }}"
+                                    download
+                                    class="btn btn-sm btn-outline-primary">
+                                        Download
+                                    </a>
+                                @else
+                                    <span class="text-muted">-</span>
+                                @endif
+                            </td>
+
+                            {{-- AKSI --}}
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-warning btn-edit"
+                                        onclick="editInventaris({{ $item->id }})">
+                                    <i class="material-icons text-sm">edit</i>
+                                </button>
+                            </td>
+
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">
+                                Data inventaris belum tersedia
+                            </td>
+                        </tr>
+                        @endforelse
+                        </tbody>
                         </table>
+                        <div class="d-flex justify-content-between align-items-center px-3 mt-3">
+                            <div class="text-sm text-muted">
+                                Menampilkan {{ $data->firstItem() }} - {{ $data->lastItem() }}
+                                dari {{ $data->total() }} data
+                            </div>
+                            <div>
+                                {{ $data->links('pagination::bootstrap-5') }}
+                            </div>
+                        </div>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
@@ -182,34 +364,62 @@ MODAL EDIT INVENTARIS
 
             <input type="hidden" id="edit_id">
 
-            <div class="modal-header">
-                <h5>Edit Inventaris</h5>
-                <button class="btn-close" data-bs-dismiss="modal"></button>
+            {{-- Modal Header dengan animasi gradient --}}
+            <div class="modal-header animated-header">
+                <h5 class="modal-title fw-bold">Edit Inventaris</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
             <div class="modal-body">
-                <input type="text" name="nama_barang" id="edit_nama" class="form-control mb-2" required>
-                <input type="number" name="jumlah" id="edit_jumlah" class="form-control mb-2" required>
-                <select name="kondisi" id="edit_kondisi" class="form-control mb-2">
-                    <option>Baik</option>
-                    <option>Rusak Ringan</option>
-                    <option>Rusak Berat</option>
-                </select>
-                <input type="text" name="lokasi" id="edit_lokasi" class="form-control">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="edit_nama" class="form-label fw-semibold">Nama Barang</label>
+                        <input type="text" name="nama_barang" id="edit_nama" class="form-control" required>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="edit_jumlah" class="form-label fw-semibold">Jumlah</label>
+                        <input type="number" name="jumlah" id="edit_jumlah" class="form-control" required>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="edit_kondisi" class="form-label fw-semibold">Kondisi</label>
+                        <select name="kondisi" id="edit_kondisi" class="form-control">
+                            <option>Baik</option>
+                            <option>Rusak Ringan</option>
+                            <option>Rusak Berat</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="edit_lokasi" class="form-label fw-semibold">Lokasi</label>
+                        <input type="text" name="lokasi" id="edit_lokasi" class="form-control">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="edit_foto" class="form-label fw-semibold">Foto Barang (Opsional)</label>
+                        <input type="file" name="foto" id="edit_foto" class="form-control" accept="image/*">
+                        <small class="text-muted">Biarkan kosong jika tidak ingin mengganti foto.</small>
+                        <div class="mt-2">
+                            <img id="previewFoto" src="" class="img-fluid rounded" style="max-height:100px; display:none;">
+                        </div>
+                    </div>
+
+                </div>
             </div>
 
             <div class="modal-footer">
-                <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                <button class="btn bg-gradient-primary">Update</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                <button type="submit" class="btn bg-gradient-primary">Update Inventaris</button>
             </div>
         </form>
     </div>
 </div>
-
 @endsection
 
 @push('scripts')
 <script>
+// Script preview foto & AJAX sama seperti sebelumnya
 function editInventaris(id){
     fetch(`/gudang-cabang/inventaris/${id}/edit`)
     .then(res => res.json())
@@ -220,6 +430,14 @@ function editInventaris(id){
         edit_kondisi.value = d.kondisi;
         edit_lokasi.value = d.lokasi ?? '';
         formEdit.action = `/gudang-cabang/inventaris/${id}`;
+
+        if(d.foto){
+            previewFoto.src = `/storage/${d.foto}`;
+            previewFoto.style.display = 'block';
+        } else {
+            previewFoto.style.display = 'none';
+        }
+
         new bootstrap.Modal(modalEdit).show();
     });
 }
@@ -231,6 +449,14 @@ document.getElementById('formEdit').addEventListener('submit', function(e){
         headers:{'X-CSRF-TOKEN':'{{ csrf_token() }}'},
         body:new FormData(this)
     }).then(()=>location.reload());
+});
+
+document.getElementById('edit_foto').addEventListener('change', function(){
+    const file = this.files[0];
+    if(file){
+        previewFoto.src = URL.createObjectURL(file);
+        previewFoto.style.display = 'block';
+    }
 });
 </script>
 @endpush

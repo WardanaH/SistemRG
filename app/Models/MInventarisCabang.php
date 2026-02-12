@@ -21,6 +21,7 @@ class MInventarisCabang extends Model
         'lokasi',
         'tanggal_input',
         'qr_code',
+        'foto',
     ];
 
     public function cabang()
