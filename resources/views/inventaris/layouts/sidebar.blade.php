@@ -48,7 +48,7 @@
             @endphp
 
             <a class="navbar-brand m-0 d-flex align-items-center" href="{{ route('gudangpusat.dashboard') }}">
-                <img src="{{ asset('storage/RGlogo.webp') }}" class="navbar-brand-img h-100 me-2" style="height:40px; width:40px; object-fit:contain;">
+                <img src="{{ asset('image-company/icon.webp') }}" class="navbar-brand-img h-100 me-2" style="height:40px; width:40px; object-fit:contain;">
                 <span class="ms-1 font-weight-bold text-white">
                     {{ $cabangNama }}
                 </span>

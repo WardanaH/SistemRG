@@ -86,6 +86,6 @@ class GudangBarangSeeder extends Seeder
             ['kategori_id'=>null,'nama_bahan'=>'tripod banner','harga'=>0,'satuan'=>'pcs','stok'=>100,'batas_stok'=>1000,'keterangan'=>null,'created_at'=>$now,'updated_at'=>$now],
         ];
 
-        DB::table('barang_gudang')->insert($data);
+        DB::table('gudang_barangs')->insert($data);
     }
 }
