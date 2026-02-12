@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SPK_{{ $spk->no_spk }}</title>
+    <title>SPK_LEMBUR_{{ $spk->no_spk }}</title>
     <style>
         @page {
             size: A5 landscape;
@@ -16,13 +16,14 @@
             margin: 0;
             padding: 10px;
             background-color: #fff;
-            color: #a90000;
+            /* Warna Tema: Oranye Gelap untuk Lembur */
+            color: #d35400;
             font-size: 11px;
             -webkit-print-color-adjust: exact;
         }
 
         .spk-container {
-            border: 2px solid #a90000;
+            border: 2px solid #d35400;
             width: 100%;
             height: 96vh;
             box-sizing: border-box;
@@ -34,7 +35,7 @@
         /* HEADER */
         .header {
             display: flex;
-            border-bottom: 2px solid #a90000;
+            border-bottom: 2px solid #d35400;
             height: 85px;
         }
 
@@ -43,7 +44,7 @@
             padding: 5px 10px;
             display: flex;
             align-items: center;
-            border-right: 1px solid #a90000;
+            border-right: 1px solid #d35400;
         }
 
         .logo-text h1 {
@@ -52,6 +53,7 @@
             font-weight: 900;
             text-transform: uppercase;
             line-height: 1;
+            color: #d35400;
         }
 
         .logo-text p {
@@ -68,7 +70,7 @@
 
         .header-row {
             display: flex;
-            border-bottom: 1px solid #a90000;
+            border-bottom: 1px solid #d35400;
             flex: 1;
         }
 
@@ -77,13 +79,14 @@
         }
 
         .header-label {
-            width: 70px;
+            width: 90px;
             padding: 5px;
             font-weight: bold;
-            border-right: 1px solid #a90000;
+            border-right: 1px solid #d35400;
             display: flex;
             align-items: center;
             font-size: 10px;
+            color: #d35400;
         }
 
         .header-value {
@@ -96,7 +99,8 @@
         }
 
         .spk-title-bar {
-            background-color: #a90000;
+            background-color: #d35400;
+            /* Oranye */
             color: white;
             text-align: center;
             font-weight: bold;
@@ -116,17 +120,19 @@
         }
 
         .content-table th {
-            border-bottom: 1px solid #a90000;
-            border-right: 1px solid #a90000;
+            border-bottom: 1px solid #d35400;
+            border-right: 1px solid #d35400;
             padding: 4px;
             text-align: center;
             font-size: 10px;
-            background: #f8f8f8;
+            background: #fff5e6;
+            /* Background header tabel agak kekuningan */
+            color: #d35400;
         }
 
         .content-table td {
             border-bottom: 1px solid #eee;
-            border-right: 1px solid #a90000;
+            border-right: 1px solid #d35400;
             padding: 4px 6px;
             color: #000;
             vertical-align: top;
@@ -139,26 +145,26 @@
         }
 
         .content-table tbody tr:last-child td {
-            border-bottom: 1px solid #a90000;
+            border-bottom: 1px solid #d35400;
         }
 
         /* FOOTER AREA */
         .footer-area {
             display: flex;
             height: 95px;
-            border-top: 1px solid #a90000;
+            border-top: 1px solid #d35400;
         }
 
         .footer-left {
             width: 25%;
             display: flex;
             flex-direction: column;
-            border-right: 1px solid #a90000;
+            border-right: 1px solid #d35400;
         }
 
         .staff-box {
             flex: 1;
-            border-bottom: 1px solid #a90000;
+            border-bottom: 1px solid #d35400;
             padding: 4px;
             font-size: 9px;
         }
@@ -171,6 +177,7 @@
             font-weight: bold;
             display: block;
             margin-bottom: 2px;
+            color: #d35400;
         }
 
         .staff-value {
@@ -185,12 +192,12 @@
             width: 55%;
             display: flex;
             flex-direction: column;
-            border-right: 1px solid #a90000;
+            border-right: 1px solid #d35400;
         }
 
         .cust-box {
             flex: 1;
-            border-bottom: 1px solid #a90000;
+            border-bottom: 1px solid #d35400;
             padding: 5px;
             display: flex;
             align-items: center;
@@ -201,9 +208,9 @@
         }
 
         .cust-label {
-            width: 60px;
+            width: 70px;
             font-weight: bold;
-            background: #a90000;
+            background: #d35400;
             color: white;
             padding: 2px 4px;
             margin-right: 10px;
@@ -230,6 +237,7 @@
         .ttd-title {
             font-weight: bold;
             font-size: 9px;
+            color: #d35400;
         }
 
         .ttd-space {
@@ -244,7 +252,7 @@
 
             .spk-container {
                 height: 100vh;
-                border: 2px solid #a90000;
+                border: 2px solid #d35400;
             }
         }
     </style>
@@ -254,12 +262,13 @@
 
     <div class="spk-container">
 
-        {{-- HEADER --}}
+        {{-- HEADER LOGO & INFO --}}
         <div class="header">
             <div class="header-left">
                 <div class="logo-text">
                     <div style="font-size: 30px; float: left; margin-right: 10px;">
-                        <svg width="35" height="35" viewBox="0 0 24 24" fill="#a90000">
+                        {{-- Icon SVG warna oranye --}}
+                        <svg width="35" height="35" viewBox="0 0 24 24" fill="#d35400">
                             <path d="M12 2L2 7l10 5 10-5-10-5zm0 9l2.5-1.25L12 8.5l-2.5 1.25L12 11zm0 2.5l-5-2.5-5 2.5L12 22l10-8.5-5-2.5-5 2.5z" />
                         </svg>
                     </div>
@@ -275,38 +284,43 @@
                         {{ \Carbon\Carbon::parse($spk->tanggal_spk)->format('d - m - Y') }}
                     </div>
                 </div>
+                {{-- INFO LEMBUR DARI MANA --}}
                 <div class="header-row">
-                    <div class="header-label">DESIGNER :</div>
+                    <div class="header-label">DESIGNER DARI:</div>
                     <div class="header-value">
-                        {{ strtoupper($spk->designer->nama ?? '-') }}
+                        {{ strtoupper($spk->cabangAsal->nama ?? 'PUSAT') }}
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="spk-title-bar">
-            SURAT PERINTAH KERJA <span style="font-weight: normal; font-size: 10px; margin-left: 10px;">NO SPK :</span> <span style="color: yellow; font-size: 14px;">{{ $spk->no_spk }}</span>
+            SURAT PERINTAH KERJA <span style="font-weight: bold; color: #fff59d;">(LEMBUR)</span>
+            <span style="font-weight: normal; font-size: 10px; margin-left: 20px;">NO SPK :</span>
+            <span style="color: white; font-size: 14px;">{{ $spk->no_spk }}</span>
         </div>
 
-        {{-- TABEL ITEM (JENIS & OPERATOR ADA DI SINI) --}}
+        {{-- TABEL ITEM --}}
         <div class="table-wrapper">
             <table class="content-table">
                 <thead>
                     <tr>
+                        <th width="10%">JENIS</th>
                         <th width="25%">NAMA FILE</th>
                         <th width="13%">UKURAN</th>
                         <th width="12%">BAHAN</th>
                         <th width="5%">QTY</th>
                         <th width="10%">FINISHING</th>
                         <th width="10%">KET</th>
-                        <th width="10%">JENIS</th>
-                        <th width="15%">OPERATOR</th>
+                        <th width="15%">OPERATOR (LOKASI)</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($spk->items as $item)
                     <tr>
-
+                        <td align="center" style="font-weight: bold; font-size: 10px;">
+                            {{ strtoupper($item->jenis_order) }}
+                        </td>
                         <td>
                             <strong>{{ $item->nama_file }}</strong>
                         </td>
@@ -314,17 +328,16 @@
                         <td align="center">{{ $item->bahan->nama_bahan ?? '-' }}</td>
                         <td align="center" style="font-weight: bold; font-size: 12px;">{{ $item->qty }}</td>
                         <td align="center">{{ $item->finishing ?? '-' }}</td>
-                        <td align="center">{{ $item->catatan ?? '-' }}</td>
-                        <td align="center" style="font-weight: bold; font-size: 10px;">
-                            {{ strtoupper($item->jenis_order) }}
-                        </td>
+                        <td>{{ $item->catatan ?? '-' }}</td>
+
+                        {{-- Operator Produksi --}}
                         <td align="center" style="font-size: 10px; font-weight: bold;">
                             {{ strtoupper($item->operator->nama ?? '-') }}
                         </td>
                     </tr>
                     @endforeach
 
-                    {{-- Baris kosong pelengkap --}}
+                    {{-- Filler Rows agar tabel tetap penuh sampai bawah --}}
                     @for($i = 0; $i < max(0, 6 - count($spk->items)); $i++)
                         <tr>
                             <td style="color:transparent;">.</td>
@@ -345,7 +358,7 @@
         <div class="footer-area">
             <div class="footer-left">
                 <div class="staff-box" style="border-bottom: none; height: 100%;">
-                    <span class="staff-label" style="text-align: center; margin-top: 5px;">DESIGNER</span>
+                    <span class="staff-label" style="text-align: center; margin-top: 5px;">DESIGNER (LEMBUR)</span>
                     <div class="staff-value" style="margin-top: 15px;">
                         {{ strtoupper($spk->designer->nama ?? '-') }}
                     </div>
@@ -354,7 +367,7 @@
 
             <div class="footer-center">
                 <div class="cust-box">
-                    <div class="cust-label">NAMA</div>
+                    <div class="cust-label">CUSTOMER</div>
                     <div class="cust-value">{{ strtoupper($spk->nama_pelanggan) }}</div>
                 </div>
                 <div class="cust-box">
@@ -364,8 +377,9 @@
             </div>
 
             <div class="footer-right">
-                <div class="ttd-title">TTD ACC CETAK</div>
+                <div class="ttd-title">ADMIN (LOKASI)</div>
                 <div class="ttd-space"></div>
+                {{-- Bisa dikosongkan untuk TTD Admin Cabang tempat lembur --}}
             </div>
         </div>
 

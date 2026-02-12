@@ -16,6 +16,12 @@ class MSpk extends Model
     }
 
     // Relasi ke User sebagai Designer
+    public function admin()
+    {
+        return $this->belongsTo(User::class, 'admin_id', 'id');
+    }
+
+    // Relasi ke User sebagai Designer
     public function designer()
     {
         return $this->belongsTo(User::class, 'designer_id', 'id');
@@ -38,5 +44,10 @@ class MSpk extends Model
     public function cabangAsal()
     {
         return $this->belongsTo(MCabang::class, 'asal_cabang_id', 'id');
+    }
+
+    public function items()
+    {
+        return $this->hasMany(MSubSpk::class, 'spk_id');
     }
 }

@@ -14,13 +14,13 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        // --- Buat 2 cabang ---
+        // --- 1. Buat Cabang ---
         $cabangGDGUtama = MCabang::create([
             'kode' => 'GDG-UTM',
             'nama' => 'Gudang Utama',
             'slug' => 'gudang-utama',
-            'email' => 'utama@example.com',
-            'telepon' => '08123456789',
+            'email' => 'gudang-utama@restuguru.com',
+            'telepon' => '0811000000',
             'alamat' => 'Jl. Merdeka No. 1, Jakarta',
             'jenis' => 'pusat',
         ]);
@@ -29,7 +29,7 @@ class UserSeeder extends Seeder
             'kode' => 'CBG-UTM',
             'nama' => 'Cabang Utama',
             'slug' => 'cabang-pusat',
-            'email' => 'utama@example.com',
+            'email' => 'utama@restuguru.com',
             'telepon' => '08123456789',
             'alamat' => 'Jl. Merdeka No. 1, Jakarta',
             'jenis' => 'pusat',
@@ -39,7 +39,7 @@ class UserSeeder extends Seeder
             'kode' => 'CBG-BJM',
             'nama' => 'Cabang Banjarmasin',
             'slug' => 'cabang-banjarmasin',
-            'email' => 'banjarmasin@example.com',
+            'email' => 'banjarmasin@restuguru.com',
             'telepon' => '08234567890',
             'alamat' => 'Jl. Veteran No. 2, Banjarmasin',
             'jenis' => 'cabang',
@@ -49,140 +49,510 @@ class UserSeeder extends Seeder
             'kode' => 'CBG-BJB',
             'nama' => 'Cabang Banjarbaru',
             'slug' => 'cabang-banjarbaru',
-            'email' => 'banjarbaru@example.com',
+            'email' => 'banjarbaru@restuguru.com',
             'telepon' => '08234567890',
-            'alamat' => 'Jl. Veteran No. 2, Banjarmasin',
+            'alamat' => 'Jl. Veteran No. 3, Banjarbaru',
             'jenis' => 'cabang',
         ]);
 
-        // --- Buat user Manajemen ---
-        $admin = User::create([
+        $cabangMtp = MCabang::create([
+            'kode' => 'CBG-MTP',
+            'nama' => 'Cabang Martapura',
+            'slug' => 'cabang-martapura',
+            'email' => 'Martapura@restuguru.com',
+            'telepon' => '08234567890',
+            'alamat' => 'Martapura, Cindai Alus, Kabupaten Banjar, Kalimantan Selatan',
+            'jenis' => 'cabang',
+        ]);
+
+        $cabangLgg = MCabang::create([
+            'kode' => 'CBG-LGG',
+            'nama' => 'Cabang Liangangggang',
+            'slug' => 'cabang-liangangggang',
+            'email' => 'Liangangggang@restuguru.com',
+            'telepon' => '08234567891',
+            'alamat' => 'Jl. A. Yani No.17, Landasan Ulin Bar., Kec. Liang Anggang, Kota Banjar Baru, Kalimantan Selatan 70722',
+            'jenis' => 'cabang',
+        ]);
+
+
+        // manajemen
+        $manajemen = User::create([
             'nama' => 'Manajemen',
             'username' => 'manajemen',
-            'email' => 'manajemen@example.com',
+            'email' => 'manajemen@restuguru.com',
             'password' => Hash::make('password'),
             'cabang_id' => $cabangUtama->id,
         ]);
-        $admin->assignRole('manajemen');
+        $manajemen->assignRole('manajemen');
 
-        // --- Buat user Admin BJM ---
-        $admin = User::create([
-            'nama' => 'Admin Banjarmasin',
-            'username' => 'adminbjm',
-            'email' => 'adminbanjarmasin@example.com',
+
+
+
+
+
+
+
+        // MTP
+        //admin
+        $rahmawati = User::create([
+            'nama' => 'Rahmawati',
+            'username' => 'rahmawati',
+            'email' => 'rahmawati@restuguru.com',
             'password' => Hash::make('password'),
-            'cabang_id' => $cabangBjm->id,
+            'cabang_id' => $cabangMtp->id,
         ]);
-        $admin->assignRole('admin');
+        $rahmawati->assignRole('admin');
 
-        // --- Buat user Admin BJB ---
-        $admin = User::create([
-            'nama' => 'Admin Banjarbaru',
-            'username' => 'adminbjb',
-            'email' => 'adminbanjarbaru@example.com',
+        $egyDinda = User::create([
+            'nama' => 'Egy Dinda Wulandari',
+            'username' => 'egydinda',
+            'email' => 'egydinda@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangMtp->id,
+        ]);
+        $egyDinda->assignRole('admin');
+
+        $zaid = User::create([
+            'nama' => 'Ahmad Mujahid admin',
+            'username' => 'zaidadmin',
+            'email' => 'zaidadmin@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangMtp->id,
+        ]);
+        $zaid->assignRole('admin');
+
+        $rizkyMahdini = User::create([
+            'nama' => 'Rizky Mahdini',
+            'username' => 'rizkymahdini',
+            'email' => 'rizky@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangMtp->id,
+        ]);
+        $rizkyMahdini->assignRole('admin');
+
+        //operator outdoor
+        $aan = User::create([
+            'nama' => 'Aan',
+            'username' => 'aan',
+            'email' => 'aan@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangMtp->id,
+        ]);
+        $aan->assignRole('operator outdoor');
+
+        $akbar = User::create([
+            'nama' => 'Akbar',
+            'username' => 'akbar',
+            'email' => 'akbar@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangMtp->id,
+        ]);
+        $akbar->assignRole('operator outdoor');
+
+        // opearator indoor
+        $kiki = User::create([
+            'nama' => 'Kiki',
+            'username' => 'kiki',
+            'email' => 'kiki@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangMtp->id,
+        ]);
+        $kiki->assignRole('operator indoor');
+
+        // operator multi
+        $nopal = User::create([
+            'nama' => 'Nopal',
+            'username' => 'nopal',
+            'email' => 'nopal@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangMtp->id,
+        ]);
+        $nopal->assignRole('operator multi');
+
+        //designer
+        $zaid = User::create([
+            'nama' => 'Zaid',
+            'username' => 'zaid',
+            'email' => 'zaid@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangMtp->id,
+        ]);
+        $zaid->assignRole('designer');
+
+        $mila = User::create([
+            'nama' => 'Mila',
+            'username' => 'mila',
+            'email' => 'mila@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangMtp->id,
+        ]);
+        $mila->assignRole('designer');
+
+        $dini = User::create([
+            'nama' => 'Dini',
+            'username' => 'dini',
+            'email' => 'dini@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangMtp->id,
+        ]);
+        $dini->assignRole('designer');
+
+        $wawa = User::create([
+            'nama' => 'Wawa',
+            'username' => 'wawa',
+            'email' => 'wawa@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangMtp->id,
+        ]);
+        $wawa->assignRole('designer');
+
+        $alif = User::create([
+            'nama' => 'Alif',
+            'username' => 'alif',
+            'email' => 'alif@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangMtp->id,
+        ]);
+        $alif->assignRole('designer');
+
+        $indah = User::create([
+            'nama' => 'Indah',
+            'username' => 'indah',
+            'email' => 'indah@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangMtp->id,
+        ]);
+        $indah->assignRole('designer');
+
+        $mahmud = User::create([
+            'nama' => 'Mahmud',
+            'username' => 'mahmud',
+            'email' => 'mahmud@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangMtp->id,
+        ]);
+        $mahmud->assignRole('designer');
+
+
+
+
+
+
+        // BJB
+        //admin
+        $dina = User::create([
+            'nama' => 'Dina',
+            'username' => 'dina',
+            'email' => 'dina@restuguru.com',
             'password' => Hash::make('password'),
             'cabang_id' => $cabangBjb->id,
         ]);
-        $admin->assignRole('admin');
+        $dina->assignRole('admin');
 
-        // --- Buat user Operator Indoor ---
-        $operatorIndoor = User::create([
-            'nama' => 'Operator Cabang bjm',
-            'username' => 'operatorIndoor',
-            'email' => 'operatorOutdoor@example.com',
-            'password' => Hash::make('password'),
-            'cabang_id' => $cabangBjm->id,
-        ]);
-        $operatorIndoor->assignRole('operator indoor');
-
-        // --- Buat user Operator Outdoor ---
-        $operatorOutdoor = User::create([
-            'nama' => 'Operator Cabang bjm',
-            'username' => 'operatorOutdoor',
-            'email' => 'operatorIndoor@example.com',
-            'password' => Hash::make('password'),
-            'cabang_id' => $cabangBjm->id,
-        ]);
-        $operatorOutdoor->assignRole('operator outdoor');
-
-        // --- Buat user Operator Multi ---
-        $operatorMulti = User::create([
-            'nama' => 'Operator Cabang bjm',
-            'username' => 'operatorMulti',
-            'email' => 'operatorMulti@example.com',
-            'password' => Hash::make('password'),
-            'cabang_id' => $cabangBjm->id,
-        ]);
-        $operatorMulti->assignRole('operator multi');
-
-        // --- Buat user Operator Indoor ---
-        $operatorIndoor = User::create([
-            'nama' => 'Operator Cabang bjb',
-            'username' => 'operatorIndoorbjb',
-            'email' => 'operatorOutdoorbjb@example.com',
+        $aya = User::create([
+            'nama' => 'Aya',
+            'username' => 'aya',
+            'email' => 'aya@restuguru.com',
             'password' => Hash::make('password'),
             'cabang_id' => $cabangBjb->id,
         ]);
-        $operatorIndoor->assignRole('operator indoor');
+        $aya->assignRole('admin');
 
-        // --- Buat user Operator Outdoor ---
-        $operatorOutdoor = User::create([
-            'nama' => 'Operator Cabang bjb',
-            'username' => 'operatorOutdoorbjb',
-            'email' => 'operatorIndoorbjb@example.com',
+        $yeni = User::create([
+            'nama' => 'Yeni',
+            'username' => 'yeni',
+            'email' => 'yeni@restuguru.com',
             'password' => Hash::make('password'),
             'cabang_id' => $cabangBjb->id,
         ]);
-        $operatorOutdoor->assignRole('operator outdoor');
+        $yeni->assignRole('admin');
 
-        // --- Buat user Operator Multi ---
-        $operatorMulti = User::create([
-            'nama' => 'Operator Cabang bjb',
-            'username' => 'operatorMultibjb',
-            'email' => 'operatorMultibjb@example.com',
+        $edy = User::create([
+            'nama' => 'Edy admin',
+            'username' => 'edyadmin',
+            'email' => 'edyadmin@restuguru.com',
             'password' => Hash::make('password'),
             'cabang_id' => $cabangBjb->id,
         ]);
-        $operatorMulti->assignRole('operator multi');
+        $edy->assignRole('admin');
 
-        // --- Buat user Designer ---
-        $operatorMulti = User::create([
-            'nama' => 'Designer',
-            'username' => 'designer',
-            'email' => 'designer@example.com',
+        //operator outdoor
+        $aziz = User::create([
+            'nama' => 'Aziz',
+            'username' => 'aziz',
+            'email' => 'aziz@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangBjb->id,
+        ]);
+        $aziz->assignRole('operator outdoor');
+
+        $madon = User::create([
+            'nama' => 'Madon',
+            'username' => 'madon',
+            'email' => 'madon@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangBjb->id,
+        ]);
+        $madon->assignRole('operator outdoor');
+
+        // Operator indoor
+        $mubin = User::create([
+            'nama' => 'Mubin',
+            'username' => 'mubin',
+            'email' => 'mubin@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangBjb->id,
+        ]);
+        $mubin->assignRole('operator indoor');
+
+        //operator multi
+        $adit = User::create([
+            'nama' => 'Adit',
+            'username' => 'adit',
+            'email' => 'adit@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangBjb->id,
+        ]);
+        $adit->assignRole('operator multi');
+
+        // Designer BJB
+        $riki = User::create([
+            'nama' => 'Riki',
+            'username' => 'riki',
+            'email' => 'riki@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangBjb->id,
+        ]);
+        $riki->assignRole('designer');
+
+        $rifa = User::create([
+            'nama' => 'Rifa',
+            'username' => 'rifa',
+            'email' => 'rifa@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangBjb->id,
+        ]);
+        $rifa->assignRole('designer');
+
+        $syifa = User::create([
+            'nama' => 'Syifa',
+            'username' => 'syifa',
+            'email' => 'syifa@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangBjb->id,
+        ]);
+        $syifa->assignRole('designer');
+
+        $fajar = User::create([
+            'nama' => 'Fajar',
+            'username' => 'fajar',
+            'email' => 'fajar@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangBjb->id,
+        ]);
+        $fajar->assignRole('designer');
+
+        $edy = User::create([
+            'nama' => 'Edy',
+            'username' => 'edy',
+            'email' => 'edy@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangBjb->id,
+        ]);
+        $edy->assignRole('designer');
+
+        $husni = User::create([
+            'nama' => 'Husni',
+            'username' => 'husni',
+            'email' => 'husni@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangBjb->id,
+        ]);
+        $husni->assignRole('designer');
+
+
+
+
+
+
+        // BJM
+        //admin
+        $devi = User::create([
+            'nama' => 'Devi',
+            'username' => 'devi',
+            'email' => 'devi@restuguru.com',
             'password' => Hash::make('password'),
             'cabang_id' => $cabangBjm->id,
         ]);
-        $operatorMulti->assignRole('designer');
+        $devi->assignRole('admin');
 
-        // --- Buat user Gudang utama ---
-        $admin = User::create([
-            'nama' => 'gudang',
+        $dila = User::create([
+            'nama' => 'Dila',
+            'username' => 'dila',
+            'email' => 'dila@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangBjm->id,
+        ]);
+        $dila->assignRole('admin');
+
+        // operator
+        $uji = User::create([
+            'nama' => 'Uji',
+            'username' => 'uji',
+            'email' => 'uji@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangBjm->id,
+        ]);
+        $uji->assignRole('operator outdoor');
+
+        $tilah = User::create([
+            'nama' => 'Tilah',
+            'username' => 'tilah',
+            'email' => 'tilah@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangBjm->id,
+        ]);
+        $tilah->assignRole('operator outdoor');
+
+        // operator indoor
+        $usai = User::create([
+            'nama' => 'Usai',
+            'username' => 'usai',
+            'email' => 'usai@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangBjm->id,
+        ]);
+        $usai->assignRole('operator indoor');
+
+        //designer
+        $joe = User::create([
+            'nama' => 'Joe',
+            'username' => 'joe',
+            'email' => 'joe@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangBjm->id,
+        ]);
+        $joe->assignRole('designer');
+
+        $iqbal = User::create([
+            'nama' => 'Iqbal',
+            'username' => 'iqbal',
+            'email' => 'iqbal@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangBjm->id,
+        ]);
+        $iqbal->assignRole('designer');
+
+        $lisda = User::create([
+            'nama' => 'Lisda',
+            'username' => 'lisda',
+            'email' => 'lisda@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangBjm->id,
+        ]);
+        $lisda->assignRole('designer');
+
+        $heny = User::create([
+            'nama' => 'Heny',
+            'username' => 'heny',
+            'email' => 'heny@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangBjm->id,
+        ]);
+        $heny->assignRole('designer');
+
+
+
+
+
+
+        // Lianganggang
+        //admin
+        $ila = User::create([
+            'nama' => 'Ila',
+            'username' => 'ila',
+            'email' => 'ila@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangLgg->id,
+        ]);
+        $ila->assignRole('admin');
+
+        //operator outdoor
+        $budi = User::create([
+            'nama' => 'Budi',
+            'username' => 'budi',
+            'email' => 'budi@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangLgg->id,
+        ]);
+        $budi->assignRole('operator outdoor');
+
+        //designer
+        $darian = User::create([
+            'nama' => 'Darian',
+            'username' => 'darian',
+            'email' => 'darian@restuguru.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangLgg->id,
+        ]);
+        $darian->assignRole('designer');
+
+
+
+
+
+
+        // --- 4. INVENTORY (Tetap 1 User per Bagian) ---
+
+        // Gudang Utama
+        $invUtama = User::create([
+            'nama' => 'Gudang Utama',
             'username' => 'gudang',
             'email' => 'gudang@example.com',
             'password' => Hash::make('password'),
             'cabang_id' => $cabangGDGUtama->id,
         ]);
-        $admin->assignRole('inventory utama');
+        $invUtama->assignRole('inventory utama');
 
-        // --- Buat user Gudang bjm ---
-        $admin = User::create([
-            'nama' => 'gudang bjm',
+        // Gudang BJM
+        $invBjm = User::create([
+            'nama' => 'Gudang BJM',
             'username' => 'gudangbjm',
             'email' => 'gudangbjm@example.com',
             'password' => Hash::make('password'),
             'cabang_id' => $cabangBjm->id,
         ]);
-        $admin->assignRole('inventory cabang');
+        $invBjm->assignRole('inventory cabang');
 
-        // --- Buat user Gudang bjb ---
-        $admin = User::create([
-            'nama' => 'gudang bjb',
+        // Gudang BJB
+        $invBjb = User::create([
+            'nama' => 'Gudang BJB',
             'username' => 'gudangbjb',
             'email' => 'gudangbjb@example.com',
             'password' => Hash::make('password'),
-            'cabang_id' => $cabangGDGUtama->id,
+            'cabang_id' => $cabangBjb->id,
         ]);
-        $admin->assignRole('inventory cabang');
+        $invBjb->assignRole('inventory cabang');
+
+        // Gudang Lianganggang
+        $invLgg = User::create([
+            'nama' => 'Gudang Lianganggang',
+            'username' => 'gudanglgg',
+            'email' => 'gudanglgg@example.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangLgg->id,
+        ]);
+        $invLgg->assignRole('inventory cabang');
+
+        // Gudang MTP
+        $invMtp = User::create([
+            'nama' => 'Gudang MTP',
+            'username' => 'gudangmtp',
+            'email' => 'gudangmtp@example.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangMtp->id,
+        ]);
+        $invMtp->assignRole('inventory cabang');
     }
 }

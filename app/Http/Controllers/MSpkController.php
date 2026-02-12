@@ -6,15 +6,15 @@ use Carbon\Carbon;
 use App\Models\MSpk;
 use App\Models\User;
 use App\Models\MCabang;
+use App\Models\MSubSpk;
 use App\Models\MBahanBaku;
 use App\Models\MFinishing;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Log;
-use App\Events\NotifikasiSpkBaru;
 
 class MSpkController extends Controller
 {
@@ -64,17 +64,19 @@ class MSpkController extends Controller
     {
         $user = Auth::user();
 
-        // Mulai Query dengan Eager Loading agar hemat query database
-        $query = MSpk::with(['bahan', 'designer', 'operator', 'cabang'])
-            ->where('is_bantuan', false);
+        // PERBAIKAN: Hapus 'bahan' & 'operator' karena sudah pindah ke tabel items
+        // Tambahkan 'withCount' untuk menghitung jumlah item di tabel depan
+        $query = MSpk::with(['designer', 'cabang'])
+            ->withCount('items') // Menghitung jumlah item di sub_spk
+            ->where('is_bantuan', false)
+            ->where('is_lembur', false);
 
         // 1. Logika Filter Cabang
-        // Jika user BUKAN dari pusat, filter hanya SPK cabangnya sendiri
         if ($user->cabang->jenis !== 'pusat') {
             $query->where('cabang_id', $user->cabang_id);
         }
 
-        // 2. Logika Pencarian (No SPK atau Nama Pelanggan)
+        // 2. Logika Pencarian
         if ($request->has('search') && $request->search != '') {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -83,12 +85,67 @@ class MSpkController extends Controller
             });
         }
 
-        // 3. Ambil data (Paginate 10 per halaman) & urutkan terbaru
         $spks = $query->latest()->paginate(10);
 
-        return view('spk.designer.indexSpk', [
+        return view('spk.designer.indexSpk', [ // Sesuaikan folder view Anda
             'title' => 'Manajemen SPK',
             'spks' => $spks
+        ]);
+    }
+
+    public function indexLembur(Request $request)
+    {
+        $user = Auth::user();
+
+        // Eager load relasi yang dibutuhkan
+        // 'cabang' = Cabang Tujuan (Tempat lembur)
+        // 'cabangAsal' = Cabang Asal Designer (Penting untuk ditampilkan di tabel)
+        $query = MSpk::with(['designer', 'cabang', 'cabangAsal'])
+            ->withCount('items') // Menghitung jumlah item
+            ->where('is_lembur', true); // Hanya ambil data lembur
+
+        // 1. LOGIKA FILTER AKSES
+        if ($user->cabang->jenis !== 'pusat') {
+
+            if ($user->hasRole('designer')) {
+                // A. DESIGNER: Melihat riwayat lembur yang DIA kerjakan (Outgoing)
+                // Filter berdasarkan 'designer_id', bukan cabang.
+                // Karena saat lembur, cabang_id SPK = Cabang Tujuan, sedangkan user->cabang_id = Cabang Asal.
+                $query->where('designer_id', $user->id);
+            }
+        }
+
+        // 2. LOGIKA PENCARIAN
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('no_spk', 'like', "%$search%")
+                    ->orWhere('nama_pelanggan', 'like', "%$search%")
+                    // Optional: Cari berdasarkan nama designer
+                    ->orWhereHas('designer', function ($d) use ($search) {
+                        $d->where('nama', 'like', "%$search%");
+                    });
+            });
+        }
+
+        $spks = $query->latest()->paginate(10);
+
+        return view('spk.designer.indexSpkLembur', [
+            'title' => 'Manajemen SPK Lembur',
+            'spks'  => $spks
+        ]);
+    }
+
+    public function show($id)
+    {
+        // Ambil SPK Header beserta Relasi Detail Itemnya
+        // Kita perlu load: items, items->bahan, items->operator
+        $spk = MSpk::with(['designer', 'cabang', 'items.bahan', 'items.operator'])
+            ->findOrFail($id);
+
+        return view('spk.designer.show', [
+            'title' => 'Detail SPK - ' . $spk->no_spk,
+            'spk' => $spk
         ]);
     }
 
@@ -96,115 +153,135 @@ class MSpkController extends Controller
     {
         $user = Auth::user();
 
-        // 1. RULE VALIDASI DASAR
-        $rules = [
-            'tanggal'         => 'required',
-            'jenis_order'     => 'required|in:outdoor,indoor,multi',
-            'nama_pelanggan'  => 'required|string|max:255',
-            'nama_file'       => 'required|string',
-            'ukuran_p'        => 'required|numeric|min:0',
-            'ukuran_l'        => 'required|numeric|min:0',
-            'bahan_id'        => 'required|exists:m_bahan_bakus,id',
-            'qty'             => 'required|integer|min:1',
-            'finishing'       => 'nullable|string',
-            'catatan'         => 'nullable|string',
-            'designer_id'     => 'required|exists:users,id',
-            'operator_id'     => 'required|exists:users,id',
-        ];
+        // 1. VALIDASI DATA
+        $request->validate([
+            // Header (Data Pelanggan)
+            'nama_pelanggan' => 'required|string|max:255',
+            'no_telepon'     => 'nullable|string',
+            'tanggal'        => 'required',
 
-        // 2. VALIDASI TAMBAHAN JIKA MODE BANTUAN AKTIF
-        if ($request->has('is_bantuan')) {
-            // Jika Bantuan: Asal Cabang WAJIB, No Telp WAJIB (karena order luar)
-            $rules['asal_cabang_id'] = 'required|exists:m_cabangs,id';
-            $rules['no_telp']        = 'required|numeric|digits_between:10,13';
-        } else {
-            // Jika Biasa: No Telp Boleh Kosong (Nanti diisi admin) atau string "Di Isi Oleh Admin"
-            $rules['no_telp']        = 'nullable';
-        }
+            // Validasi Lembur
+            'is_lembur'        => 'nullable|boolean',
+            'cabang_lembur_id' => 'required_if:is_lembur,1|exists:m_cabangs,id',
 
-        $request->validate($rules, [
-            'asal_cabang_id.required' => 'Harap pilih asal cabang pengirim order.',
-            'no_telp.required'        => 'Untuk SPK Bantuan, nomor telepon pelanggan wajib diisi.',
+            // Detail Items (Array)
+            'items'             => 'required|array|min:1',
+            'items.*.jenis'     => 'required|in:outdoor,indoor,multi',
+            'items.*.file'      => 'required|string',
+            'items.*.p'         => 'required|numeric|min:0',
+            'items.*.l'         => 'required|numeric|min:0',
+            'items.*.bahan_id'  => 'required|exists:m_bahan_bakus,id',
+            'items.*.qty'       => 'required|integer|min:1',
+            'items.*.operator_id' => 'required|exists:users,id', // ID Operator ini valid karena sudah difilter JS di view
+            'items.*.finishing' => 'nullable|string',
+            'items.*.catatan'   => 'nullable|string',
+        ], [
+            'items.required' => 'Mohon masukkan minimal 1 item pesanan.',
+            'cabang_lembur_id.required_if' => 'Mohon pilih cabang lokasi lembur.',
         ]);
 
-        // dd($request->all());
+        $isLemburRoute = $request->has('is_lembur') && $request->is_lembur == '1';
 
-        // 3. MULAI TRANSAKSI DATABASE
         try {
             DB::transaction(function () use ($request, $user) {
 
-                // Ambil Kode Cabang User Login (Misal: CBG-BJM)
-                $cabangKode = $user->cabang->kode;
-                $basePrefix = Str::after($cabangKode, '-'); // Hasil: BJM
+                // A. TENTUKAN CABANG TARGET (Dimana SPK ini akan masuk?)
+                // Jika lembur = Cabang Lembur. Jika tidak = Cabang User.
+                $isLembur = $request->has('is_lembur') && $request->is_lembur == '1';
+                $targetCabangId = $isLembur ? $request->cabang_lembur_id : $user->cabang_id;
 
-                // Tentukan Prefix Akhir & Asal Cabang
-                if ($request->has('is_bantuan')) {
-                    $finalPrefix = 'B' . $basePrefix; // Hasil: BBJM
-                    $asalCabangId = $request->asal_cabang_id;
-                    $noTelp = $request->no_telp;
+                // Ambil Data Cabang Target untuk Kode SPK
+                $targetCabang = MCabang::findOrFail($targetCabangId);
+                $cabangKode = $targetCabang->kode; // Misal: CAB-MTP
+                $basePrefix = \Illuminate\Support\Str::after($cabangKode, '-'); // Ambil 'MTP'
+
+                // Logika Prefix:
+                // Jika Lembur -> LMTP (L + Kode Cabang)
+                // Jika Reguler -> MTP (Kode Cabang saja)
+                if ($isLembur) {
+                    $prefix = 'L' . $basePrefix; // Contoh: LMTP
                 } else {
-                    $finalPrefix = $basePrefix; // Hasil: BJM
-                    $asalCabangId = null;
-                    // Jika inputnya text default, kita simpan null biar bersih di DB
-                    $noTelp = ($request->no_telp == 'Di Isi Oleh Admin') ? null : $request->no_telp;
+                    $prefix = $basePrefix; // Contoh: MTP
                 }
 
-                // --- GENERATE NOMOR URUT (LOCKING) ---
-                // Cari nomor terakhir berdasarkan Cabang Pembuat & Pola Prefix
-                $lastSpk = MSpk::where('cabang_id', $user->cabang_id)
-                    ->where('no_spk', 'like', $finalPrefix . '-%') // Filter BJM- atau BBJM-
-                    ->lockForUpdate() // Kunci baris agar tidak tabrakan
+                // Cari nomor terakhir berdasarkan PREFIX yang spesifik ini
+                // Jadi sequence LMTP tidak akan mengganggu sequence MTP biasa
+                $lastSpk = MSpk::where('cabang_id', $targetCabangId)
+                    ->where('no_spk', 'like', $prefix . '-%') // Cari yang depannya LMTP- atau MTP-
+                    ->lockForUpdate()
                     ->orderBy('id', 'desc')
                     ->first();
 
                 $nextNumber = 1;
                 if ($lastSpk) {
-                    // Ambil angka di belakang strip terakhir
-                    $lastNumber = (int) Str::afterLast($lastSpk->no_spk, '-');
+                    // Ambil angka dibelakang strip terakhir
+                    $lastNumber = (int) \Illuminate\Support\Str::afterLast($lastSpk->no_spk, '-');
                     $nextNumber = $lastNumber + 1;
                 }
 
-                // Format: PREFIX-000001 (Contoh: BJM-000001 atau BBJM-000001)
-                $newNoSpk = $finalPrefix . '-' . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
+                // Gabungkan menjadi format baru
+                $newNoSpk = $prefix . '-' . str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
 
-                // --- FORMAT TANGGAL ---
+                // Format Tanggal
                 try {
-                    $formattedDate = Carbon::createFromFormat('d-m-Y', $request->tanggal)->format('Y-m-d');
+                    $tgl = \Carbon\Carbon::createFromFormat('d-m-Y H:i:s', $request->tanggal);
                 } catch (\Exception $e) {
-                    $formattedDate = now()->format('Y-m-d');
+                    $tgl = now();
                 }
 
-                // --- SIMPAN DATA ---
-                MSpk::create([
-                    'no_spk'             => $newNoSpk,
-                    'tanggal_spk'        => $formattedDate,
-                    'jenis_order_spk'    => $request->jenis_order,
-                    'nama_pelanggan'     => $request->nama_pelanggan,
-                    'no_telepon'         => $noTelp,
-                    'nama_file'          => $request->nama_file,
-                    'ukuran_panjang'     => $request->ukuran_p,
-                    'ukuran_lebar'       => $request->ukuran_l,
-                    'bahan_id'           => $request->bahan_id,
-                    'kuantitas'          => $request->qty,
-                    'finishing'          => $request->finishing,
-                    'keterangan'         => $request->catatan,
-                    'designer_id'        => $request->designer_id,
-                    'operator_id'        => $request->operator_id,
-                    'cabang_id'          => $user->cabang_id, // Cabang tempat pembuatan (Produksi)
+                // 3. SIMPAN HEADER (M_SPK)
+                $spk = MSpk::create([
+                    'no_spk'           => $newNoSpk,
+                    'tanggal_spk'      => $tgl,
+                    'nama_pelanggan'   => $request->nama_pelanggan,
+                    'no_telepon'       => $request->no_telepon,
 
-                    // Kolom Baru untuk Bantuan
-                    'is_bantuan'         => $request->has('is_bantuan'),
-                    'asal_cabang_id'     => $asalCabangId,
+                    // PENTING: Cabang ID diisi Cabang Target agar masuk ke Admin sana
+                    'cabang_id'        => $targetCabangId,
+
+                    // Info Designer & Lembur
+                    'designer_id'      => $user->id,
+                    'is_lembur'        => $isLembur,
+                    'cabang_lembur_id' => $isLembur ? $targetCabangId : null,
+                    'asal_cabang_id'   => $isLembur ? $user->cabang_id : null, // Mencatat asal designer
+
+                    'status_spk'       => 'pending',
+                    'is_bantuan'       => false,
                 ]);
 
-                event(new NotifikasiSpkBaru($newNoSpk, 'Reguler', Auth::user()->nama));
+                // 4. SIMPAN ITEMS (M_SUB_SPK)
+                foreach ($request->items as $item) {
+                    MSubSpk::create([
+                        'spk_id'          => $spk->id,
+                        'nama_file'       => $item['file'],
+                        'jenis_order'     => $item['jenis'],
+                        'p'               => $item['p'],
+                        'l'               => $item['l'],
+                        'bahan_id'        => $item['bahan_id'],
+                        'qty'             => $item['qty'],
+                        'finishing'       => $item['finishing'] ?? '-',
+                        'catatan'         => $item['catatan'] ?? '-',
+                        'operator_id'     => $item['operator_id'], // Operator yang dipilih (sudah sesuai cabang target)
+                        'status_produksi' => 'pending',
+                    ]);
+                }
 
-                return redirect()->route('spk.index')->with('success', 'SPK Berhasil Dibuat!');
+                if ($isLembur == true) {
+                    event(new \App\Events\NotifikasiSpkLembur($newNoSpk, 'Lembur', $targetCabangId, $user->nama));
+                } else {
+                    event(new \App\Events\NotifikasiSpkBaru($newNoSpk, 'Reguler', $targetCabangId, $user->nama));
+                }
+
+                // 5. KIRIM NOTIFIKASI
+                // Menandai jenis notifikasi apakah Reguler atau Lembur
             });
 
-            return redirect()->route('spk.index')->with('success', 'SPK Berhasil Dibuat!');
+            if ($isLemburRoute == true) {
+                return redirect()->route('spk-lembur.index')->with('success', 'SPK Lembur Berhasil Dibuat!');
+            } else {
+                return redirect()->route('spk.index')->with('success', 'SPK Berhasil Dibuat!');
+            }
         } catch (\Exception $e) {
-            Log::error('Gagal membuat SPK: ' . $e->getMessage());
             return back()->with('error', 'Gagal membuat SPK: ' . $e->getMessage())->withInput();
         }
     }
@@ -212,19 +289,22 @@ class MSpkController extends Controller
     // Halaman Edit SPK
     public function edit($id)
     {
-        $spk = MSpk::findOrFail($id);
+        // 1. Ambil Data SPK beserta Items-nya
+        $spk = MSpk::with(['items.operator', 'items.bahan'])->findOrFail($id);
+        // dd($spk);
 
-        // Pastikan user hanya bisa edit SPK cabangnya sendiri (kecuali admin pusat)
+        // 2. Validasi Akses Cabang
         if (Auth::user()->cabang->jenis !== 'pusat' && $spk->cabang_id !== Auth::user()->cabang_id) {
             abort(403, 'Akses ditolak');
         }
 
+        // 3. Data Pendukung untuk Dropdown
         $bahans = MBahanBaku::all();
         $finishings = MFinishing::all();
 
-        // Ambil data designer & operator (sesuai cabang)
         $cabangId = $spk->cabang_id;
         $designers = User::role('designer')->where('cabang_id', $cabangId)->get();
+        // Ambil semua operator di cabang ini
         $operators = User::role(['operator indoor', 'operator outdoor', 'operator multi'])
             ->where('cabang_id', $cabangId)->get();
 
@@ -238,46 +318,63 @@ class MSpkController extends Controller
         ]);
     }
 
-    // Proses Update SPK
     public function update(Request $request, $id)
     {
         $spk = MSpk::findOrFail($id);
 
-        // Validasi Update (Nomor SPK & Tipe Bantuan tidak boleh diubah untuk menjaga integritas)
+        // 1. Validasi Header & Items
         $request->validate([
+            // Header
             'nama_pelanggan' => 'required|string|max:255',
-            'no_telp'        => 'nullable|numeric|digits_between:10,13',
-            'nama_file'      => 'required|string',
-            'ukuran_p'       => 'required|numeric|min:0',
-            'ukuran_l'       => 'required|numeric|min:0',
-            'bahan_id'       => 'required|exists:m_bahan_bakus,id',
-            'qty'            => 'required|integer|min:1',
-            'designer_id'    => 'required|exists:users,id',
-            'operator_id'    => 'required|exists:users,id',
+            'no_telepon'     => 'nullable|string',
+            'items'          => 'required|array|min:1',
+
+            // Detail Items (Validasi Array)
+            'items.*.jenis'       => 'required|in:outdoor,indoor,multi',
+            'items.*.file'        => 'required|string',
+            'items.*.p'           => 'required|numeric|min:0',
+            'items.*.l'           => 'required|numeric|min:0',
+            'items.*.bahan_id'    => 'required|exists:m_bahan_bakus,id',
+            'items.*.qty'         => 'required|integer|min:1',
+            'items.*.operator_id' => 'required|exists:users,id',
         ]);
 
-        $spk->update([
-            'nama_pelanggan'  => $request->nama_pelanggan,
-            'no_telepon'      => $request->no_telp, // Di sini Admin bisa update no telp
-            'nama_file'       => $request->nama_file,
-            'ukuran_panjang'  => $request->ukuran_p,
-            'ukuran_lebar'    => $request->ukuran_l,
-            'bahan_id'        => $request->bahan_id,
-            'kuantitas'       => $request->qty,
-            'finishing'       => $request->finishing,
-            'keterangan'      => $request->catatan,
-            'designer_id'     => $request->designer_id,
-            'operator_id'     => $request->operator_id,
-            'jenis_order_spk' => $request->jenis_order,
+        try {
+            DB::transaction(function () use ($request, $spk) {
+                // 2. Update Header
+                $spk->update([
+                    'nama_pelanggan' => $request->nama_pelanggan,
+                    'no_telepon'     => $request->no_telepon,
+                    // designer_id jarang berubah, tapi kalau mau diupdate silakan tambahkan
+                ]);
 
-            // Asal Cabang bisa diupdate jika perlu, tapi is_bantuan & no_spk sebaiknya jangan
-            'asal_cabang_id'  => $request->has('is_bantuan') ? $request->asal_cabang_id : null,
-        ]);
+                // 3. Hapus Semua Item Lama (Reset)
+                // Cara paling aman & mudah untuk update one-to-many adalah hapus dulu, lalu buat baru
+                // Kecuali Anda butuh tracking ID item yang persis sama
+                $spk->items()->delete();
 
-        if ($spk->is_bantuan == '1') {
-            return redirect()->route('spk-bantuan.index')->with('success', 'Data SPK bantuan berhasil diperbarui!');
-        } else {
-            return redirect()->route('spk.index')->with('success', 'Data SPK berhasil diperbarui!');
+                // 4. Buat Ulang Item Baru
+                foreach ($request->items as $item) {
+                    MSubSpk::create([
+                        'spk_id'          => $spk->id,
+                        'nama_file'       => $item['file'],
+                        'jenis_order'     => $item['jenis'],
+                        'p'               => $item['p'],
+                        'l'               => $item['l'],
+                        'bahan_id'        => $item['bahan_id'],
+                        'qty'             => $item['qty'],
+                        'finishing'       => $item['finishing'] ?? '-',
+                        'catatan'         => $item['catatan'] ?? '-',
+                        'operator_id'     => $item['operator_id'],
+                        'status_produksi' => 'pending', // Reset status jika diedit total
+                    ]);
+                }
+            });
+
+            $route = $spk->is_bantuan ? 'spk-bantuan.index' : 'spk.index';
+            return redirect()->route($route)->with('success', 'Data SPK berhasil diperbarui!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal update: ' . $e->getMessage());
         }
     }
 
@@ -289,8 +386,12 @@ class MSpkController extends Controller
 
     public function cetakSpk($id)
     {
-        // Hanya ambil data SPK dan relasinya
-        $spk = MSpk::with(['bahan', 'designer', 'operator', 'cabang'])->findOrFail($id);
+        $spk = MSpk::with(['designer', 'items.bahan', 'items.operator'])
+            ->findOrFail($id);
+
+        if ($spk->is_lembur == true) {
+            return view('spk.nota_spk.notaLembur', compact('spk'));
+        }
 
         return view('spk.nota_spk.notaspk', compact('spk'));
     }
@@ -298,11 +399,12 @@ class MSpkController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
-            'status_spk' => 'required|in:pending,acc,reject',
+            'status_spk' => 'required|in:pending,acc,rejected',
         ]);
 
         $spk = MSpk::findOrFail($id);
         $spk->status_spk = $request->status_spk;
+        $spk->admin_id = auth()->id();
 
         // Opsional: Jika status ACC, status produksi otomatis jadi ongoing?
         // if ($request->status_spk == 'acc') {
@@ -318,113 +420,234 @@ class MSpkController extends Controller
     {
         $user = Auth::user();
 
-        // 1. Query Dasar
-        $query = MSpk::with(['bahan', 'designer', 'operator', 'cabang']);
+        // 1. Query ke Tabel ITEM (MSubSpk)
+        $query = MSubSpk::with(['spk', 'spk.designer', 'bahan'])
+            ->whereHas('spk', function ($q) use ($user) {
+                // Filter Cabang (Hanya di cabang user login)
+                if ($user->cabang->jenis !== 'pusat') {
+                    $q->where('cabang_id', $user->cabang_id);
+                }
 
-        // 2. FILTER CABANG (Penting: Gunakan cabang_produksi_id agar SPK Bantuan muncul)
-        if ($user->cabang->jenis !== 'pusat') {
-            // Operator hanya melihat pekerjaan yang dilimpahkan ke cabangnya
-            // (Baik order lokal maupun bantuan dari luar)
-            $query->where('cabang_id', $user->cabang_id);
-        }
+                // Filter Header: Harus ACC dan BUKAN bantuan (untuk reguler index)
+                $q->where('status_spk', 'acc')
+                    ->where('is_bantuan', false)
+                    ->where('is_lembur', false);
+            });
 
-        // 3. FILTER STATUS (Gunakan whereIn agar RAPI dan tidak bocor)
-        $query->where('status_spk', 'acc')
-            ->whereIn('status_produksi', ['pending', 'ripping', 'ongoing', 'finishing'])
-            ->where('is_bantuan', false);
+        // 2. PERBAIKAN: FILTER SPESIFIK PER USER
+        // Kita tidak lagi memfilter berdasarkan "Role", tapi langsung berdasarkan "operator_id"
+        // agar Operator A tidak melihat kerjaan Operator B meski role-nya sama.
+        $query->where('operator_id', $user->id);
 
-        // 4. FILTER ROLE & JENIS ORDER (Grouping Wajib)
-        $query->where(function (Builder $q) use ($user) {
+        // 3. Filter Status Produksi (Hanya yang masih aktif)
+        $query->whereIn('status_produksi', ['pending', 'ripping', 'ongoing', 'finishing']);
 
-            // Kumpulkan jenis order yang boleh dilihat user ini
-            $allowedTypes = [];
-
-            if ($user->hasRole('operator indoor')) {
-                $allowedTypes[] = 'indoor';
-            }
-            if ($user->hasRole('operator outdoor')) {
-                $allowedTypes[] = 'outdoor';
-            }
-            if ($user->hasRole('operator multi')) {
-                $allowedTypes[] = 'multi';
-            }
-
-            // Logika: Tampilkan jika Jenis Order sesuai Role ATAU dia ditunjuk langsung (by ID)
-            $q->whereIn('jenis_order_spk', $allowedTypes)
-                ->orWhere('operator_id', $user->id);
-        });
-
-        // 5. PENCARIAN
+        // 4. Pencarian
         if ($request->has('search') && $request->search != '') {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('no_spk', 'like', "%$search%")
-                    ->orWhere('nama_pelanggan', 'like', "%$search%");
+                $q->where('nama_file', 'like', "%$search%")
+                    ->orWhereHas('spk', function ($sq) use ($search) {
+                        $sq->where('no_spk', 'like', "%$search%")
+                            ->orWhere('nama_pelanggan', 'like', "%$search%");
+                    });
             });
         }
 
-        $spks = $query->latest()->paginate(10);
+        $items = $query->oldest()->paginate(15);
 
         return view('spk.operator.indexSpk', [
             'title' => 'Produksi SPK',
-            'spks' => $spks
+            'items' => $items
+        ]);
+    }
+
+    public function operatorIndexLembur(Request $request)
+    {
+        $user = Auth::user();
+
+        // 1. Mulai Query dari Item (MSubSpk)
+        $query = MSubSpk::with(['spk.designer', 'spk.cabang', 'spk.cabangAsal', 'bahan'])
+            ->whereHas('spk', function ($q) {
+
+                // --- HAPUS FILTER CABANG INI ---
+                // Masalahnya: User Cabang 6, SPK Cabang 5.
+                // Jika difilter pakai user->cabang_id (6), SPK Cabang 5 tidak akan ketemu.
+                // Karena ini LEMBUR, operator boleh mengerjakan lintas cabang.
+                /* if ($user->cabang->jenis !== 'pusat') {
+                    $q->where('cabang_id', $user->cabang_id);
+                }
+                */
+
+                // Filter Khusus Lembur & Status
+                // Gunakan whereIn status 'pending' & 'acc' supaya data muncul
+                // walaupun admin belum klik tombol ACC (untuk testing).
+                $q->whereIn('status_spk', ['acc'])
+                    ->where('is_lembur', true);
+            });
+
+        // 2. FILTER UTAMA: Spesifik Item milik Operator yang Login
+        // Ini kuncinya. Budi (ID 41) hanya akan melihat item dimana dia ditugaskan.
+        $query->where('operator_id', $user->id);
+
+        // 3. Filter Status Produksi Aktif
+        $query->whereIn('status_produksi', ['pending', 'ripping', 'ongoing', 'finishing']);
+
+        // 4. Logika Pencarian
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_file', 'like', "%$search%")
+                    ->orWhereHas('spk', function ($sq) use ($search) {
+                        $sq->where('no_spk', 'like', "%$search%")
+                            ->orWhere('nama_pelanggan', 'like', "%$search%");
+                    });
+            });
+        }
+
+        $items = $query->oldest()->paginate(15);
+
+        // PENTING: Gunakan View Operator (Tabel Item), BUKAN View Designer (Tabel Header)
+        return view('spk.operator.indexSpk', [
+            'title' => 'Produksi Lembur',
+            'items' => $items
         ]);
     }
 
     // Method untuk Operator Menyelesaikan Pekerjaan
     public function updateStatusProduksi(Request $request, $id)
     {
+        // 1. Validasi Input
         $request->validate([
             'status_produksi' => 'required|in:pending,ripping,ongoing,finishing,done',
             'catatan_operator' => 'nullable|string',
         ]);
 
-        $spk = MSpk::findOrFail($id);
+        // 2. Ambil Data Item (MSubSpk), bukan MSpk Header
+        $item = \App\Models\MSubSpk::with('spk')->findOrFail($id);
 
-        // Validasi: SPK harus sudah di-ACC sebelum diproduksi
-        if ($spk->status_spk != 'acc') {
-            return back()->with('error', 'Gagal! SPK ini belum di-ACC oleh manajemen.');
+        // 3. Validasi: SPK Induk harus sudah ACC
+        if ($item->spk->status_spk != 'acc') {
+            return back()->with('error', 'Gagal! SPK Induk belum di-ACC oleh manajemen.');
         }
 
-        $spk->status_produksi = $request->status_produksi;
-        $spk->catatan_operator = $request->catatan_operator;
-        $spk->save();
+        // 4. Update Status Item
+        $item->update([
+            'status_produksi' => $request->status_produksi,
+            'catatan_operator' => $request->catatan_operator,
 
-        return back()->with('success', 'Status produksi dan catatan berhasil diperbarui!');
+            // Otomatis set Operator yang sedang login saat status berubah dari 'pending'
+            // Ini agar ketahuan siapa yang mengerjakan item ini
+            'operator_id' => ($request->status_produksi != 'pending') ? auth()->id() : $item->operator_id
+        ]);
+
+        // 5. Logika Otomatis Update Status SPK Induk (Header)
+        // Cek apakah SEMUA item dalam SPK ini sudah 'done'?
+        $parentSpk = $item->spk;
+
+        $totalItems = $parentSpk->items()->count();
+        $doneItems = $parentSpk->items()->where('status_produksi', 'done')->count();
+        $ongoingItems = $parentSpk->items()->where('status_produksi', '!=', 'pending')->count();
+
+        if ($totalItems > 0 && $totalItems == $doneItems) {
+            // Jika semua item sudah 'done', maka Header SPK juga 'done'
+            $parentSpk->update(['status_produksi' => 'done']);
+        } elseif ($ongoingItems > 0) {
+            // Jika minimal ada 1 item yang sedang dikerjakan, Header jadi 'ongoing'
+            $parentSpk->update(['status_produksi' => 'ongoing']);
+        }
+
+        return back()->with('success', 'Status Item Berhasil Diperbarui!');
     }
 
     public function riwayat(Request $request)
     {
         $user = Auth::user();
 
-        // 1. Inisialisasi Query Awal
-        $query = MSpk::with(['bahan', 'designer', 'operator', 'cabang'])
-            ->where('is_bantuan', false);
+        // 1. Query ke Tabel ITEM (MSubSpk)
+        $query = MSubSpk::with(['spk', 'spk.designer', 'bahan'])
+            ->whereHas('spk', function ($q) use ($user) {
+                // Filter Cabang (Hanya riwayat pekerjaan di cabang sendiri)
+                if ($user->cabang->jenis !== 'pusat') {
+                    $q->where('cabang_id', $user->cabang_id);
+                }
 
-        // 2. Filter Cabang (Jika bukan pusat, hanya lihat cabang sendiri)
-        if ($user->cabang->jenis !== 'pusat') {
-            $query->where('cabang_id', $user->cabang_id);
-        }
+                // SPK Reguler
+                $q->where('is_bantuan', false)
+                    ->where('is_lembur', false);
+            });
 
-        // 3. Filter Status Produksi "DONE" (Selesai)
+        // 2. Filter Status Produksi "DONE" (Selesai)
         $query->where('status_produksi', 'done');
+
+        // 3. LOGIKA HAK AKSES MELIHAT DATA
+        // Jika user BUKAN Admin dan BUKAN Manajemen (artinya dia Operator biasa)
+        // Maka filter hanya pekerjaan milik dia sendiri.
+        if (!$user->hasRole(['admin', 'manajemen'])) {
+            $query->where('operator_id', $user->id);
+        }
+        // Jika Admin/Manajemen, kode di atas dilewati, jadi bisa lihat semua operator.
 
         // 4. Logika Pencarian
         if ($request->has('search') && $request->search != '') {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('no_spk', 'like', "%$search%")
-                    ->orWhere('nama_pelanggan', 'like', "%$search%");
+                $q->where('nama_file', 'like', "%$search%")
+                    ->orWhereHas('spk', function ($sq) use ($search) {
+                        $sq->where('no_spk', 'like', "%$search%")
+                            ->orWhere('nama_pelanggan', 'like', "%$search%");
+                    });
             });
         }
 
-        // 5. Eksekusi Data (Pagination)
-        // Gunakan paginate() di akhir setelah semua filter diterapkan
-        $spks = $query->latest()->paginate(10);
+        // 5. Eksekusi Data
+        $items = $query->latest()->paginate(15);
 
         return view('spk.operator.riwayatSpk', [
             'title' => 'Riwayat Produksi Selesai',
-            'spks' => $spks
+            'items' => $items
+        ]);
+    }
+
+    public function riwayatLembur(Request $request)
+    {
+        $user = Auth::user();
+
+        // 1. Query Item (MSubSpk)
+        $query = MSubSpk::with(['spk', 'spk.designer', 'spk.cabang', 'spk.cabangAsal', 'bahan'])
+            ->whereHas('spk', function ($q) use ($user) {
+                // Filter Cabang (Hanya riwayat pekerjaan di cabang sendiri)
+
+                $q->where('is_bantuan', false)
+                    ->where('is_lembur', true);
+            });
+
+        // 2. Filter Utama: Milik Operator yg Login & Status DONE
+        $query->where('status_produksi', 'done');
+            // dd($query);
+
+        if (!$user->hasRole(['admin', 'manajemen'])) {
+            $query->where('operator_id', $user->id);
+        }
+
+        // 3. Pencarian
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_file', 'like', "%$search%")
+                    ->orWhereHas('spk', function ($sq) use ($search) {
+                        $sq->where('no_spk', 'like', "%$search%")
+                            ->orWhere('nama_pelanggan', 'like', "%$search%");
+                    });
+            });
+        }
+
+        // 4. Urutkan dari yang paling baru selesai (updated_at)
+        $items = $query->orderBy('updated_at', 'desc')->paginate(15);
+
+        return view('spk.operator.riwayatSpk', [
+            'title' => 'Riwayat Pekerjaan Selesai',
+            'items' => $items
         ]);
     }
 }

@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <title>{{ $title }} - Sistem SPK RG</title>
+    <link rel="shortcut icon" href="{{ asset('image-company/icon.webp') }}">
 
     <!-- Fonts & Icons -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,900">
@@ -101,10 +102,15 @@
 
     <script>
         $(function() {
-            $('.select2').select2({
-                width: '100%',
-                placeholder: 'Pilih data',
-                allowClear: true
+            $('.select2').each(function() {
+                $(this).select2({
+                    width: '100%',
+                    // Mengambil placeholder dari atribut data-placeholder atau default ke 'Pilih data'
+                    placeholder: $(this).data('placeholder') || 'Pilih data',
+                    allowClear: true,
+                    // Jika select2 berada di dalam Modal, tambahkan ini agar tidak error fokus
+                    dropdownParent: $(this).closest('.modal').length ? $(this).closest('.modal') : null
+                });
             });
         });
     </script>
@@ -113,7 +119,7 @@
 
     <script>
         // 1. AKTIFKAN LOGGING
-        Pusher.logToConsole = true;
+        // Pusher.logToConsole = true;
 
         // 2. Inisialisasi Pusher
         var pusher = new Pusher('{{ config("broadcasting.connections.pusher.key") }}', {
@@ -122,29 +128,32 @@
         });
 
         // Cek Config di Console
-        console.log("Config Pusher:", {
-            key: '{{ config("broadcasting.connections.pusher.key") }}',
-            cluster: '{{ config("broadcasting.connections.pusher.options.cluster") }}'
-        });
+        // console.log("Config Pusher:", {
+        //     key: '{{ config("broadcasting.connections.pusher.key") }}',
+        //     cluster: '{{ config("broadcasting.connections.pusher.options.cluster") }}'
+        // });
 
         // Status Admin
-        const isAdmin = {{ Auth::check() && Auth::user() -> hasRole('admin') ? 'true' : 'false' }};
-        console.log("Status Admin:", isAdmin);
+        const isAdmin = {{Auth::check() && Auth::user() -> hasRole('admin') ? 'true' : 'false'}};
+        // console.log("Status Admin:", isAdmin);
 
-        var channel = pusher.subscribe('channel-admin');
+        // Id cabang Admin
+        const cabangId = {{Auth::check() && Auth::user() -> hasRole('admin') ? Auth::user()->cabang_id : 'null'}};
+
+        var channel = pusher.subscribe('channel-admin-' + cabangId);
+        var channel_lembur = pusher.subscribe('channel-lembur-' + cabangId);
+        // console.log("Channel:", channel, channel_lembur);
 
         // 3. Binding Event (Menangani Notifikasi Masuk)
         channel.bind('spk-dibuat', function(data) {
 
-            console.log("EVENT DITERIMA:", data);
+            // console.log("EVENT DITERIMA:", data);
 
             if (isAdmin) {
-                // A. Update Angka di Lonceng Navbar
-                updateBadgeNavbar();
-
                 // B. Mainkan Suara (File Custom Kamu)
                 playNotificationSound();
-
+                // A. Update Angka di Lonceng Navbar
+                updateBadgeNavbar();
                 // C. Tampilkan SweetAlert (Auto Close 5 Detik)
                 Swal.fire({
                     title: 'SPK Baru Masuk!',
@@ -165,6 +174,40 @@
                 }).then((result) => {
                     if (result.isConfirmed) {
                         window.location.href = "{{ url('/spk') }}?search=" + data.no_spk;
+                    }
+                });
+            }
+        });
+
+        channel_lembur.bind('spk-lembur-dibuat', function(data) {
+
+            // console.log("EVENT DITERIMA:", data);
+
+            if (isAdmin) {
+                // B. Mainkan Suara (File Custom Kamu)
+                playNotificationSound();
+                // A. Update Angka di Lonceng Navbar
+                updateBadgeNavbar();
+                // C. Tampilkan SweetAlert (Auto Close 5 Detik)
+                Swal.fire({
+                    title: 'SPK Baru Masuk!',
+                    html: `<p>${data.pesan}</p><small>No: <b>${data.no_spk}</b></small>`,
+                    icon: 'info',
+                    position: 'top-end', // Tampil di pojok kanan atas
+                    showConfirmButton: true,
+                    confirmButtonText: 'Lihat',
+                    showCancelButton: true,
+                    cancelButtonText: 'Tutup',
+                    timer: 5000, // Menutup otomatis dalam 5000ms (5 detik)
+                    timerProgressBar: true, // Ada bar progres berjalan
+                    didOpen: (toast) => {
+                        // Jika mouse diarahkan ke notif, waktu berhenti (biar bisa dibaca)
+                        toast.onmouseenter = Swal.stopTimer;
+                        toast.onmouseleave = Swal.resumeTimer;
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = "{{ url('/spk-lembur') }}?search=" + data.no_spk;
                     }
                 });
             }

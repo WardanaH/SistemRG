@@ -10,7 +10,13 @@
 @if (session('success'))
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        Swal.fire({ icon: "success", title: "Berhasil!", text: "{{ session('success') }}", showConfirmButton: false, timer: 1500 });
+        Swal.fire({
+            icon: "success",
+            title: "Berhasil!",
+            text: "{{ session('success') }}",
+            showConfirmButton: false,
+            timer: 1500
+        });
     });
 </script>
 @endif
@@ -18,7 +24,12 @@
 @if (session('error'))
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        Swal.fire({ icon: "error", title: "Gagal!", text: "{{ session('error') }}", showConfirmButton: true });
+        Swal.fire({
+            icon: "error",
+            title: "Gagal!",
+            text: "{{ session('error') }}",
+            showConfirmButton: true
+        });
     });
 </script>
 @endif
@@ -72,7 +83,7 @@
                                 <select name="role" class="form-control" style="appearance: auto; padding-left: 10px;">
                                     <option value="" disabled selected>Pilih Role</option>
                                     @foreach($roles as $role)
-                                        <option value="{{ $role->name }}">{{ ucfirst($role->name) }}</option>
+                                    <option value="{{ $role->name }}">{{ ucfirst($role->name) }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -82,7 +93,7 @@
                                 <select name="cabang_id" class="form-control" style="appearance: auto; padding-left: 10px;">
                                     <option value="" disabled selected>Pilih Cabang</option>
                                     @foreach($cabangs as $c)
-                                        <option value="{{ $c->id }}">{{ $c->nama }}</option>
+                                    <option value="{{ $c->id }}">{{ $c->nama }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -212,9 +223,23 @@
                                 </td>
 
                                 <td class="align-middle">
-                                    <a href="{{ route('manajemen.user.edit', $user) }}" class="text-secondary font-weight-bold text-xs me-3" data-toggle="tooltip" data-original-title="Edit user">
-                                        Edit
-                                    </a>
+                                    {{-- Di dalam @foreach($users as $user) --}}
+                                    <button type="button"
+                                        class="btn btn-link text-dark px-3 mb-0 btn-edit-user"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalEditUser"
+                                        data-id="{{ $user->id }}"
+                                        data-name="{{ $user->nama }}"
+                                        data-username="{{ $user->username }}"
+                                        data-email="{{ $user->email }}"
+                                        data-role="{{ $user->roles->first()->name ?? '' }}"
+                                        data-cabang="{{ $user->cabang_id }}"
+                                        data-telepon="{{ $user->telepon }}"
+                                        data-gaji="{{ $user->gaji }}"
+                                        data-alamat="{{ $user->alamat }}"
+                                        data-url="{{ route('manajemen.user.update', $user->id) }}">
+                                        <i class="material-icons text-sm me-2">edit</i>Edit
+                                    </button>
 
                                     <form method="POST" action="{{ route('manajemen.user.destroy', $user) }}" class="d-inline delete-form">
                                         @csrf @method('DELETE')
@@ -232,6 +257,48 @@
         </div>
     </div>
 </div>
+
+{{-- INCLUDE PARTIAL MODAL --}}
+@include('spk.manajemen.partials.modal_edit_user')
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Handle Edit User Modal
+        const editButtons = document.querySelectorAll('.btn-edit-user');
+
+        editButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                // 1. Ambil data dari atribut data-* tombol
+                const id = this.dataset.id;
+                const name = this.dataset.name;
+                const username = this.dataset.username;
+                const email = this.dataset.email;
+                const role = this.dataset.role;
+                const cabang = this.dataset.cabang;
+                const telepon = this.dataset.telepon;
+                const gaji = this.dataset.gaji;
+                const alamat = this.dataset.alamat;
+                const url = this.dataset.url;
+
+                // 2. Isi value ke dalam input form modal
+                document.getElementById('edit_name').value = name;
+                document.getElementById('edit_username').value = username;
+                document.getElementById('edit_email').value = email;
+                document.getElementById('edit_telepon').value = telepon;
+                document.getElementById('edit_gaji').value = gaji;
+                document.getElementById('edit_alamat').value = alamat;
+
+                // 3. Set Select Option (Role & Cabang)
+                // Kita set value select, browser akan otomatis memilih option yg cocok
+                document.getElementById('edit_role').value = role;
+                document.getElementById('edit_cabang_id').value = cabang;
+
+                // 4. Update Action URL Form
+                document.getElementById('formEditUser').action = url;
+            });
+        });
+    });
+</script>
 
 {{-- SCRIPT SWEETALERT DELETE (SAMA SEPERTI SEBELUMNYA) --}}
 <script>
