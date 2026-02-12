@@ -50,6 +50,8 @@
                                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-3">Info SPK (Parent)</th>
                                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Detail Item (File)</th>
                                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Spesifikasi</th>
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Catatan Produksi</th>
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Catatan Operator</th>
                                 <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Qty</th>
                                 <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Status Item</th>
                                 <th class="text-secondary opacity-7 text-end pe-4">Aksi</th>
@@ -91,6 +93,20 @@
                                     <p class="text-xs font-weight-bold mb-0">Bahan: {{ $item->bahan->nama_bahan ?? '-' }}</p>
                                     <p class="text-xs text-secondary mb-0">{{ $item->p }} x {{ $item->l }} cm</p>
                                     <p class="text-xs text-secondary mb-0">Fin: {{ $item->finishing ?? '-' }}</p>
+                                </td>
+
+                                {{-- KOLOM 4: CATATAN PRODUKSI --}}
+                                <td>
+                                    <p class="text-xs text-secondary mb-0">
+                                        {{ $item->catatan ?? '-' }}
+                                    </p>
+                                </td>
+
+                                {{-- KOLOM 5: CATATAN OPERATOR --}}
+                                <td>
+                                    <p class="text-xs text-secondary mb-0">
+                                        {{ $item->catatan_operator ?? '-' }}
+                                    </p>
                                 </td>
 
                                 {{-- KOLOM 4: QTY --}}
