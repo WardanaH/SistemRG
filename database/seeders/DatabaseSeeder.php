@@ -18,7 +18,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             BahanSeeder::class,
             FinishingSeeder::class,
-            // RolePermissionSeeder::class,
+            GudangBarangSeeder::class
         ]);
     }
 }

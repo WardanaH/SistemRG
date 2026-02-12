@@ -1,6 +1,66 @@
 @extends('inventaris.layouts.app')
 
 @section('title', 'Permintaan Pengiriman Barang')
+<style>
+
+    /* INPUT lebih modern */
+    .form-control{
+        border-radius:10px !important;
+        border:1.5px solid #e5e7eb !important;
+        transition:.2s;
+    }
+
+    .form-control:focus{
+        border-color:#ff4d88 !important;
+        box-shadow:0 0 0 3px rgba(255,77,136,.15) !important;
+    }
+
+    /* Card barang biar ga flat */
+    .barang-item{
+        background:#fff;
+        padding:18px;
+        border-radius:14px;
+        box-shadow:0 6px 18px rgba(0,0,0,.05);
+        transition:.25s;
+    }
+
+    .barang-item:hover{
+        transform:translateY(-3px);
+        box-shadow:0 10px 24px rgba(0,0,0,.08);
+    }
+
+    /* tombol tambah barang */
+    #btnTambahBarang{
+        border-radius:10px;
+        font-weight:600;
+    }
+
+    /* tombol hapus */
+    .btn-remove-barang{
+        border-radius:10px;
+    }
+
+    /* textarea */
+    textarea{
+        border-radius:12px !important;
+    }
+
+    .table-modern{
+        border-collapse:separate;
+        border-spacing:0 10px;
+    }
+
+    .table-modern tbody tr{
+        background:#fff;
+        box-shadow:0 4px 14px rgba(0,0,0,.05);
+        transition:.25s;
+    }
+
+    .table-modern tbody tr:hover{
+        transform:translateY(-4px);
+    }
+
+</style>
 
 @section('content')
 <div class="container-fluid py-4">
@@ -45,9 +105,10 @@
                             <div class="col-md-6">
                                 <label class="form-label">Tanggal Permintaan</label>
                                 <input type="date"
-                                       name="tanggal_permintaan"
-                                       class="form-control border border-2 border-grey"
-                                       required>
+                                    name="tanggal_permintaan"
+                                    class="form-control border border-2 border-grey"
+                                    value="{{ date('Y-m-d') }}"
+                                    readonly>
                             </div>
                         </div>
 
@@ -136,56 +197,85 @@
 
                 <div class="card-body px-0 pb-2">
                     <div class="table-responsive p-0">
-                        <table class="table align-items-center mb-0">
+                        <table class="table table-modern align-items-center">
                             <thead>
                                 <tr>
-                                    <th>No</th>
+                                    <th class="text-center">No</th>
                                     <th>Kode</th>
                                     <th>Tanggal</th>
                                     <th class="text-center">Status</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse($datas as $i => $row)
-                                <tr>
-                                    <td>{{ $i+1 }}</td>
-                                    <td>{{ $row->kode_permintaan }}</td>
-                                    <td>{{ \Carbon\Carbon::parse($row->tanggal_permintaan)->format('d M Y') }}</td>
-                                    <td class="text-center">
-                                        @if ($row->status === 'Menunggu')
-                                            <span class="badge bg-warning">
-                                                {{ $row->status }}
-                                            </span>
+                            @forelse($datas as $i => $row)
+                            <tr>
+                                {{-- NO --}}
+                                <td class="text-center">{{ $datas->firstItem() + $i }}</td>
+                                {{-- KODE PERMINTAAN --}}
+                                <td>
+                                    <div class="d-flex px-2 py-1">
+                                        <div class="avatar avatar-sm me-3 border-radius-md
+                                                    bg-gradient-info d-flex align-items-center justify-content-center">
+                                            <i class="material-icons text-white text-sm">assignment</i>
+                                        </div>
+                                        <div class="d-flex flex-column justify-content-center">
+                                            <h6 class="mb-0 text-sm">{{ $row->kode_permintaan }}</h6>
+                                            {{-- <p class="text-xs text-secondary mb-0">
+                                                {{ \Carbon\Carbon::parse($row->tanggal_permintaan)->format('d M Y') }}
+                                            </p> --}}
+                                        </div>
+                                    </div>
+                                </td>
 
-                                        @elseif ($row->status === 'Diproses')
-                                            <span class="badge bg-primary">
-                                                {{ $row->status }}
-                                            </span>
+                                {{-- TANGGAL --}}
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar avatar-sm me-2 bg-gradient-primary border-radius-md d-flex align-items-center justify-content-center">
+                                            <i class="material-icons text-white text-sm">calendar_today</i>
+                                        </div>
 
-                                        @elseif ($row->status === 'Selesai')
-                                            <span class="text-secondary">
-                                                {{ $row->status }}
-                                            </span>
+                                        <span class="text-sm">
+                                            {{ \Carbon\Carbon::parse($row->tanggal_permintaan)->format('d M Y') }}
+                                        </span>
+                                    </div>
+                                </td>
 
-                                        @else
-                                            <span class="text-muted">
-                                                {{ $row->status }}
-                                            </span>
-                                        @endif
-                                    </td>
-                                </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="4" class="text-center text-muted py-4">
-                                        Belum ada permintaan
-                                    </td>
-                                </tr>
-                                @endforelse
+                                {{-- STATUS --}}
+                                <td class="text-center">
+                                    @if ($row->status === 'Menunggu')
+                                        <span class="badge bg-warning">{{ $row->status }}</span>
+
+                                    @elseif ($row->status === 'Diproses')
+                                        <span class="badge bg-primary">{{ $row->status }}</span>
+
+                                    @elseif ($row->status === 'Selesai')
+                                        <span class="badge bg-success">{{ $row->status }}</span>
+
+                                    @else
+                                        <span class="text-muted">{{ $row->status }}</span>
+                                    @endif
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">
+                                    Belum ada permintaan
+                                </td>
+                            </tr>
+                            @endforelse
                             </tbody>
                         </table>
+                        <div class="d-flex justify-content-between align-items-center px-3 mt-3">
+                            <div class="text-sm text-muted">
+                                Menampilkan {{ $datas->firstItem() }} - {{ $datas->lastItem() }}
+                                dari {{ $datas->total() }} data
+                            </div>
+                            <div>
+                                {{ $datas->links('pagination::bootstrap-5') }}
+                            </div>
+                        </div>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>

@@ -1,6 +1,53 @@
 @extends('inventaris.layouts.app')
 
 @section('title', 'Barang Gudang Cabang')
+<style>
+
+.table-modern tbody tr{
+    transition: all .2s ease;
+}
+
+.table-modern tbody tr:hover{
+    background:#f8f9fa;
+    transform: scale(1.003);
+}
+
+/* stok */
+.stok-text{
+    font-weight:700;
+    font-size:15px;
+}
+.table-modern{
+    border-collapse: separate;
+    border-spacing: 0 8px;
+}
+
+.table-modern tbody tr{
+    background: #fff;
+    box-shadow: 0 4px 10px rgba(0,0,0,.04);
+    border-radius:12px;
+    transition:.2s;
+}
+
+.table-modern tbody tr:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(0,0,0,.06);
+}
+
+.table-modern td{
+    border-top:none !important;
+    padding:18px !important;
+}
+
+.table-modern tbody tr td:first-child{
+    border-radius:12px 0 0 12px;
+}
+
+.table-modern tbody tr td:last-child{
+    border-radius:0 12px 12px 0;
+}
+
+</style>
 
 @section('content')
 <div class="container-fluid py-4">
@@ -37,16 +84,34 @@
                 </div>
 
                 <div class="card-body px-0 pb-2">
+                    <div class="px-3 pt-3">
+                        <form method="GET" action="{{ route('gudangcabang.barang') }}">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <input type="text"
+                                        name="search"
+                                        class="form-control"
+                                        placeholder="Cari nama barang..."
+                                        value="{{ request('search') }}">
+                                </div>
+                                <div class="col-md-2">
+                                    <button class="btn bg-gradient-primary mb-0">
+                                        <i class="material-icons text-sm">search</i> Cari
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
                     <div class="table-responsive">
-                        <table class="table align-items-center mb-0">
+                        <table class="table table-modern align-items-center">
                             <thead>
                                 <tr>
-                                    <th>No</th>
+                                    <th class="text-center">No</th>
                                     <th>Nama</th>
                                     <th>Satuan</th>
                                     <th>Stok</th>
                                     <th class="text-center">Status</th>
-                                    <th class="text-center">Aksi</th>
+                                    {{-- <th class="text-center">Aksi</th> --}}
                                 </tr>
                             </thead>
 
@@ -77,24 +142,63 @@
                                     @endphp
 
                                     <tr>
-                                        <td>{{ $i+1 }}</td>
-                                        <td class="fw-bold">{{ $item->nama_bahan }}</td>
-                                        <td>{{ $item->satuan }}</td>
-                                        <td>{{ $stokFormat }}</td>
-
+                                        {{-- NO --}}
                                         <td class="text-center">
-                                            <span class="badge {{ $badge }}">{{ $status }}</span>
+                                            {{ $datas->firstItem() + $i }}
                                         </td>
 
+                                        {{-- NAMA BARANG --}}
+                                        <td>
+                                            <div class="d-flex px-2 py-1">
+                                                <div class="avatar avatar-sm me-3 border-radius-md
+                                                            bg-gradient-primary d-flex align-items-center justify-content-center">
+                                                    <i class="material-icons text-white text-sm">inventory_2</i>
+                                                </div>
+
+                                                <div class="d-flex flex-column justify-content-center">
+                                                    <h6 class="mb-0 text-sm">{{ $item->nama_bahan }}</h6>
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        {{-- SATUAN --}}
+                                        <td>
+                                        @php
+                                            $icons = [
+                                                'ROLL' => 'refresh',
+                                                'PACK' => 'inventory_2',
+                                                'LEMBAR' => 'description',
+                                                'METER' => 'straighten',
+                                                'BOX' => 'inbox',
+                                                'PCS' => 'widgets',
+                                                'RIM' => 'layers',
+                                                'TANK' => 'propane_tank',
+                                                'BOTOL' => 'liquor',
+                                                'LUSIN' => 'view_comfy'
+                                            ];
+
+                                            $icon = $icons[strtoupper(trim($item->satuan))] ?? 'inventory_2';
+                                        @endphp
+
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="material-icons text-secondary" style="font-size:18px">
+                                                {{ $icon }}
+                                            </i>
+
+                                            <span class="fw-semibold">
+                                                {{ ucfirst(strtolower($item->satuan)) }}
+                                            </span>
+                                        </div>
+                                        </td>
+
+                                        {{-- STOK --}}
+                                        <td class="stok-text">
+                                            {{ $stokFormat }}
+                                        </td>
+
+                                        {{-- STATUS --}}
                                         <td class="text-center">
-                                            <button class="btn btn-link text-info px-2"
-                                                onclick="editStok(
-                                                    {{ $item->id }},
-                                                    '{{ $item->nama_bahan }}',
-                                                    {{ $item->stok_cabang }}
-                                                )">
-                                                <i class="material-icons-round">edit</i>
-                                            </button>
+                                            <span class="badge {{ $badge }}">{{ $status }}</span>
                                         </td>
                                     </tr>
                                 @empty
@@ -105,8 +209,16 @@
                                     </tr>
                                 @endforelse
                             </tbody>
-
                         </table>
+                        <div class="d-flex justify-content-between align-items-center px-3 mt-3">
+                            <div>
+                                Menampilkan {{ $datas->firstItem() }} - {{ $datas->lastItem() }}
+                                dari {{ $datas->total() }} data
+                            </div>
+                            <div>
+                                {{ $datas->links('pagination::bootstrap-5') }}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

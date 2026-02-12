@@ -17,9 +17,12 @@ Route::middleware(['auth', 'role:inventory utama'])
     ->group(function () {
 
         //dashboard
-        Route::get('/dashboard', function () {
-            return view('inventaris.gudangpusat.dashboard');
-        })->name('gudangpusat.dashboard');
+        // Route::get('/dashboard', function () {
+        //     return view('inventaris.gudangpusat.dashboard');
+        // })->name('gudangpusat.dashboard');
+
+        Route::get('/dashboard', [GudangPusatController::class, 'dashboard'])
+            ->name('gudangpusat.dashboard');
 
         // barang
         Route::get('/barang', [GudangPusatController::class, 'index'])
@@ -60,20 +63,24 @@ Route::middleware(['auth', 'role:inventory utama'])
         Route::get('/laporan-pengiriman', [GudangPusatController::class, 'laporanIndex'])
             ->name('laporan.pengiriman.index');
 
-        Route::get('/laporan-pengiriman/{bulan}/{tahun}', [GudangPusatController::class, 'laporanDetail'])
-            ->name('laporan.pengiriman.detail');
+        Route::get('laporan/pengiriman/detail', [GudangPusatController::class, 'laporanDetail'])->name('laporan.pengiriman.detail');
 
-        Route::get('/laporan-pengiriman/{bulan}/{tahun}/download', [GudangPusatController::class, 'laporanDownload'])
-            ->name('laporan.pengiriman.download');
-
-        Route::get(
-            '/laporan/pengiriman/excel/{bulan}/{tahun}',
+        Route::get('gudang-pusat/laporan/pengiriman/excel',
             [GudangPusatController::class, 'laporanExcel']
         )->name('laporan.pengiriman.excel');
 
-        // =====================
-        // PERMINTAAN CABANG
-        // =====================
+        Route::get('gudang-pusat/laporan/pengiriman/download',
+            [GudangPusatController::class, 'laporanDownload']
+        )->name('laporan.pengiriman.download');
+
+        // UPDATE STOK
+        Route::get('/update-stok', [GudangPusatController::class, 'updateStokIndex'])
+            ->name('barang.pusat.updatestok');
+
+        Route::post('/update-stok', [GudangPusatController::class, 'updateStokStore'])
+            ->name('barang.pusat.updatestok.store');
+
+        // permintaan
         Route::get('/permintaan', [GudangPusatController::class, 'permintaanIndex'])
             ->name('permintaan.pusat.index');
 
