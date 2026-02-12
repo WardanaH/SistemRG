@@ -24,4 +24,10 @@ class MCabang extends Model
     {
         return $this->hasMany(User::class, 'cabang_id');
     }
+
+    public function cabangBarangs()
+    {
+        return $this->hasMany(MCabangBarang::class, 'cabang_id');
+    }
+
 }

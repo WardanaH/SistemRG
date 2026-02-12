@@ -26,4 +26,15 @@ class User extends Authenticatable
     {
         return $this->belongsTo(MCabang::class, 'cabang_id');
     }
+
+    public function spkDesigner()
+    {
+        return $this->hasMany(MSpk::class, 'designer_id', 'id');
+    }
+
+    // Relasi: User mengerjakan banyak SPK sebagai Operator
+    public function spkOperator()
+    {
+        return $this->hasMany(MSpk::class, 'operator_id', 'id');
+    }
 }

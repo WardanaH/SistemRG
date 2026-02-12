@@ -1,46 +1,221 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Login</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQC2zeC1rVlgBPJk2X8zSuOAMH6g+2de296eGbzZNdjJ8DY55ymZJXki6Y/mq" crossorigin="anonymous">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="apple-touch-icon" sizes="76x76" href="{{ asset('assets/img/apple-icon.png') }}">
+    <link rel="icon" type="image/png" href="{{ asset('assets/img/favicon.png') }}">
+
+    <title>Login | Material Dashboard</title>
+
+    <!-- Fonts -->
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,900|Roboto+Slab:400,700" />
+
+    <!-- Icons -->
+    <link href="{{ asset('assets/css/nucleo-icons.css') }}" rel="stylesheet" />
+    <link href="{{ asset('assets/css/nucleo-svg.css') }}" rel="stylesheet" />
+    <script src="https://kit.fontawesome.com/42d5adcbca.js" crossorigin="anonymous"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+
+    <!-- CSS -->
+    <link id="pagestyle" href="{{ asset('assets/css/material-dashboard.css?v=3.0.0') }}" rel="stylesheet" />
+
+    <!-- Select2 -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+    <style>
+        /* ===============================
+    SELECT2 GLOBAL - MATERIAL LOOK
+    ================================ */
+
+        .select2-container {
+            width: 100% !important;
+        }
+
+        .select2-container--default .select2-selection--single {
+            height: 40px;
+            border-radius: 0.4rem;
+            /* border: 1px solid #1a73e8; */
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            background-color: #fff;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            padding-left: 0;
+            color: #344767;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 45px;
+        }
+
+        /* focus */
+        .select2-container--open .select2-selection--single {
+            border-color: #1a73e8;
+            box-shadow: 0 0 0 0.15rem rgba(26, 115, 232, 0.25);
+        }
+
+        .select2-dropdown {
+            border-radius: 0.75rem !important;
+            border: 1px solid #1a73e8 !important;
+        }
+    </style>
 </head>
-<body>
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-4">
-                <div class="card mt-5">
-                    <div class="card-header">
-                        <h3>Login</h3>
-                    </div>
-                    <div class="card-body">
-                        <form action="{{ route('auth.login') }}" method="POST">
-                            @csrf
-                            <div class="mb-3">
-                                <label for="username" class="form-label">Username</label>
-                                <input type="text" class="form-control @error('username') is-invalid @enderror" id="username" name="username" value="{{ old('username') }}" required>
-                                @error('username')
-                                    <div class="invalid-feedback">
-                                        {{ $message }}
+
+<body class="bg-gray-200">
+
+    <main class="main-content mt-0">
+        <div class="page-header align-items-start min-vh-100"
+            style="background-image: url('https://images.unsplash.com/photo-1497294815431-9365093b7331?auto=format&fit=crop&w=1950&q=80');">
+            <span class="mask bg-gradient-dark opacity-6"></span>
+
+            <div class="container my-auto">
+                <div class="row">
+                    <div class="col-lg-4 col-md-8 col-12 mx-auto">
+
+                        <div class="card z-index-0 fadeIn3 fadeInBottom">
+
+                            <!-- HEADER -->
+                            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+                                <div class="bg-gradient-primary shadow-primary border-radius-lg py-3 pe-1">
+                                    <h4 class="text-white font-weight-bolder text-center mt-2 mb-0">
+                                        Login
+                                    </h4>
+
+                                    <div class="row mt-3">
+                                        <div class="col-2 text-center ms-auto">
+                                            <a class="btn btn-link px-3" href="#">
+                                                <i class="fa fa-facebook text-white text-lg"></i>
+                                            </a>
+                                        </div>
+                                        <div class="col-2 text-center px-1">
+                                            <a class="btn btn-link px-3" href="#">
+                                                <i class="fa fa-github text-white text-lg"></i>
+                                            </a>
+                                        </div>
+                                        <div class="col-2 text-center me-auto">
+                                            <a class="btn btn-link px-3" href="#">
+                                                <i class="fa fa-google text-white text-lg"></i>
+                                            </a>
+                                        </div>
                                     </div>
-                                @enderror
+
+                                </div>
                             </div>
-                            <div class="mb-3">
-                                <label for="password" class="form-label">Password</label>
-                                <input type="password" class="form-control @error('password') is-invalid @enderror" id="password" name="password" required>
-                                @error('password')
-                                    <div class="invalid-feedback">
-                                        {{ $message }}
+
+                            <!-- BODY -->
+                            <div class="card-body">
+                                <form role="form" class="text-start" action="{{ route('auth.login') }}" method="POST">
+
+                                    @csrf
+
+                                    <div class="input-group input-group-outline my-3">
+                                        <select class="select2" name="username" class="form-control" style="appearance: auto; padding: 10px;">
+                                            <option value="" selected disabled>-- Pilih User --</option>
+
+                                            @foreach ($users as $user)
+                                            <option value="{{ $user->username }}">
+                                                {{ $user->nama }} | {{ $user->roles()->pluck('name')->implode(', ') }} | {{ $user->cabang->nama }}
+                                            </option>
+                                            @endforeach
+                                        </select>
                                     </div>
-                                @enderror
+
+                                    <div class="input-group input-group-outline mb-3">
+                                        <label class="form-label">Password</label>
+                                        <input type="password" name="password" class="form-control">
+                                    </div>
+
+                                    <div class="form-check form-switch d-flex align-items-center mb-3">
+                                        <input class="form-check-input" type="checkbox" id="rememberMe" name="remember">
+                                        <label class="form-check-label mb-0 ms-2" for="rememberMe">
+                                            Remember me
+                                        </label>
+                                    </div>
+
+                                    <div class="text-center">
+                                        <button type="submit" class="btn bg-gradient-primary w-100 my-4 mb-2">
+                                            Login
+                                        </button>
+                                    </div>
+
+                                    @if($errors->any())
+                                    <div class="alert alert-danger text-white mt-3" role="alert">
+                                        <span class="text-sm">{{ $errors->first() }}</span>
+                                    </div>
+                                    @endif
+
+                                    <p class="mt-4 text-sm text-center">
+                                        Don't have an account?
+                                        <a href="#" class="text-primary text-gradient font-weight-bold">Sign up</a>
+                                    </p>
+
+                                </form>
                             </div>
-                            <button type="submit" class="btn btn-primary">Login</button>
-                        </form>
+
+                        </div>
+
                     </div>
                 </div>
             </div>
+
+            <!-- FOOTER -->
+            <footer class="footer position-absolute bottom-2 py-2 w-100">
+                <div class="container">
+                    <div class="row align-items-center justify-content-lg-between">
+                        <div class="col-12 col-md-6 my-auto">
+                            <div class="copyright text-center text-sm text-white text-lg-start">
+                                © <script>
+                                    document.write(new Date().getFullYear())
+                                </script>,
+                                made with <i class="fa fa-heart"></i> by
+                                <a href="https://www.creative-tim.com"
+                                    class="font-weight-bold text-white" target="_blank">
+                                    Creative Tim
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+
         </div>
-    </div>
+    </main>
+
+    <!-- CORE JS -->
+    <script src="{{ asset('assets/js/core/popper.min.js') }}"></script>
+    <script src="{{ asset('assets/js/core/bootstrap.min.js') }}"></script>
+    <script src="{{ asset('assets/js/plugins/perfect-scrollbar.min.js') }}"></script>
+    <script src="{{ asset('assets/js/plugins/smooth-scrollbar.min.js') }}"></script>
+
+    <script>
+        if (navigator.platform.indexOf('Win') > -1 && document.querySelector('#sidenav-scrollbar')) {
+            Scrollbar.init(document.querySelector('#sidenav-scrollbar'), {
+                damping: '0.5'
+            });
+        }
+    </script>
+
+    <script src="{{ asset('assets/js/material-dashboard.min.js?v=3.0.0') }}"></script>
+
+    <!-- select 2-->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+        $(function() {
+            $('.select2').select2({
+                width: '100%',
+                placeholder: 'Pilih data',
+                allowClear: true
+            });
+        });
+    </script>
 </body>
+
 </html>
