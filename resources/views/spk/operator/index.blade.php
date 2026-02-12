@@ -118,7 +118,7 @@
                     <div class="mt-4 d-flex gap-2">
                         <a href="{{ route('spk.produksi') }}" class="btn btn-sm bg-gradient-info w-100">Buka Reguler</a>
                         @if($ongoingLembur > 0)
-                            <a href="{{ route('spk.produksi.lembur') }}" class="btn btn-sm bg-gradient-warning w-100">Buka Lembur</a>
+                            <a href="{{ route('spk-lembur.produksi') }}" class="btn btn-sm bg-gradient-warning w-100">Buka Lembur</a>
                         @endif
                     </div>
                 </div>
