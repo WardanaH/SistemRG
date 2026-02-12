@@ -24,6 +24,7 @@ return new class extends Migration
             $table->string('kondisi')->default('Baik');
             $table->string('lokasi')->nullable();
             $table->date('tanggal_input');
+            $table->string('foto')->nullable();
 
             $table->string('qr_code')->nullable();
 

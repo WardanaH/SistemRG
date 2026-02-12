@@ -3,62 +3,62 @@
 @section('title', 'Permintaan Pengiriman Barang')
 <style>
 
-/* INPUT lebih modern */
-.form-control{
-    border-radius:10px !important;
-    border:1.5px solid #e5e7eb !important;
-    transition:.2s;
-}
+    /* INPUT lebih modern */
+    .form-control{
+        border-radius:10px !important;
+        border:1.5px solid #e5e7eb !important;
+        transition:.2s;
+    }
 
-.form-control:focus{
-    border-color:#ff4d88 !important;
-    box-shadow:0 0 0 3px rgba(255,77,136,.15) !important;
-}
+    .form-control:focus{
+        border-color:#ff4d88 !important;
+        box-shadow:0 0 0 3px rgba(255,77,136,.15) !important;
+    }
 
-/* Card barang biar ga flat */
-.barang-item{
-    background:#fff;
-    padding:18px;
-    border-radius:14px;
-    box-shadow:0 6px 18px rgba(0,0,0,.05);
-    transition:.25s;
-}
+    /* Card barang biar ga flat */
+    .barang-item{
+        background:#fff;
+        padding:18px;
+        border-radius:14px;
+        box-shadow:0 6px 18px rgba(0,0,0,.05);
+        transition:.25s;
+    }
 
-.barang-item:hover{
-    transform:translateY(-3px);
-    box-shadow:0 10px 24px rgba(0,0,0,.08);
-}
+    .barang-item:hover{
+        transform:translateY(-3px);
+        box-shadow:0 10px 24px rgba(0,0,0,.08);
+    }
 
-/* tombol tambah barang */
-#btnTambahBarang{
-    border-radius:10px;
-    font-weight:600;
-}
+    /* tombol tambah barang */
+    #btnTambahBarang{
+        border-radius:10px;
+        font-weight:600;
+    }
 
-/* tombol hapus */
-.btn-remove-barang{
-    border-radius:10px;
-}
+    /* tombol hapus */
+    .btn-remove-barang{
+        border-radius:10px;
+    }
 
-/* textarea */
-textarea{
-    border-radius:12px !important;
-}
+    /* textarea */
+    textarea{
+        border-radius:12px !important;
+    }
 
-.table-modern{
-    border-collapse:separate;
-    border-spacing:0 10px;
-}
+    .table-modern{
+        border-collapse:separate;
+        border-spacing:0 10px;
+    }
 
-.table-modern tbody tr{
-    background:#fff;
-    box-shadow:0 4px 14px rgba(0,0,0,.05);
-    transition:.25s;
-}
+    .table-modern tbody tr{
+        background:#fff;
+        box-shadow:0 4px 14px rgba(0,0,0,.05);
+        transition:.25s;
+    }
 
-.table-modern tbody tr:hover{
-    transform:translateY(-4px);
-}
+    .table-modern tbody tr:hover{
+        transform:translateY(-4px);
+    }
 
 </style>
 

@@ -3,124 +3,124 @@
 @section('title', 'Pengiriman Barang')
 <style>
 
-/* =============================
-TABLE MODERN
-============================= */
+    /* =============================
+    TABLE MODERN
+    ============================= */
 
-.table-modern{
-    border-collapse: separate;
-    border-spacing: 0 10px;
-}
+    .table-modern{
+        border-collapse: separate;
+        border-spacing: 0 10px;
+    }
 
-.table-modern thead th{
-    border:none;
-    font-size:12px;
-    text-transform:uppercase;
-    letter-spacing:.6px;
-    color:#94a3b8;
-}
+    .table-modern thead th{
+        border:none;
+        font-size:12px;
+        text-transform:uppercase;
+        letter-spacing:.6px;
+        color:#94a3b8;
+    }
 
-.table-modern tbody tr{
-    background:#fff;
-    box-shadow:0 4px 14px rgba(0,0,0,.04);
-    border-radius:14px;
-    transition:.25s;
-}
+    .table-modern tbody tr{
+        background:#fff;
+        box-shadow:0 4px 14px rgba(0,0,0,.04);
+        border-radius:14px;
+        transition:.25s;
+    }
 
-.table-modern tbody tr:hover{
-    transform:translateY(-3px);
-    box-shadow:0 10px 24px rgba(0,0,0,.07);
-}
+    .table-modern tbody tr:hover{
+        transform:translateY(-3px);
+        box-shadow:0 10px 24px rgba(0,0,0,.07);
+    }
 
-.table-modern td{
-    border-top:none !important;
-    padding:20px !important;
-    vertical-align:middle;
-}
+    .table-modern td{
+        border-top:none !important;
+        padding:20px !important;
+        vertical-align:middle;
+    }
 
-.table-modern tbody tr td:first-child{
-    border-radius:14px 0 0 14px;
-}
+    .table-modern tbody tr td:first-child{
+        border-radius:14px 0 0 14px;
+    }
 
-.table-modern tbody tr td:last-child{
-    border-radius:0 14px 14px 0;
-}
+    .table-modern tbody tr td:last-child{
+        border-radius:0 14px 14px 0;
+    }
 
-/* table di modal proses & detail */
-.table-modern.modal-table td {
-    padding: 12px !important;
-}
-.table-modern.modal-table th {
-    font-size: 12px;
-}
+    /* table di modal proses & detail */
+    .table-modern.modal-table td {
+        padding: 12px !important;
+    }
+    .table-modern.modal-table th {
+        font-size: 12px;
+    }
 
-/* =============================
-STATUS BADGE (biar ga norak)
-============================= */
+    /* =============================
+    STATUS BADGE (biar ga norak)
+    ============================= */
 
-.badge{
-    padding:6px 12px;
-    font-weight:600;
-    border-radius:8px;
-}
-
-
-/* =============================
-TOMBOL AKSI BIAR MAHAL
-============================= */
-
-.action-box{
-    display:inline-flex;
-    gap:6px;
-    padding:4px;
-    background:#f1f5f9;
-    border-radius:12px;
-}
-
-.action-btn{
-    border:none;
-    width:36px;
-    height:36px;
-    border-radius:10px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    transition:.2s;
-}
-
-.action-edit{
-    background:#e0f2fe;
-    color:#0284c7;
-}
-
-.action-edit:hover{
-    background:#0284c7;
-    color:white;
-}
-
-.action-delete{
-    background:#fee2e2;
-    color:#dc2626;
-}
-
-.action-delete:hover{
-    background:#dc2626;
-    color:white;
-}
+    .badge{
+        padding:6px 12px;
+        font-weight:600;
+        border-radius:8px;
+    }
 
 
-/* tombol proses */
-.btn-proses{
-    border-radius:10px;
-    font-weight:600;
-    padding:6px 14px;
-}
+    /* =============================
+    TOMBOL AKSI BIAR MAHAL
+    ============================= */
+
+    .action-box{
+        display:inline-flex;
+        gap:6px;
+        padding:4px;
+        background:#f1f5f9;
+        border-radius:12px;
+    }
+
+    .action-btn{
+        border:none;
+        width:36px;
+        height:36px;
+        border-radius:10px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        transition:.2s;
+    }
+
+    .action-edit{
+        background:#e0f2fe;
+        color:#0284c7;
+    }
+
+    .action-edit:hover{
+        background:#0284c7;
+        color:white;
+    }
+
+    .action-delete{
+        background:#fee2e2;
+        color:#dc2626;
+    }
+
+    .action-delete:hover{
+        background:#dc2626;
+        color:white;
+    }
 
 
-/* select status biar ga kaku */
-.select-status{
-    border-radius:10px !important;
-}
+    /* tombol proses */
+    .btn-proses{
+        border-radius:10px;
+        font-weight:600;
+        padding:6px 14px;
+    }
+
+
+    /* select status biar ga kaku */
+    .select-status{
+        border-radius:10px !important;
+    }
 
 </style>
 
@@ -582,7 +582,7 @@ MODAL EDIT PENGIRIMAN (PERBAIKAN)
                             <tr><td colspan="5" class="text-center text-muted">Memuat data...</td></tr>
                         </tbody>
                     </table>
-                    <div class="alert alert-info mt-3" id="editCatatanPermintaanBox" style="display:none">
+                    <div class="alert mt-3" id="editCatatanPermintaanBox" style="display:none">
                         <b>Catatan Permintaan Cabang</b><br>
                         <span id="editCatatanPermintaan"></span>
                     </div>
@@ -803,7 +803,7 @@ $(document).on('click', '.btn-proses', function () {
                     <div class="mt-1">${statusStok}</div>
                 </td>
                 <td>
-                    <input type="text" name="barang[${index}][keterangan]" value="${item.keterangan ?? ''}" class="form-control">
+                    <input type="text" name="barang[${index}][keterangan]" value="${item.keterangan ?? ''}" class="form-control" disabled>
                 </td>
                 <input type="hidden" name="barang[${index}][gudang_barang_id]" value="${item.gudang_barang_id}">
                 <input type="hidden" name="barang[${index}][jumlah]" value="${item.jumlah}">
@@ -929,7 +929,7 @@ $(document).on('click', '.btn-edit', function () {
   <input type="text"
     name="barang[${i}][keterangan]"
     value="${item.keterangan ?? ''}"
-    class="form-control">
+    class="form-control" disabled>
 </td>
                 </tr>
             `;

@@ -3,93 +3,93 @@
 @section('title', 'Inventaris Gudang Cabang')
 <style>
 
-/* INPUT */
-.form-control{
-    border-radius:10px;
-    border:1px solid #e0e0e0;
-}
+    /* INPUT */
+    .form-control{
+        border-radius:10px;
+        border:1px solid #e0e0e0;
+    }
 
-.form-control:focus{
-    border-color:#43a047;
-    box-shadow:0 0 0 2px rgba(67,160,71,0.15);
-}
+    .form-control:focus{
+        border-color:#43a047;
+        box-shadow:0 0 0 2px rgba(67,160,71,0.15);
+    }
 
-/* SEARCH BOX */
-.search-box{
-    border-radius:30px;
-    padding-left:20px;
-}
+    /* SEARCH BOX */
+    .search-box{
+        border-radius:30px;
+        padding-left:20px;
+    }
 
-/* TABEL BIAR GA KAKU */
-.table thead th{
-    font-size:12px;
-    color:#7b809a;
-    border-bottom:1px solid #eee;
-}
+    /* TABEL BIAR GA KAKU */
+    .table thead th{
+        font-size:12px;
+        color:#7b809a;
+        border-bottom:1px solid #eee;
+    }
 
-.table tbody tr{
-    transition:.2s;
-}
+    .table tbody tr{
+        transition:.2s;
+    }
 
-.table tbody tr:hover{
-    background:#f8f9fa;
-}
+    .table tbody tr:hover{
+        background:#f8f9fa;
+    }
 
-/* FOTO */
-.img-inventaris{
-    width:55px;
-    height:55px;
-    object-fit:cover;
-    border-radius:12px;
-    transition:.3s;
-}
+    /* FOTO */
+    .img-inventaris{
+        width:55px;
+        height:55px;
+        object-fit:cover;
+        border-radius:12px;
+        transition:.3s;
+    }
 
-.img-inventaris:hover{
-    transform:scale(1.7);
-    z-index:99;
-}
+    .img-inventaris:hover{
+        transform:scale(1.7);
+        z-index:99;
+    }
 
-/* BADGE LEBIH SOFT */
-.badge{
-    font-weight:500;
-    padding:6px 10px;
-    border-radius:8px;
-}
+    /* BADGE LEBIH SOFT */
+    .badge{
+        font-weight:500;
+        padding:6px 10px;
+        border-radius:8px;
+    }
 
-/* BUTTON EDIT */
-.btn-edit{
-    border-radius:10px;
-}
+    /* BUTTON EDIT */
+    .btn-edit{
+        border-radius:10px;
+    }
 
-.bg-gradient-pink{
-    background: linear-gradient(135deg, #ff4d88, #ff2e63);
-}
+    .bg-gradient-pink{
+        background: linear-gradient(135deg, #ff4d88, #ff2e63);
+    }
 
-/* Header Animasi Gradient */
-.animated-header {
-    background: linear-gradient(270deg, #FFD54F, #FFA726, #FFB74D);
-    background-size: 600% 600%;
-    animation: gradientMove 8s ease infinite;
-    color: #fff;
-    border-bottom: none;
-    border-radius: 0.5rem 0.5rem 0 0;
-}
+    /* Header Animasi Gradient */
+    .animated-header {
+        background: linear-gradient(270deg, #FFD54F, #FFA726, #FFB74D);
+        background-size: 600% 600%;
+        animation: gradientMove 8s ease infinite;
+        color: #fff;
+        border-bottom: none;
+        border-radius: 0.5rem 0.5rem 0 0;
+    }
 
-@keyframes gradientMove {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
+    @keyframes gradientMove {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
 
-/* Modal title */
-.animated-header .modal-title {
-    font-size: 1.25rem;
-}
+    /* Modal title */
+    .animated-header .modal-title {
+        font-size: 1.25rem;
+    }
 
-/* Tombol close tetap putih */
-.animated-header .btn-close {
-    filter: brightness(0) invert(1);
-}
+    /* Tombol close tetap putih */
+    .animated-header .btn-close {
+        filter: brightness(0) invert(1);
+    }
 
 </style>
 @section('content')

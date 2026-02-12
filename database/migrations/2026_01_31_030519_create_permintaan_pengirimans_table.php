@@ -12,7 +12,7 @@ return new class extends Migration {
             $table->string('kode_permintaan')->unique();
             $table->foreignId('cabang_id')->constrained('m_cabangs')->cascadeOnDelete();
             $table->date('tanggal_permintaan');
-            $table->enum('status', ['Menunggu', 'Disetujui', 'Ditolak'])->default('Menunggu');
+            $table->enum('status', ['Menunggu', 'Diproses', 'Disetujui', 'Ditolak'])->default('Menunggu');
             $table->json('detail_barang');
             $table->text('catatan')->nullable();
             $table->timestamps();

@@ -21,6 +21,7 @@ class MPengiriman extends Model
         'read_at',
         'keterangan_terima',
         'foto_penerimaan',
+        'catatan_terima'
     ];
 
     protected $casts = [

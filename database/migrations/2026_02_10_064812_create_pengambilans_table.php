@@ -12,7 +12,7 @@ return new class extends Migration {
             $table->unsignedBigInteger('cabang_id');
             $table->string('ambil_ke');
             $table->date('tanggal');
-            $table->string('atas_nama');
+            $table->string('atas_nama')->nullable();
             $table->json('list_barang');
             $table->string('foto')->nullable();
             $table->timestamps();

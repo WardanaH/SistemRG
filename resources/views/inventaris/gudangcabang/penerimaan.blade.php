@@ -2,74 +2,73 @@
 
 @section('title', 'Penerimaan Barang')
 <style>
+    /* Pink identity biar konsisten */
+    .bg-gradient-pink {
+        background: linear-gradient(135deg, #ff5f9e, #ff3d7f);
+    }
 
-/* Pink identity biar konsisten */
-.bg-gradient-pink{
-    background:linear-gradient(135deg,#ff5f9e,#ff3d7f);
-}
+    .shadow-pink {
+        box-shadow: 0 6px 18px rgba(255, 77, 136, .35);
+    }
 
-.shadow-pink{
-    box-shadow:0 6px 18px rgba(255,77,136,.35);
-}
+    /* TABLE MODERN */
+    .table-modern {
+        border-collapse: separate;
+        border-spacing: 0 12px;
+    }
 
-/* TABLE MODERN */
-.table-modern{
-    border-collapse:separate;
-    border-spacing:0 12px;
-}
+    .table-modern tbody tr {
+        background: #fff;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, .05);
+        transition: .25s;
+    }
 
-.table-modern tbody tr{
-    background:#fff;
-    box-shadow:0 6px 16px rgba(0,0,0,.05);
-    transition:.25s;
-}
+    .table-modern tbody tr:hover {
+        transform: translateY(-4px);
+    }
 
-.table-modern tbody tr:hover{
-    transform:translateY(-4px);
-}
+    /* Avatar icon lebih soft */
+    .avatar-soft {
+        background: rgba(255, 95, 158, .12);
+        color: #ff3d7f;
+    }
 
-/* Avatar icon lebih soft */
-.avatar-soft{
-    background:rgba(255,95,158,.12);
-    color:#ff3d7f;
-}
+    /* Badge biar ga norak */
+    .badge {
+        border-radius: 8px;
+        padding: 6px 10px;
+        font-weight: 600;
+    }
 
-/* Badge biar ga norak */
-.badge{
-    border-radius:8px;
-    padding:6px 10px;
-    font-weight:600;
-}
+    /* tombol detail */
+    .btn-detail {
+        background: rgba(59, 130, 246, .1);
+        border-radius: 8px;
+    }
 
-/* tombol detail */
-.btn-detail{
-    background:rgba(59,130,246,.1);
-    border-radius:8px;
-}
+    .btn-detail:hover {
+        background: #3b82f6;
+        color: white !important;
+    }
 
-.btn-detail:hover{
-    background:#3b82f6;
-    color:white !important;
-}
+    /* tombol terima */
+    .btn-terima {
+        border-radius: 10px;
+        font-weight: 600;
+        box-shadow: 0 4px 12px rgba(34, 197, 94, .3);
+    }
 
-/* tombol terima */
-.btn-terima{
-    border-radius:10px;
-    font-weight:600;
-    box-shadow:0 4px 12px rgba(34,197,94,.3);
-}
+    /* modal biar modern */
+    .modal-content {
+        border-radius: 16px;
+        border: none;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, .2);
+    }
 
-/* modal biar modern */
-.modal-content{
-    border-radius:16px;
-    border:none;
-    box-shadow:0 20px 60px rgba(0,0,0,.2);
-}
-
-.badge-status{
-    border-radius:999px;
-    padding:6px 14px;
-}
+    .badge-status {
+        border-radius: 999px;
+        padding: 6px 14px;
+    }
 </style>
 
 @section('content')
@@ -80,11 +79,14 @@
     ===================== --}}
     @if(session('success'))
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
             Swal.fire({
                 icon: 'success',
                 title: 'Berhasil',
-                text: '{{ is_array(session('success')) ? implode(", ", session('success')) : session('success') }}',
+                text: '{{ is_array(session('
+                success ')) ? implode(", ", session('
+                success ')) : session('
+                success ') }}',
                 timer: 2000,
                 showConfirmButton: false
             });
@@ -94,11 +96,14 @@
 
     @if(session('error'))
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
             Swal.fire({
                 icon: 'error',
                 title: 'Gagal',
-                text: '{{ is_array(session('error')) ? implode(", ", session('error')) : session('error') }}'
+                text: '{{ is_array(session('
+                error ')) ? implode(", ", session('
+                error ')) : session('
+                error ') }}'
             });
         });
     </script>
@@ -120,138 +125,138 @@
 
                 <div class="card-body px-0 pb-2">
                     @if($riwayat->isEmpty())
-                        <p class="text-muted text-center py-4">
-                            Tidak ada data pengiriman dari Gudang Pusat.
-                        </p>
+                    <p class="text-muted text-center py-4">
+                        Tidak ada data pengiriman dari Gudang Pusat.
+                    </p>
                     @else
 
                     <div class="table-responsive p-0">
                         <table class="table table-modern align-items-center">
-                        <thead>
-                        <tr>
-                            <th class="text-center">No</th>
-                            <th>Barang</th>
-                            <th>Jumlah</th>
-                            <th>Satuan</th>
-                            <th>Tanggal Kirim</th>
-                            <th class="text-center">Status</th>
-                            <th>Tanggal Diterima</th>
-                            <th class="text-center">Kelengkapan</th>
-                            <th class="text-center">Detail</th>
-                            <th class="text-center">Aksi</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        @foreach($riwayat as $index => $r)
-@php
-    $detail = is_array($r->keterangan)
-        ? $r->keterangan
-        : json_decode($r->keterangan, true) ?? [];
-@endphp
+                            <thead>
+                                <tr>
+                                    <th class="text-center">No</th>
+                                    <th>Barang</th>
+                                    <th>Jumlah</th>
+                                    <th>Satuan</th>
+                                    <th>Tanggal Kirim</th>
+                                    <th class="text-center">Status</th>
+                                    <th>Tanggal Diterima</th>
+                                    <th class="text-center">Kelengkapan</th>
+                                    <th class="text-center">Detail</th>
+                                    <th class="text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($riwayat as $index => $r)
+                                @php
+                                $detail = is_array($r->keterangan)
+                                ? $r->keterangan
+                                : json_decode($r->keterangan, true) ?? [];
+                                @endphp
 
-                        <tr>
+                                <tr>
 
-                            {{-- NO --}}
-                            <td class="text-center">{{ $index + 1 }}</td>
+                                    {{-- NO --}}
+                                    <td class="text-center">{{ $index + 1 }}</td>
 
-                            {{-- BARANG --}}
-                            <td>
-                                <div class="d-flex px-2 py-1">
-                                    <div class="avatar avatar-sm me-3 border-radius-md
+                                    {{-- BARANG --}}
+                                    <td>
+                                        <div class="d-flex px-2 py-1">
+                                            <div class="avatar avatar-sm me-3 border-radius-md
                                     d-flex align-items-center justify-content-center"
-                                    style="background:linear-gradient(135deg,#ff3d7f,#ff0055);">
+                                                style="background:linear-gradient(135deg,#ff3d7f,#ff0055);">
 
-                                        <i class="material-icons text-white text-sm">inventory_2</i>
-                                    </div>
-                                    <div class="d-flex flex-column justify-content-center">
-                                        <h6 class="mb-0 text-sm">
-                                            {{ collect($detail)->pluck('nama_barang')->implode(', ') }}
-                                        </h6>
-                                    </div>
-                                </div>
-                            </td>
+                                                <i class="material-icons text-white text-sm">inventory_2</i>
+                                            </div>
+                                            <div class="d-flex flex-column justify-content-center">
+                                                <h6 class="mb-0 text-sm">
+                                                    {{ collect($detail)->pluck('nama_barang')->implode(', ') }}
+                                                </h6>
+                                            </div>
+                                        </div>
+                                    </td>
 
-                            {{-- JUMLAH --}}
-                            <td>
-                                {{ collect($detail)->pluck('jumlah')->implode(', ') }}
-                            </td>
+                                    {{-- JUMLAH --}}
+                                    <td>
+                                        {{ collect($detail)->pluck('jumlah')->implode(', ') }}
+                                    </td>
 
-                            {{-- SATUAN --}}
-                            <td>
-                                {{ collect($detail)->pluck('satuan')->implode(', ') }}
-                            </td>
+                                    {{-- SATUAN --}}
+                                    <td>
+                                        {{ collect($detail)->pluck('satuan')->implode(', ') }}
+                                    </td>
 
-                            {{-- TANGGAL KIRIM --}}
-                            <td>
-                            <div class="d-flex align-items-center">
-                                <i class="material-icons me-2 text-primary">calendar_today</i>
-                                <span class="text-sm">
-                                    {{ \Carbon\Carbon::parse($r->tanggal_pengiriman)->format('d M Y') }}
-                                </span>
-                            </div>
-                            </td>
+                                    {{-- TANGGAL KIRIM --}}
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <i class="material-icons me-2 text-primary">calendar_today</i>
+                                            <span class="text-sm">
+                                                {{ \Carbon\Carbon::parse($r->tanggal_pengiriman)->format('d M Y') }}
+                                            </span>
+                                        </div>
+                                    </td>
 
-                            {{-- STATUS --}}
-                            <td class="text-center">
-                                @if($r->status_pengiriman == 'Dikemas')
-                                    <span class="badge bg-gradient-secondary">Dikemas</span>
-                                @elseif($r->status_pengiriman == 'Dikirim')
-                                    <span class="badge bg-gradient-info">Dikirim</span>
-                                @else
-                                    <span class="badge bg-gradient-success">Diterima</span>
-                                @endif
-                            </td>
+                                    {{-- STATUS --}}
+                                    <td class="text-center">
+                                        @if($r->status_pengiriman == 'Dikemas')
+                                        <span class="badge bg-gradient-secondary">Dikemas</span>
+                                        @elseif($r->status_pengiriman == 'Dikirim')
+                                        <span class="badge bg-gradient-info">Dikirim</span>
+                                        @else
+                                        <span class="badge bg-gradient-success">Diterima</span>
+                                        @endif
+                                    </td>
 
-                            {{-- TANGGAL DITERIMA --}}
-                            <td>
-                                {{ $r->tanggal_diterima
+                                    {{-- TANGGAL DITERIMA --}}
+                                    <td>
+                                        {{ $r->tanggal_diterima
                                     ? \Carbon\Carbon::parse($r->tanggal_diterima)->format('d M Y')
                                     : '-' }}
-                            </td>
+                                    </td>
 
-                            {{-- KELENGKAPAN --}}
-                            <td class="text-center">
-                            @if($r->status_pengiriman === 'Diterima')
-                                <span class="badge {{ $r->status_kelengkapan === 'Lengkap' ? 'bg-success' : 'bg-warning' }}">
-                                    {{ $r->status_kelengkapan }}
-                                </span>
-                            @else
-                                <span class="text-muted">-</span>
-                            @endif
-                            </td>
+                                    {{-- KELENGKAPAN --}}
+                                    <td class="text-center">
+                                        @if($r->status_pengiriman === 'Diterima')
+                                        <span class="badge {{ $r->status_kelengkapan === 'Lengkap' ? 'bg-success' : 'bg-warning' }}">
+                                            {{ $r->status_kelengkapan }}
+                                        </span>
+                                        @else
+                                        <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
 
-                            {{-- DETAIL --}}
-                            <td class="text-center">
-                                <button type="button"
-                                    class="btn btn-link text-primary btn-detail"
-                                    data-detail='@json($detail)'
-                                    data-kode="{{ $r->kode_pengiriman }}"
-                                    data-cabang="{{ $cabang->nama }}"
-                                    data-tanggal="{{ $r->created_at }}"
-                                    data-foto="{{ $r->foto_penerimaan }}"
-                                    data-catatan-permintaan='@json(optional($r->permintaan)->catatan)'
-                                    data-catatan-gudang="{{ $r->catatan_gudang ?? '' }}"
-                                    data-catatan-terima='@json($r->keterangan_terima)'>
-                                    <i class="material-icons-round">receipt_long</i>
-                                </button>
-                            </td>
+                                    {{-- DETAIL --}}
+                                    <td class="text-center">
+                                        <button type="button"
+                                            class="btn btn-link text-primary btn-detail"
+                                            data-detail='@json($detail)'
+                                            data-kode="{{ $r->kode_pengiriman }}"
+                                            data-cabang="{{ $cabang->nama }}"
+                                            data-tanggal="{{ $r->created_at }}"
+                                            data-foto="{{ $r->foto_penerimaan }}"
+                                            data-catatan-permintaan='@json(optional($r->permintaan)->catatan)'
+                                            data-catatan-gudang="{{ $r->catatan_gudang ?? '' }}"
+                                            data-catatan-terima='@json($r->keterangan_terima)'>
+                                            <i class="material-icons-round">receipt_long</i>
+                                        </button>
+                                    </td>
 
-                            {{-- AKSI --}}
-                            <td class="text-center">
-                                @if($r->status_pengiriman == 'Dikirim')
-                                    <button
-                                        class="btn btn-terima btn-sm"style="background:linear-gradient(135deg,#22c55e,#16a34a); border:none; color:white;"
-                                        data-id="{{ $r->id }}"
-                                        data-detail='@json($detail)'>
-                                        Terima
-                                    </button>
-                                @else
-                                    <span class="text-muted">-</span>
-                                @endif
-                            </td>
-                        </tr>
-                        @endforeach
-                        </tbody>
+                                    {{-- AKSI --}}
+                                    <td class="text-center">
+                                        @if($r->status_pengiriman == 'Dikirim')
+                                        <button
+                                            class="btn btn-terima btn-sm" style="background:linear-gradient(135deg,#22c55e,#16a34a); border:none; color:white;"
+                                            data-id="{{ $r->id }}"
+                                            data-detail='@json($detail)'>
+                                            Terima
+                                        </button>
+                                        @else
+                                        <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
                         </table>
                         <div class="d-flex justify-content-between align-items-center px-3 mt-3">
                             <div class="text-sm text-muted">
@@ -271,72 +276,72 @@
 </div>
 <!-- modal detail -->
 <div class="modal fade" id="modalDetail">
-  <div class="modal-dialog modal-xl modal-dialog-centered">
-    <div class="modal-content">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
 
-      <div class="modal-header" style="background:linear-gradient(135deg,#3b82f6,#2563eb); color:white;">
-        <h5 class="modal-title">Detail Pengiriman</h5>
-        <button class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
+            <div class="modal-header" style="background:linear-gradient(135deg,#3b82f6,#2563eb); color:white;">
+                <h5 class="modal-title">Detail Pengiriman</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
 
-      <div class="modal-body">
-        <div id="notaContent"></div>
-      </div>
+            <div class="modal-body">
+                <div id="notaContent"></div>
+            </div>
 
+        </div>
     </div>
-  </div>
 </div>
 
 <!-- modal terima -->
 <div class="modal fade" id="modalTerima">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
 
-      <form method="POST" id="formTerima" enctype="multipart/form-data">
-        @csrf
+            <form method="POST" id="formTerima" enctype="multipart/form-data">
+                @csrf
 
-        <div class="modal-header" style="background:linear-gradient(135deg,#22c55e,#16a34a); color:white;">
-          <h5 class="modal-title">Terima Pengiriman</h5>
-          <button class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-header" style="background:linear-gradient(135deg,#22c55e,#16a34a); color:white;">
+                    <h5 class="modal-title">Terima Pengiriman</h5>
+                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+
+                    <div class="table-responsive">
+                        <table class="table table-modern">
+                            <thead>
+                                <tr>
+                                    <th>✔</th>
+                                    <th>Barang</th>
+                                    <th>Dikirim</th>
+                                    <th>Diterima</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bodyTerima"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="mb-2">
+                        <label>Foto Penerimaan</label>
+                        <input type="file" name="foto" class="form-control">
+                    </div>
+
+                    <div>
+                        <label>Keterangan</label>
+                        <textarea name="keterangan_terima" class="form-control"></textarea>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button class="btn btn-success">Simpan Penerimaan</button>
+                </div>
+
+            </form>
+
         </div>
-
-        <div class="modal-body">
-
-          <div class="table-responsive">
-            <table class="table table-modern">
-              <thead>
-                <tr>
-                  <th>✔</th>
-                  <th>Barang</th>
-                  <th>Dikirim</th>
-                  <th>Diterima</th>
-                </tr>
-              </thead>
-              <tbody id="bodyTerima"></tbody>
-            </table>
-          </div>
-
-          <div class="mb-2">
-            <label>Foto Penerimaan</label>
-            <input type="file" name="foto" class="form-control">
-          </div>
-
-          <div>
-            <label>Keterangan</label>
-            <textarea name="keterangan_terima" class="form-control"></textarea>
-          </div>
-
-        </div>
-
-        <div class="modal-footer">
-          <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-          <button class="btn btn-success">Simpan Penerimaan</button>
-        </div>
-
-      </form>
-
     </div>
-  </div>
 </div>
 
 
@@ -347,7 +352,7 @@
 
 <script>
     // KONFIRMASI TERIMA BARANG
-    $(document).on('click', '.btn-terima', function () {
+    $(document).on('click', '.btn-terima', function() {
 
         let id = $(this).data('id');
         let detail = $(this).data('detail');
@@ -389,49 +394,50 @@
         ).show();
     });
 </script>
+
 <script>
-$(document).on('click', '.btn-detail', function () {
+    $(document).on('click', '.btn-detail', function() {
 
-    let detail = $(this).data('detail');
-    let kode   = $(this).data('kode');
-    let cabang = $(this).data('cabang');
-    let tanggal = $(this).data('tanggal');
-    let foto   = $(this).data('foto');
+        let detail = $(this).data('detail');
+        let kode = $(this).data('kode');
+        let cabang = $(this).data('cabang');
+        let tanggal = $(this).data('tanggal');
+        let foto = $(this).data('foto');
 
-    let catPermintaan = $(this).data('catatan-permintaan');
-    let catGudang     = $(this).data('catatan-gudang');
-    let catTerima     = $(this).data('catatan-terima');
+        let catPermintaan = $(this).data('catatan-permintaan');
+        let catGudang = $(this).data('catatan-gudang');
+        let catTerima = $(this).data('catatan-terima');
 
-    if (Array.isArray(catPermintaan)) {
-        catPermintaan = catPermintaan.join(', ');
-    }
-
-    if (Array.isArray(catGudang)) {
-        catGudang = catGudang.join(', ');
-    }
-
-if (Array.isArray(catTerima) && catTerima.length > 0) {
-
-    let list = '';
-
-    catTerima.forEach(item => {
-        if(item.keterangan){
-            list += `• ${item.nama_barang} : ${item.keterangan}<br>`;
+        if (Array.isArray(catPermintaan)) {
+            catPermintaan = catPermintaan.join(', ');
         }
-    });
 
-    if(list){
-        html += `
+        if (Array.isArray(catGudang)) {
+            catGudang = catGudang.join(', ');
+        }
+
+        if (Array.isArray(catTerima) && catTerima.length > 0) {
+
+            let list = '';
+
+            catTerima.forEach(item => {
+                if (item.keterangan) {
+                    list += `• ${item.nama_barang} : ${item.keterangan}<br>`;
+                }
+            });
+
+            if (list) {
+                html += `
             <div class="alert border-0 shadow-sm">
                 <b>Catatan Penerimaan Cabang</b><br>
                 ${list}
             </div>
         `;
-    }
-}
+            }
+        }
 
 
-    let html = `
+        let html = `
 
     <div class="card shadow-sm border-0 mb-3">
         <div class="card-body">
@@ -458,8 +464,8 @@ if (Array.isArray(catTerima) && catTerima.length > 0) {
     `;
 
 
-    if (foto) {
-        html += `
+        if (foto) {
+            html += `
             <div class="card shadow-sm mb-3">
                 <div class="card-body">
                     <div class="fw-bold mb-2">Foto Penerimaan</div>
@@ -468,9 +474,9 @@ if (Array.isArray(catTerima) && catTerima.length > 0) {
                 </div>
             </div>
         `;
-    }
+        }
 
-    html += `
+        html += `
     <div class="card shadow-sm">
         <div class="card-header fw-bold"
             style="background:linear-gradient(135deg,#3b82f6,#2563eb); color:white;">
@@ -491,8 +497,8 @@ if (Array.isArray(catTerima) && catTerima.length > 0) {
                 <tbody>
     `;
 
-    detail.forEach((d, i) => {
-        html += `
+        detail.forEach((d, i) => {
+            html += `
             <tr>
                 <td>${i + 1}</td>
                 <td class="fw-semibold">${d.nama_barang}</td>
@@ -501,9 +507,9 @@ if (Array.isArray(catTerima) && catTerima.length > 0) {
                 <td class="text-muted">${d.keterangan ? d.keterangan : '-'}</td>
             </tr>
         `;
-    });
+        });
 
-    html += `
+        html += `
                 </tbody>
             </table>
         </div>
@@ -511,48 +517,47 @@ if (Array.isArray(catTerima) && catTerima.length > 0) {
     `;
 
         if (catPermintaan) {
-        html += `
+            html += `
             <div class="alert border-0 shadow-sm">
                 <b>Catatan Permintaan</b><br>
                 ${catPermintaan}
             </div>
         `;
-    }
+        }
 
-    if (catGudang) {
-        html += `
+        if (catGudang) {
+            html += `
             <div class="alert border-0 shadow-sm">
                 <b>Catatan Pengiriman Gudang</b><br>
                 ${catGudang}
             </div>
         `;
-    }
-
-if (Array.isArray(catTerima)) {
-
-    let list = '';
-
-    catTerima.forEach(item => {
-        if(item.keterangan && item.keterangan.trim() !== ''){
-            list += `• ${item.nama_barang} : ${item.keterangan}<br>`;
         }
-    });
 
-    // ✅ hanya tampil kalau ADA isi catatan
-    if(list !== ''){
-        html += `
+        if (Array.isArray(catTerima)) {
+
+            let list = '';
+
+            catTerima.forEach(item => {
+                if (item.keterangan && item.keterangan.trim() !== '') {
+                    list += `• ${item.nama_barang} : ${item.keterangan}<br>`;
+                }
+            });
+
+            // ✅ hanya tampil kalau ADA isi catatan
+            if (list !== '') {
+                html += `
             <div class="alert border-0 shadow-sm">
                 <b>Catatan Penerimaan Cabang</b><br>
                 ${list}
             </div>
         `;
-    }
-}
+            }
+        }
 
 
-    $('#notaContent').html(html);
-    new bootstrap.Modal(document.getElementById('modalDetail')).show();
-});
-
+        $('#notaContent').html(html);
+        new bootstrap.Modal(document.getElementById('modalDetail')).show();
+    });
 </script>
 @endpush

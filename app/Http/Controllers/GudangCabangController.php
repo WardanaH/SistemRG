@@ -133,6 +133,8 @@ class GudangCabangController extends Controller
         DB::beginTransaction();
         try {
 
+            $catatan_terima = $request->keterangan_terima;
+
             $barangPermintaan = collect(
                 is_string($pengiriman->permintaan->detail_barang)
                     ? json_decode($pengiriman->permintaan->detail_barang, true)
@@ -207,6 +209,7 @@ class GudangCabangController extends Controller
                 'tanggal_diterima'   => now(),
                 'foto_penerimaan'    => $fotoPath,
                 'keterangan_terima'  => $detailTerima,
+                'catatan_terima'     => $catatan_terima
             ]);
 
             $pengiriman->permintaan->update([
@@ -327,62 +330,62 @@ class GudangCabangController extends Controller
                 break;
         }
 
-// Ambil pengiriman & pengambilan
-$pengiriman = MPengiriman::where('cabang_tujuan_id', $cabang->id)
-    ->where('status_pengiriman', 'Diterima')
-    ->when($start && $end, fn($q) => $q->whereBetween('tanggal_diterima', [$start, $end]))
-    ->selectRaw('DATE(tanggal_diterima) as tanggal')
-    ->get();
+        // Ambil pengiriman & pengambilan
+        $pengiriman = MPengiriman::where('cabang_tujuan_id', $cabang->id)
+            ->where('status_pengiriman', 'Diterima')
+            ->when($start && $end, fn($q) => $q->whereBetween('tanggal_diterima', [$start, $end]))
+            ->selectRaw('DATE(tanggal_diterima) as tanggal')
+            ->get();
 
-$pengambilan = MPengambilan::where('cabang_id', $cabang->id)
-    ->when($start && $end, fn($q) => $q->whereBetween('tanggal', [$start, $end]))
-    ->selectRaw('DATE(tanggal) as tanggal')
-    ->get();
+        $pengambilan = MPengambilan::where('cabang_id', $cabang->id)
+            ->when($start && $end, fn($q) => $q->whereBetween('tanggal', [$start, $end]))
+            ->selectRaw('DATE(tanggal) as tanggal')
+            ->get();
 
-// Merge kedua collection
-$laporanCollection = $pengiriman->merge($pengambilan)
-    ->unique('tanggal') // <-- pastikan tiap tanggal cuma 1 row
-    ->sortByDesc('tanggal')
-    ->values();
+        // Merge kedua collection
+        $laporanCollection = $pengiriman->merge($pengambilan)
+            ->unique('tanggal') // <-- pastikan tiap tanggal cuma 1 row
+            ->sortByDesc('tanggal')
+            ->values();
 
-// Pagination manual
-$page = request()->get('page', 1);
-$perPage = 10;
-$laporan = new \Illuminate\Pagination\LengthAwarePaginator(
-    $laporanCollection->forPage($page, $perPage),
-    $laporanCollection->count(),
-    $perPage,
-    $page,
-    ['path' => request()->url(), 'query' => request()->query()]
-);
+        // Pagination manual
+        $page = request()->get('page', 1);
+        $perPage = 10;
+        $laporan = new \Illuminate\Pagination\LengthAwarePaginator(
+            $laporanCollection->forPage($page, $perPage),
+            $laporanCollection->count(),
+            $perPage,
+            $page,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
 
 
-$pengirimanQuery = MPengiriman::where('cabang_tujuan_id', $cabang->id)
-    ->where('status_pengiriman', 'Diterima')
-    ->selectRaw('MONTH(tanggal_diterima) as bulan, YEAR(tanggal_diterima) as tahun');
+        $pengirimanQuery = MPengiriman::where('cabang_tujuan_id', $cabang->id)
+            ->where('status_pengiriman', 'Diterima')
+            ->selectRaw('MONTH(tanggal_diterima) as bulan, YEAR(tanggal_diterima) as tahun');
 
-if ($start && $end) {
-    $pengirimanQuery->whereBetween('tanggal_diterima', [$start, $end]);
-}
+        if ($start && $end) {
+            $pengirimanQuery->whereBetween('tanggal_diterima', [$start, $end]);
+        }
 
-$pengambilanQuery = MPengambilan::where('cabang_id', $cabang->id)
-    ->selectRaw('MONTH(tanggal) as bulan, YEAR(tanggal) as tahun');
+        $pengambilanQuery = MPengambilan::where('cabang_id', $cabang->id)
+            ->selectRaw('MONTH(tanggal) as bulan, YEAR(tanggal) as tahun');
 
-if ($start && $end) {
-    $pengambilanQuery->whereBetween('tanggal', [$start, $end]);
-}
+        if ($start && $end) {
+            $pengambilanQuery->whereBetween('tanggal', [$start, $end]);
+        }
 
-// union
-$laporanQuery = $pengirimanQuery->union($pengambilanQuery);
+        // union
+        $laporanQuery = $pengirimanQuery->union($pengambilanQuery);
 
-$laporan = DB::table(DB::raw("({$laporanQuery->toSql()}) as sub"))
-    ->mergeBindings($laporanQuery->getQuery())
-    ->select('bulan', 'tahun')
-    ->groupBy('tahun', 'bulan')
-    ->orderBy('tahun', 'DESC')
-    ->orderBy('bulan', 'DESC')
-    ->paginate(10)
-    ->appends($request->all());
+        $laporan = DB::table(DB::raw("({$laporanQuery->toSql()}) as sub"))
+            ->mergeBindings($laporanQuery->getQuery())
+            ->select('bulan', 'tahun')
+            ->groupBy('tahun', 'bulan')
+            ->orderBy('tahun', 'DESC')
+            ->orderBy('bulan', 'DESC')
+            ->paginate(10)
+            ->appends($request->all());
 
 
         return view('inventaris.gudangcabang.laporan.laporan', compact(

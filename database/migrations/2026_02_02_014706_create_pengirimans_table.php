@@ -22,8 +22,10 @@ return new class extends Migration
             $table->date('tanggal_pengiriman');
 
             $table->enum('status_pengiriman', [
+                'Menunggu',
+                'Dikemas',
                 'Dikirim',
-                'Diterima'
+                'Diterima',
             ])->default('Dikirim');
 
             $table->enum('status_kelengkapan', [
@@ -38,6 +40,12 @@ return new class extends Migration
 
             // catatan dari gudang pusat
             $table->text('catatan_gudang')->nullable();
+
+            // catatan dari cabang tujuan
+            $table->string('foto_penerimaan')->nullable();
+
+            $table->longText('keterangan_terima')->nullable();
+            $table->string('catatan_terima')->nullable();
 
             $table->timestamps();
 
