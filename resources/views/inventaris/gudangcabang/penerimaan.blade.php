@@ -229,14 +229,15 @@
                                     <td class="text-center">
                                         <button type="button"
                                             class="btn btn-link text-primary btn-detail"
-                                            data-detail='@json($detail)'
+data-detail='@json($detail)'
+data-detail-terima='@json($r->keterangan_terima)'
                                             data-kode="{{ $r->kode_pengiriman }}"
                                             data-cabang="{{ $cabang->nama }}"
                                             data-tanggal="{{ $r->created_at }}"
                                             data-foto="{{ $r->foto_penerimaan }}"
                                             data-catatan-permintaan='@json(optional($r->permintaan)->catatan)'
                                             data-catatan-gudang="{{ $r->catatan_gudang ?? '' }}"
-                                            data-catatan-terima='@json($r->keterangan_terima)'>
+                                            data-catatan-terima='@json($r->catatan_terima)'>
                                             <i class="material-icons-round">receipt_long</i>
                                         </button>
                                     </td>
@@ -328,7 +329,7 @@
 
                     <div>
                         <label>Keterangan</label>
-                        <textarea name="keterangan_terima" class="form-control"></textarea>
+                        <textarea name="catatan_terima" class="form-control"></textarea>
                     </div>
 
                 </div>
@@ -355,7 +356,7 @@
     $(document).on('click', '.btn-terima', function() {
 
         let id = $(this).data('id');
-        let detail = $(this).data('detail');
+        let detail = $(this).data('detail-terima');
 
         let html = '';
 
@@ -396,53 +397,33 @@
 </script>
 
 <script>
-    $(document).on('click', '.btn-detail', function() {
+$(document).on('click', '.btn-detail', function() {
 
-        let detail = $(this).data('detail');
-        let kode = $(this).data('kode');
-        let cabang = $(this).data('cabang');
-        let tanggal = $(this).data('tanggal');
-        let foto = $(this).data('foto');
+    let detail = $(this).data('detail');
+    let kode = $(this).data('kode');
+    let cabang = $(this).data('cabang');
+    let tanggal = $(this).data('tanggal');
+    let foto = $(this).data('foto');
 
-        let catPermintaan = $(this).data('catatan-permintaan');
-        let catGudang = $(this).data('catatan-gudang');
-        let catTerima = $(this).data('catatan-terima');
+    let catPermintaan = $(this).data('catatan-permintaan');
+    let catGudang = $(this).data('catatan-gudang');
+    let catTerima = $(this).data('catatan-terima');
 
-        if (Array.isArray(catPermintaan)) {
-            catPermintaan = catPermintaan.join(', ');
-        }
+    // normalisasi jika array
+    if (Array.isArray(catPermintaan)) {
+        catPermintaan = catPermintaan.join(', ');
+    }
 
-        if (Array.isArray(catGudang)) {
-            catGudang = catGudang.join(', ');
-        }
+    if (Array.isArray(catGudang)) {
+        catGudang = catGudang.join(', ');
+    }
 
-        if (Array.isArray(catTerima) && catTerima.length > 0) {
-
-            let list = '';
-
-            catTerima.forEach(item => {
-                if (item.keterangan) {
-                    list += `• ${item.nama_barang} : ${item.keterangan}<br>`;
-                }
-            });
-
-            if (list) {
-                html += `
-            <div class="alert border-0 shadow-sm">
-                <b>Catatan Penerimaan Cabang</b><br>
-                ${list}
-            </div>
-        `;
-            }
-        }
-
-
-        let html = `
-
+    let html = `
     <div class="card shadow-sm border-0 mb-3">
         <div class="card-body">
 
             <div class="row mb-3">
+
                 <div class="col-md-4">
                     <div class="text-xs text-muted">Kode Pengiriman</div>
                     <div class="fw-bold">${kode}</div>
@@ -457,26 +438,27 @@
                     <div class="text-xs text-muted">Tanggal</div>
                     <div class="fw-bold">${tanggal}</div>
                 </div>
+
             </div>
 
         </div>
     </div>
     `;
 
-
-        if (foto) {
-            html += `
-            <div class="card shadow-sm mb-3">
-                <div class="card-body">
-                    <div class="fw-bold mb-2">Foto Penerimaan</div>
-                    <img src="/storage/${foto}"
-                        class="img-fluid rounded border">
-                </div>
-            </div>
-        `;
-        }
-
+    // FOTO
+    if (foto) {
         html += `
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <div class="fw-bold mb-2">Foto Penerimaan</div>
+                <img src="/storage/${foto}" class="img-fluid rounded border">
+            </div>
+        </div>
+        `;
+    }
+
+    // DETAIL BARANG
+    html += `
     <div class="card shadow-sm">
         <div class="card-header fw-bold"
             style="background:linear-gradient(135deg,#3b82f6,#2563eb); color:white;">
@@ -497,7 +479,9 @@
                 <tbody>
     `;
 
+    if (Array.isArray(detail)) {
         detail.forEach((d, i) => {
+
             html += `
             <tr>
                 <td>${i + 1}</td>
@@ -506,58 +490,83 @@
                 <td>${d.satuan}</td>
                 <td class="text-muted">${d.keterangan ? d.keterangan : '-'}</td>
             </tr>
-        `;
-        });
+            `;
 
-        html += `
+        });
+    }
+
+    html += `
                 </tbody>
             </table>
         </div>
     </div>
     `;
 
-        if (catPermintaan) {
+    // CATATAN PERMINTAAN
+    if (catPermintaan && catPermintaan !== '') {
+
+        html += `
+        <div class="alert border-0 shadow-sm">
+            <b>Catatan Permintaan</b><br>
+            ${catPermintaan}
+        </div>
+        `;
+    }
+
+    // CATATAN GUDANG
+    if (catGudang && catGudang !== '') {
+
+        html += `
+        <div class="alert border-0 shadow-sm">
+            <b>Catatan Pengiriman Gudang</b><br>
+            ${catGudang}
+        </div>
+        `;
+    }
+
+    // CATATAN PENERIMAAN (STRING)
+    if (catTerima && typeof catTerima === 'string') {
+
+        html += `
+        <div class="alert border-0 shadow-sm">
+            <b>Catatan Penerimaan Cabang</b><br>
+            ${catTerima}
+        </div>
+        `;
+    }
+
+    // KETERANGAN PER BARANG (ARRAY)
+    if (Array.isArray(catTerima)) {
+
+        let list = '';
+
+        catTerima.forEach(item => {
+
+            if (item.keterangan && item.keterangan.trim() !== '') {
+
+                list += `• ${item.nama_barang} : ${item.keterangan}<br>`;
+
+            }
+
+        });
+
+        if (list !== '') {
+
             html += `
             <div class="alert border-0 shadow-sm">
-                <b>Catatan Permintaan</b><br>
-                ${catPermintaan}
-            </div>
-        `;
-        }
-
-        if (catGudang) {
-            html += `
-            <div class="alert border-0 shadow-sm">
-                <b>Catatan Pengiriman Gudang</b><br>
-                ${catGudang}
-            </div>
-        `;
-        }
-
-        if (Array.isArray(catTerima)) {
-
-            let list = '';
-
-            catTerima.forEach(item => {
-                if (item.keterangan && item.keterangan.trim() !== '') {
-                    list += `• ${item.nama_barang} : ${item.keterangan}<br>`;
-                }
-            });
-
-            // ✅ hanya tampil kalau ADA isi catatan
-            if (list !== '') {
-                html += `
-            <div class="alert border-0 shadow-sm">
-                <b>Catatan Penerimaan Cabang</b><br>
+                <b>Keterangan Barang Diterima</b><br>
                 ${list}
             </div>
-        `;
-            }
+            `;
         }
+    }
 
+    $('#notaContent').html(html);
 
-        $('#notaContent').html(html);
-        new bootstrap.Modal(document.getElementById('modalDetail')).show();
-    });
+    new bootstrap.Modal(
+        document.getElementById('modalDetail')
+    ).show();
+
+});
 </script>
 @endpush
