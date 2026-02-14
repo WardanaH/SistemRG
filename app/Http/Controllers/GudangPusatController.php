@@ -663,7 +663,7 @@ class GudangPusatController extends Controller
                 'status_pengiriman'  => 'Dikemas',
                 'status_kelengkapan' => null,
                 'keterangan'         => $barangDikirim,
-                'catatan_terima'     => $request->catatan
+                'catatan_gudang'     => $request->catatan
             ]);
 
             // update status permintaan

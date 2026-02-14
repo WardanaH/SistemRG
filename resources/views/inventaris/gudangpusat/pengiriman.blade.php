@@ -323,8 +323,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             : json_decode($item->keterangan, true);
 
                         $catTerima = $item->catatan_terima
-                            ?? $detail
-                            ?? null;
+                            ?? "-";
                         @endphp
 
                         <tr>

@@ -229,8 +229,8 @@
                                     <td class="text-center">
                                         <button type="button"
                                             class="btn btn-link text-primary btn-detail"
-data-detail='@json($detail)'
-data-detail-terima='@json($r->keterangan_terima)'
+                                            data-detail='@json($detail)'
+                                            data-detail-terima='@json($r->keterangan_terima)'
                                             data-kode="{{ $r->kode_pengiriman }}"
                                             data-cabang="{{ $cabang->nama }}"
                                             data-tanggal="{{ $r->created_at }}"
@@ -356,7 +356,7 @@ data-detail-terima='@json($r->keterangan_terima)'
     $(document).on('click', '.btn-terima', function() {
 
         let id = $(this).data('id');
-        let detail = $(this).data('detail-terima');
+        let detail = $(this).data('detail');
 
         let html = '';
 

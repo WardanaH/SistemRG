@@ -129,11 +129,12 @@ class GudangCabangController extends Controller
             'barang' => 'required|array',
             'foto'   => 'required|image|max:2048',
         ]);
+        // dd($request->all());
 
         DB::beginTransaction();
         try {
 
-            $catatan_terima = $request->keterangan_terima;
+            $catatan_terima = $request->catatan_terima;
 
             $barangPermintaan = collect(
                 is_string($pengiriman->permintaan->detail_barang)
@@ -247,6 +248,7 @@ class GudangCabangController extends Controller
             'tanggal_permintaan' => 'required|date',
             'barang'             => 'required|array'
         ]);
+        // dd($request->all());
 
         $detailBarang = [];
 
@@ -270,7 +272,19 @@ class GudangCabangController extends Controller
                 'keterangan'      => $item['keterangan'] ?? null
             ];
 
+            // dd($detailBarang);
         }
+
+        $debug = [
+            'kode_permintaan'    => 'REQ-' . date('Ymd') . '-' . strtoupper(Str::random(4)),
+            'cabang_id'          => Auth::user()->cabang_id,
+            'tanggal_permintaan' => $request->tanggal_permintaan,
+            'status'             => 'Menunggu',
+            'detail_barang'      => $detailBarang,
+            'catatan'            => $request->catatan
+        ];
+
+        // dd($debug);
 
         MPermintaanPengiriman::create([
             'kode_permintaan'    => 'REQ-' . date('Ymd') . '-' . strtoupper(Str::random(4)),
