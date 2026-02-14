@@ -156,7 +156,7 @@
                     <span class="nav-link-text ms-1">Produksi Bantuan</span>
                 </a>
             </li>
-            @if (now()->isSunday())
+            @if (now())
             <li class="nav-item">
                 <a class="nav-link text-white {{ request()->routeIs('spk-lembur.produksi') ? 'active bg-gradient-primary' : '' }}"
                     href="{{ route('spk-lembur.produksi') }}">
@@ -193,7 +193,7 @@
                     <span class="nav-link-text ms-1">Riwayat Bantuan</span>
                 </a>
             </li>
-            @if (now()->isSunday())
+            @if (now())
             <li class="nav-item">
                 <a class="nav-link text-white {{ request()->routeIs('spk-lembur.riwayat') ? 'active bg-gradient-primary' : '' }}"
                     href="{{ route('spk-lembur.riwayat') }}">

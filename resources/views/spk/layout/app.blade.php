@@ -141,7 +141,7 @@
         const cabangId = {{Auth::check() && Auth::user() -> hasRole('admin') ? Auth::user()->cabang_id : 'null'}};
 
         var channel = pusher.subscribe('channel-admin-' + cabangId);
-        var channel_lembur = pusher.subscribe('channel-lembur-' + cabangId);
+        var channel_lembur = pusher.subscribe('channel-lembur');
         // console.log("Channel:", channel, channel_lembur);
 
         // 3. Binding Event (Menangani Notifikasi Masuk)

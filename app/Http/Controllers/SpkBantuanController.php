@@ -109,6 +109,7 @@ class SpkBantuanController extends Controller
         try {
             DB::transaction(function () use ($request) {
                 $user = Auth::user();
+                $cabangId = $user->cabang_id;
 
                 // A. GENERATE NOMOR SPK (Logic Lama)
                 $cabangKode = $user->cabang->kode;
@@ -164,7 +165,7 @@ class SpkBantuanController extends Controller
 
                 // D. KIRIM NOTIFIKASI
                 // Kirim notif bahwa ada SPK Bantuan Baru
-                event(new NotifikasiSpkBaru($newNoSpk, 'Bantuan', Auth::user()->nama));
+                event(new NotifikasiSpkBaru($newNoSpk, 'Bantuan', $cabangId, Auth::user()->nama));
             });
 
             return redirect()->route('spk-bantuan.index')->with('success', 'SPK Bantuan Berhasil Dibuat dengan ' . count($request->items) . ' Item!');
