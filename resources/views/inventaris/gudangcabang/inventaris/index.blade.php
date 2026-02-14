@@ -134,7 +134,7 @@
                         <div class="row">
                             <div class="col-md-3 mb-3">
                                 <label>Kode Barang</label>
-                                <input type="text" name="kode_barang" class="form-control" required>
+<input type="text" class="form-control" value="Otomatis dibuat sistem" readonly>
                             </div>
 
                             <div class="col-md-3 mb-3">
