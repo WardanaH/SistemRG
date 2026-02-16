@@ -118,6 +118,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
+        // 1. Inisialisasi Pusher
         const pusher = new Pusher('{{ config("broadcasting.connections.pusher.key") }}', {
             cluster: '{{ config("broadcasting.connections.pusher.options.cluster") }}',
             encrypted: true
@@ -127,81 +128,171 @@
         const authUserId = "{{ auth()->id() }}";
         const cabangId = "{{ Auth::check() ? Auth::user()->cabang_id : 'null' }}";
 
-        // Variabel untuk menyimpan interval suara agar bisa dihentikan
-        let alertInterval = null;
+        let alertInterval = null; // Untuk looping suara
+        let reminderTimeout = null; // Untuk memunculkan kembali Swal yang ditutup paksa
 
-        // 1. Fungsi Universal untuk Notifikasi
-        function showNotif(title, data, redirectUrl = null) {
-            const soundPath = data.operator_id ? "assets/sound/tugas_baru.mp3" : "assets/sound/notif_spk.mp3";
-            const fullSoundPath = `{{ asset('') }}${soundPath}`;
+        // --- FUNGSI LOGIKA DATA ---
 
-            // Hentikan interval lama jika ada notif baru masuk beruntun
-            if (alertInterval) clearInterval(alertInterval);
+        // Menangani notifikasi baru yang masuk
+        function handleIncomingNotif(title, data, redirectUrl = null) {
+            let notifications = JSON.parse(localStorage.getItem('notif_list')) || [];
 
-            // Fungsi untuk memutar suara
-            const playAlert = () => {
-                new Audio(fullSoundPath).play().catch(e => console.log("Audio play blocked by browser. User must interact first."));
+            const newNotif = {
+                id: Date.now(),
+                title: title,
+                pesan: data.pesan || '',
+                no_spk: data.no_spk || '',
+                nama_file: data.nama_file || '',
+                url: redirectUrl,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                is_operator: !!data.operator_id
             };
 
-            // Putar pertama kali
+            notifications.unshift(newNotif);
+            if(notifications.length > 10) notifications.pop(); // Batasi 10 notif terakhir
+
+            localStorage.setItem('notif_list', JSON.stringify(notifications));
+            localStorage.setItem('pending_active_notif', JSON.stringify(newNotif)); // Notif yang sedang "berisik"
+
+            renderNotifList();
+            triggerNotifUI();
+        }
+
+        // Menjalankan UI (Suara + SweetAlert)
+        function triggerNotifUI() {
+            const activeNotif = JSON.parse(localStorage.getItem('pending_active_notif'));
+            if (!activeNotif) return;
+
+            // Bersihkan interval lama
+            if (alertInterval) clearInterval(alertInterval);
+            if (reminderTimeout) clearTimeout(reminderTimeout);
+
+            const soundPath = activeNotif.is_operator ? "assets/sound/tugas_baru.mp3" : "assets/sound/notif_spk.mp3";
+            const audio = new Audio(`{{ asset('') }}${soundPath}`);
+
+            const playAlert = () => {
+                audio.play().catch(e => console.log("Interaksi user diperlukan untuk suara."));
+            };
+
             playAlert();
-
-            // Set Interval untuk putar ulang suara setiap 10 detik jika notif belum ditutup
-            alertInterval = setInterval(playAlert, 10000);
-
-            updateBadgeNavbar();
+            alertInterval = setInterval(playAlert, 10000); // Ulangi suara setiap 10 detik
 
             Swal.fire({
-                title: title,
-                html: `<p>${data.pesan || ''}</p><small>No: <b>${data.no_spk}</b></small><br><small>${data.nama_file || ''}</small>`,
+                title: activeNotif.title,
+                html: `<div class="text-start">
+                        <p class="mb-1">${activeNotif.pesan}</p>
+                        <small>No: <b>${activeNotif.no_spk}</b></small><br>
+                        <small class="text-truncate d-block">${activeNotif.nama_file}</small>
+                    </div>`,
                 icon: 'info',
                 position: 'top-end',
                 toast: !isAdmin,
-                showConfirmButton: true, // Pakai tombol agar user dipaksa klik (menghentikan suara)
-                
-                confirmButtonText: redirectUrl ? 'Lihat' : 'Oke, Mengerti',
-                timer: 30000, // Durasi notif lebih lama (30 detik) agar tidak cepat hilang
+                showConfirmButton: true,
+                confirmButtonText: activeNotif.url ? 'Buka / Lihat' : 'Tandai Dibaca',
+                showCancelButton: true,
+                cancelButtonText: 'Nanti Saja',
+                timer: 20000,
                 timerProgressBar: true,
-                didClose: () => {
-                    // Berhenti memutar suara saat notifikasi ditutup (baik klik oke/X/timer habis)
-                    clearInterval(alertInterval);
-                    alertInterval = null;
-                }
+                allowOutsideClick: false
             }).then((result) => {
-                if (result.isConfirmed && redirectUrl) {
-                    window.location.href = redirectUrl;
+                if (result.isConfirmed) {
+                    // Berhenti Total
+                    stopNotificationLoop();
+                    if (activeNotif.url) window.location.href = activeNotif.url;
+                } else {
+                    // User klik "Nanti" atau Timer habis: Diam sebentar, lalu muncul lagi
+                    clearInterval(alertInterval);
+                    reminderTimeout = setTimeout(triggerNotifUI, 60000); // Muncul lagi dalam 40 detik
                 }
             });
         }
 
-        // 2. Langganan Channel & Bind Event
+        function stopNotificationLoop() {
+            localStorage.removeItem('pending_active_notif');
+            clearInterval(alertInterval);
+            clearTimeout(reminderTimeout);
+            alertInterval = null;
+            reminderTimeout = null;
+        }
+
+        // --- FUNGSI TAMPILAN DROPDOWN ---
+
+        function renderNotifList() {
+            const listContainer = document.getElementById('dropdown-notif-list');
+            const badge = document.getElementById('badge-notif');
+            if (!listContainer) return;
+
+            let notifications = JSON.parse(localStorage.getItem('notif_list')) || [];
+
+            if (notifications.length > 0) {
+                badge.innerText = notifications.length;
+                badge.style.display = 'inline-block';
+
+                let html = notifications.map(n => `
+                    <li class="mb-2 border-bottom pb-2">
+                        <a class="dropdown-item border-radius-md" href="${n.url || 'javascript:;'}" onclick="clearSingleNotif(${n.id})">
+                            <div class="d-flex py-1">
+                                <div class="my-auto">
+                                    <i class="material-icons text-primary me-3">assignment</i>
+                                </div>
+                                <div class="d-flex flex-column justify-content-center">
+                                    <h6 class="text-sm font-weight-normal mb-1">
+                                        <span class="font-weight-bold">${n.title}</span>
+                                    </h6>
+                                    <p class="text-xs text-secondary mb-0">
+                                        <i class="fa fa-clock me-1"></i> ${n.time} | ${n.no_spk}
+                                    </p>
+                                </div>
+                            </div>
+                        </a>
+                    </li>
+                `).join('');
+
+                html += `<li><a class="dropdown-item text-center text-primary text-xs font-weight-bold" href="javascript:;" onclick="clearAllNotif()">Hapus Semua</a></li>`;
+                listContainer.innerHTML = html;
+            } else {
+                badge.style.display = 'none';
+                listContainer.innerHTML = '<li class="p-2 text-center"><p class="text-xs text-secondary mb-0">Tidak ada notifikasi</p></li>';
+            }
+        }
+
+        function clearSingleNotif(id) {
+            let notifications = JSON.parse(localStorage.getItem('notif_list')) || [];
+            localStorage.setItem('notif_list', JSON.stringify(notifications.filter(n => n.id !== id)));
+            stopNotificationLoop();
+            renderNotifList();
+        }
+
+        function clearAllNotif() {
+            localStorage.removeItem('notif_list');
+            stopNotificationLoop();
+            renderNotifList();
+        }
+
+        // --- BROADCAST LISTENER ---
+
         if (isAdmin) {
             pusher.subscribe('channel-admin-' + cabangId).bind('spk-dibuat', (data) => {
                 let url = data.tipe === 'Reguler' ? "{{ url('/spk') }}" : "{{ url('/spk-bantuan') }}";
-                showNotif(`SPK ${data.tipe} Baru!`, data, `${url}?search=${data.no_spk}`);
+                handleIncomingNotif(`SPK ${data.tipe} Baru!`, data, `${url}?search=${data.no_spk}`);
             });
 
             pusher.subscribe('channel-lembur').bind('spk-lembur-dibuat', (data) => {
-                showNotif('SPK Lembur Baru!', data, `{{ url('/spk-lembur') }}?search=${data.no_spk}`);
+                handleIncomingNotif('SPK Lembur Baru!', data, `{{ url('/spk-lembur') }}?search=${data.no_spk}`);
             });
         }
 
         pusher.subscribe('operator.' + authUserId).bind('kerjaan-baru', (data) => {
-            showNotif('Tugas Baru Masuk!', data);
-            if(window.location.pathname.includes('tugas-operator')) {
-                // Beri jeda sedikit sebelum reload agar user bisa melihat notif dulu
-                setTimeout(() => { location.reload(); }, 2000);
-            }
+            handleIncomingNotif('Tugas Baru Masuk!', data, "{{ route('spk.produksi') }}");
         });
 
-        // 3. Fungsi Pendukung
-        function updateBadgeNavbar() {
-            let badge = document.getElementById('badge-notif');
-            if (badge) {
-                badge.innerText = (parseInt(badge.innerText) || 0) + 1;
-                badge.style.display = 'inline-block';
+        // Jalankan saat pertama kali buka halaman atau refresh
+        window.addEventListener('load', () => {
+            renderNotifList();
+            if (localStorage.getItem('pending_active_notif')) {
+                setTimeout(triggerNotifUI, 3000); // Munculkan kembali setelah 3 detik loading halaman
             }
-        }
+        });
     </script>
 
     <script>
