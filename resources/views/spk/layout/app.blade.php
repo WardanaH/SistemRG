@@ -12,7 +12,6 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,900">
     <link href="{{ asset('assets/css/nucleo-icons.css') }}" rel="stylesheet">
     <link href="{{ asset('assets/css/nucleo-svg.css') }}" rel="stylesheet">
-    <script src="https://kit.fontawesome.com/42d5adcbca.js" crossorigin="anonymous"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 
     <!-- CSS -->
@@ -273,8 +272,12 @@
 
         if (isAdmin) {
             pusher.subscribe('channel-admin-' + cabangId).bind('spk-dibuat', (data) => {
-                let url = data.tipe === 'Reguler' ? "{{ url('/spk') }}" : "{{ url('/spk-bantuan') }}";
-                handleIncomingNotif(`SPK ${data.tipe} Baru!`, data, `${url}?search=${data.no_spk}`);
+                if (data.tipe !== 'Charge') {
+                    let url = data.tipe === 'Reguler' ? "{{ url('/spk') }}" : "{{ url('/spk-bantuan') }}";
+                    handleIncomingNotif(`SPK ${data.tipe} Baru!`, data, `${url}?search=${data.no_spk}`);
+                } else {
+                    handleIncomingNotif(`SPK Charge Baru!`, data, "{{ url('/spk-charge') }}?search=${data.no_spk}");
+                }
             });
 
             pusher.subscribe('channel-lembur').bind('spk-lembur-dibuat', (data) => {

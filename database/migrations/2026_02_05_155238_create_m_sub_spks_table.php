@@ -24,19 +24,13 @@ return new class extends Migration
             // Ukuran (Pakai double/float agar bisa koma)
             $table->double('p')->nullable();
             $table->double('l')->nullable();
-
             $table->integer('qty');
-
-            // Relasi ke Bahan
-            $table->foreignId('bahan_id')->constrained('m_bahan_bakus')->nullable();
-
             $table->string('finishing')->nullable();
-            $table->text('catatan')->nullable();
-
-            // OPERATOR & STATUS PRODUKSI (Pindah ke sini agar per item bisa beda status)
-            $table->foreignId('operator_id')->nullable()->constrained('users')->onDelete('set null')->nullable();
             $table->enum('status_produksi', ['pending', 'ripping', 'ongoing', 'finishing', 'done'])->default('pending');
+            $table->text('catatan')->nullable();
             $table->text('catatan_operator')->nullable();
+            $table->foreignId('bahan_id')->nullable()->constrained('m_bahan_bakus')->onDelete('set null')->nullable();
+            $table->foreignId('operator_id')->nullable()->constrained('users')->onDelete('set null')->nullable();
 
             $table->timestamps();
         });

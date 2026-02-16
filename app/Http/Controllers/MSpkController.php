@@ -71,8 +71,8 @@ class MSpkController extends Controller
             ->withCount('items') // Menghitung jumlah item di sub_spk
             ->where('is_bantuan', false)
             ->where('is_lembur', false)
-            ->whereHas('items', function ($q) {
-                $q->where('jenis_order', '<>', 'charge');
+            ->whereDoesntHave('items', function ($q) {
+                $q->where('jenis_order', 'charge');
             });
 
         // 1. Logika Filter Cabang
@@ -137,6 +137,39 @@ class MSpkController extends Controller
         return view('spk.designer.indexSpkLembur', [
             'title' => 'Manajemen SPK Lembur',
             'spks'  => $spks
+        ]);
+    }
+
+    public function indexCharge(Request $request)
+    {
+        $user = Auth::user();
+
+        $query = MSpk::with(['designer', 'cabang', 'items'])
+            ->withCount('items')
+            // Filter: Hanya ambil SPK yang memiliki item berjenis 'charge'
+            ->whereHas('items', function ($q) {
+                $q->where('jenis_order', 'charge');
+            });
+
+        // 1. Logika Filter Cabang (Non-Pusat hanya lihat cabang sendiri)
+        if ($user->cabang->jenis !== 'pusat') {
+            $query->where('cabang_id', $user->cabang_id);
+        }
+
+        // 2. Logika Pencarian
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('no_spk', 'like', "%$search%")
+                    ->orWhere('nama_pelanggan', 'like', "%$search%");
+            });
+        }
+
+        $spks = $query->latest()->paginate(10);
+
+        return view('spk.designer.indexSpkCharge', [ // Pastikan nama file view sesuai
+            'title' => 'Manajemen SPK Charge Desain',
+            'spks' => $spks
         ]);
     }
 
@@ -289,10 +322,14 @@ class MSpkController extends Controller
                     ]);
                 }
 
-                if ($isLembur == true) {
-                    event(new \App\Events\NotifikasiSpkLembur($newNoSpk, 'Lembur', $user->nama));
+                if ($isCharge == false) {
+                    if ($isLembur == true) {
+                        event(new \App\Events\NotifikasiSpkLembur($newNoSpk, 'Lembur', $user->nama));
+                    } else {
+                        event(new \App\Events\NotifikasiSpkBaru($newNoSpk, 'Reguler', $targetCabangId, $user->nama));
+                    }
                 } else {
-                    event(new \App\Events\NotifikasiSpkBaru($newNoSpk, 'Reguler', $targetCabangId, $user->nama));
+                    event(new \App\Events\NotifikasiSpkBaru($newNoSpk, 'Charge', $targetCabangId, $user->nama));
                 }
             });
 
@@ -415,6 +452,18 @@ class MSpkController extends Controller
         }
 
         return view('spk.nota_spk.notaspk', compact('spk'));
+    }
+
+    public function printCharge($id)
+    {
+        $spk = MSpk::with(['designer', 'cabang', 'items'])->findOrFail($id);
+
+        // Pastikan ini adalah SPK Charge
+        if (!$spk->items()->where('jenis_order', 'charge')->exists()) {
+            return back()->with('error', 'Ini bukan SPK Charge.');
+        }
+
+        return view('spk.nota.notaCharge', compact('spk'));
     }
 
     public function updateStatus(Request $request, $id)
