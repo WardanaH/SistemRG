@@ -32,7 +32,7 @@ Route::get('/', function () {
 
     if ($user->hasRole('manajemen')) {
         return redirect()->route('manajemen.dashboard');
-    } elseif ($user->hasRole('operator indoor') || $user->hasRole('operator outdoor') || $user->hasRole('operator multi')) {
+    } elseif ($user->hasRole('operator indoor') || $user->hasRole('operator outdoor') || $user->hasRole('operator multi') || $user->hasRole('operator dtf')) {
         return redirect()->route('operator.dashboard');
     } elseif ($user->hasRole('designer')) {
         return redirect()->route('designer.dashboard');
@@ -50,7 +50,7 @@ Route::get('/inventaris/qr/{kode}',[GudangCabangController::class, 'inventarisQr
 Route::middleware(['auth'])->group(function () {
     // Ganti middleware role agar bisa diakses semua role yang berkepentingan
     Route::get('/laporan-kinerja', [LaporanController::class, 'index'])
-        ->middleware('role:admin|manajemen|designer|operator indoor|operator outdoor|operator multi')
+        ->middleware('role:admin|manajemen|designer|operator indoor|operator outdoor|operator multi|operator dtf')
         ->name('laporan.index');
     Route::post('/laporan-kinerja/set-target', [LaporanController::class, 'storeTarget'])
         ->middleware('role:manajemen|admin') // Hanya manajemen/admin yg boleh set target

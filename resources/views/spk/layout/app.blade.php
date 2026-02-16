@@ -118,120 +118,89 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-        // 1. AKTIFKAN LOGGING
-        // Pusher.logToConsole = true;
-
-        // 2. Inisialisasi Pusher
-        var pusher = new Pusher('{{ config("broadcasting.connections.pusher.key") }}', {
+        const pusher = new Pusher('{{ config("broadcasting.connections.pusher.key") }}', {
             cluster: '{{ config("broadcasting.connections.pusher.options.cluster") }}',
             encrypted: true
         });
 
-        // Cek Config di Console
-        // console.log("Config Pusher:", {
-        //     key: '{{ config("broadcasting.connections.pusher.key") }}',
-        //     cluster: '{{ config("broadcasting.connections.pusher.options.cluster") }}'
-        // });
+        const isAdmin = {{ Auth::check() && Auth::user()->hasRole('admin') ? 'true' : 'false' }};
+        const authUserId = "{{ auth()->id() }}";
+        const cabangId = "{{ Auth::check() ? Auth::user()->cabang_id : 'null' }}";
 
-        // Status Admin
-        const isAdmin = {{Auth::check() && Auth::user() -> hasRole('admin') ? 'true' : 'false'}};
-        // console.log("Status Admin:", isAdmin);
+        // Variabel untuk menyimpan interval suara agar bisa dihentikan
+        let alertInterval = null;
 
-        // Id cabang Admin
-        const cabangId = {{Auth::check() && Auth::user() -> hasRole('admin') ? Auth::user()->cabang_id : 'null'}};
+        // 1. Fungsi Universal untuk Notifikasi
+        function showNotif(title, data, redirectUrl = null) {
+            const soundPath = data.operator_id ? "assets/sound/tugas_baru.mp3" : "assets/sound/notif_spk.mp3";
+            const fullSoundPath = `{{ asset('') }}${soundPath}`;
 
-        var channel = pusher.subscribe('channel-admin-' + cabangId);
-        var channel_lembur = pusher.subscribe('channel-lembur');
-        // console.log("Channel:", channel, channel_lembur);
+            // Hentikan interval lama jika ada notif baru masuk beruntun
+            if (alertInterval) clearInterval(alertInterval);
 
-        // 3. Binding Event (Menangani Notifikasi Masuk)
-        channel.bind('spk-dibuat', function(data) {
+            // Fungsi untuk memutar suara
+            const playAlert = () => {
+                new Audio(fullSoundPath).play().catch(e => console.log("Audio play blocked by browser. User must interact first."));
+            };
 
-            // console.log("EVENT DITERIMA:", data);
+            // Putar pertama kali
+            playAlert();
 
-            if (isAdmin) {
-                // B. Mainkan Suara (File Custom Kamu)
-                playNotificationSound();
-                // A. Update Angka di Lonceng Navbar
-                updateBadgeNavbar();
-                // C. Tampilkan SweetAlert (Auto Close 5 Detik)
-                Swal.fire({
-                    title: 'SPK Baru Masuk!',
-                    html: `<p>${data.pesan}</p><small>No: <b>${data.no_spk}</b></small>`,
-                    icon: 'info',
-                    position: 'top-end', // Tampil di pojok kanan atas
-                    showConfirmButton: true,
-                    confirmButtonText: 'Lihat',
-                    showCancelButton: true,
-                    cancelButtonText: 'Tutup',
-                    timer: 5000, // Menutup otomatis dalam 5000ms (5 detik)
-                    timerProgressBar: true, // Ada bar progres berjalan
-                    didOpen: (toast) => {
-                        // Jika mouse diarahkan ke notif, waktu berhenti (biar bisa dibaca)
-                        toast.onmouseenter = Swal.stopTimer;
-                        toast.onmouseleave = Swal.resumeTimer;
-                    }
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        window.location.href = "{{ url('/spk') }}?search=" + data.no_spk;
-                    }
-                });
+            // Set Interval untuk putar ulang suara setiap 10 detik jika notif belum ditutup
+            alertInterval = setInterval(playAlert, 10000);
+
+            updateBadgeNavbar();
+
+            Swal.fire({
+                title: title,
+                html: `<p>${data.pesan || ''}</p><small>No: <b>${data.no_spk}</b></small><br><small>${data.nama_file || ''}</small>`,
+                icon: 'info',
+                position: 'top-end',
+                toast: !isAdmin,
+                showConfirmButton: true, // Pakai tombol agar user dipaksa klik (menghentikan suara)
+                
+                confirmButtonText: redirectUrl ? 'Lihat' : 'Oke, Mengerti',
+                timer: 30000, // Durasi notif lebih lama (30 detik) agar tidak cepat hilang
+                timerProgressBar: true,
+                didClose: () => {
+                    // Berhenti memutar suara saat notifikasi ditutup (baik klik oke/X/timer habis)
+                    clearInterval(alertInterval);
+                    alertInterval = null;
+                }
+            }).then((result) => {
+                if (result.isConfirmed && redirectUrl) {
+                    window.location.href = redirectUrl;
+                }
+            });
+        }
+
+        // 2. Langganan Channel & Bind Event
+        if (isAdmin) {
+            pusher.subscribe('channel-admin-' + cabangId).bind('spk-dibuat', (data) => {
+                let url = data.tipe === 'Reguler' ? "{{ url('/spk') }}" : "{{ url('/spk-bantuan') }}";
+                showNotif(`SPK ${data.tipe} Baru!`, data, `${url}?search=${data.no_spk}`);
+            });
+
+            pusher.subscribe('channel-lembur').bind('spk-lembur-dibuat', (data) => {
+                showNotif('SPK Lembur Baru!', data, `{{ url('/spk-lembur') }}?search=${data.no_spk}`);
+            });
+        }
+
+        pusher.subscribe('operator.' + authUserId).bind('kerjaan-baru', (data) => {
+            showNotif('Tugas Baru Masuk!', data);
+            if(window.location.pathname.includes('tugas-operator')) {
+                // Beri jeda sedikit sebelum reload agar user bisa melihat notif dulu
+                setTimeout(() => { location.reload(); }, 2000);
             }
         });
 
-        channel_lembur.bind('spk-lembur-dibuat', function(data) {
-
-            // console.log("EVENT DITERIMA:", data);
-
-            if (isAdmin) {
-                // B. Mainkan Suara (File Custom Kamu)
-                playNotificationSound();
-                // A. Update Angka di Lonceng Navbar
-                updateBadgeNavbar();
-                // C. Tampilkan SweetAlert (Auto Close 5 Detik)
-                Swal.fire({
-                    title: 'SPK Baru Masuk!',
-                    html: `<p>${data.pesan}</p><small>No: <b>${data.no_spk}</b></small>`,
-                    icon: 'info',
-                    position: 'top-end', // Tampil di pojok kanan atas
-                    showConfirmButton: true,
-                    confirmButtonText: 'Lihat',
-                    showCancelButton: true,
-                    cancelButtonText: 'Tutup',
-                    timer: 5000, // Menutup otomatis dalam 5000ms (5 detik)
-                    timerProgressBar: true, // Ada bar progres berjalan
-                    didOpen: (toast) => {
-                        // Jika mouse diarahkan ke notif, waktu berhenti (biar bisa dibaca)
-                        toast.onmouseenter = Swal.stopTimer;
-                        toast.onmouseleave = Swal.resumeTimer;
-                    }
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        window.location.href = "{{ url('/spk-lembur') }}?search=" + data.no_spk;
-                    }
-                });
-            }
-        });
-
-        // 4. Fungsi Menambah Angka Badge Lonceng
+        // 3. Fungsi Pendukung
         function updateBadgeNavbar() {
             let badge = document.getElementById('badge-notif');
             if (badge) {
-                // Ambil angka sekarang, ubah ke integer, tambah 1
-                let currentCount = parseInt(badge.innerText) || 0;
-                badge.innerText = currentCount + 1;
-
-                // Tampilkan badge (karena defaultnya display:none)
+                badge.innerText = (parseInt(badge.innerText) || 0) + 1;
                 badge.style.display = 'inline-block';
             }
-        }
-
-        // 5. Fungsi Audio (SESUAI PERMINTAAN: File tidak diubah)
-        function playNotificationSound() {
-            let audio = new Audio('{{ asset("assets/sound/notif_spk.mp3") }}');
-            audio.play().catch(function(error) {
-                console.log("Audio error: " + error);
-            });
         }
     </script>
 

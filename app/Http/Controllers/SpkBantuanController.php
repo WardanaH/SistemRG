@@ -82,7 +82,7 @@ class SpkBantuanController extends Controller
         $finishings = MFinishing::all();
 
         // Operator Lokal
-        $operators = User::role(['operator indoor', 'operator outdoor', 'operator multi'])
+        $operators = User::role(['operator indoor', 'operator outdoor', 'operator multi', 'operator dtf'])
             ->where('cabang_id', $user->cabang_id)->get();
 
         return view('spk.designer.spkBantuan', [

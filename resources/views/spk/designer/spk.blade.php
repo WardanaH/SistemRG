@@ -108,7 +108,7 @@
                     {{-- II. DAFTAR ITEM (TABEL) --}}
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <p class="text-sm text-uppercase font-weight-bold mb-0">II. Detail Item Pesanan</p>
-                        <button type="button" class="btn btn-sm btn-info mb-0" data-bs-toggle="modal" data-bs-target="#modalTambahItem">
+                        <button type="button" class="btn btn-sm btn-info mb-0" onclick="prepareTambah()" data-bs-toggle="modal" data-bs-target="#modalTambahItem">
                             <i class="fa fa-plus me-1"></i> Tambah Item
                         </button>
                     </div>
@@ -180,7 +180,7 @@
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label class="form-label text-xs font-weight-bold">Jenis Order:</label>
-                        <div class="d-flex gap-3 mt-1">
+                        <div class="d-flex flex-wrap gap-3 mt-1">
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="modal_jenis" id="m_outdoor" value="outdoor" checked>
                                 <label class="custom-control-label" for="m_outdoor">Outdoor</label>
@@ -192,6 +192,14 @@
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="modal_jenis" id="m_multi" value="multi">
                                 <label class="custom-control-label" for="m_multi">Multi</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_jenis" id="m_dtf" value="dtf">
+                                <label class="custom-control-label" for="m_dtf">DTF UV</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_jenis" id="m_charge" value="charge">
+                                <label class="custom-control-label" for="m_charge">Charge Desain</label>
                             </div>
                         </div>
                     </div>
@@ -293,102 +301,171 @@
 @push('scripts')
 <script>
     let itemIndex = 0;
+    let editId = null;
+
+    function prepareTambah() {
+        resetModal(); // Membersihkan form dan me-set editId = null
+    }
 
     function tambahItem() {
-        // 1. AMBIL VALUE DARI MODAL
         let jenis = document.querySelector('input[name="modal_jenis"]:checked').value;
 
+        // Ambil value
         let operatorSelect = document.getElementById('modal_operator');
-        let operatorId = operatorSelect.value;
-        let operatorNama = operatorSelect.options[operatorSelect.selectedIndex]?.text;
+        let operatorId = operatorSelect.value || null;
+        let operatorNama = operatorSelect.options[operatorSelect.selectedIndex]?.text || '-';
 
         let file = document.getElementById('modal_nama_file').value;
-        let p = document.getElementById('modal_p').value;
-        let l = document.getElementById('modal_l').value;
+        let p = document.getElementById('modal_p').value || 0;
+        let l = document.getElementById('modal_l').value || 0;
 
         let bahanSelect = document.getElementById('modal_bahan');
-        let bahanId = bahanSelect.value;
-        let bahanNama = bahanSelect.options[bahanSelect.selectedIndex]?.text;
+        let bahanId = bahanSelect.value || null;
+        let bahanNama = bahanSelect.options[bahanSelect.selectedIndex]?.text || '-';
 
         let qty = document.getElementById('modal_qty').value;
-        let finishing = document.getElementById('modal_finishing').value;
+        let finishing = document.getElementById('modal_finishing').value || '-';
         let catatan = document.getElementById('modal_catatan').value;
 
-        // 2. VALIDASI INPUT
-        if (!file || !p || !l || !bahanId || !operatorId || !qty) {
-            Swal.fire("Data Belum Lengkap", "Mohon lengkapi Operator, Nama File, Ukuran, Bahan, dan Qty.", "warning");
-            return;
+        // VALIDASI KHUSUS CHARGE DESAIN
+        if (jenis === 'charge') {
+            if (!file || !qty) {
+                Swal.fire("Data Belum Lengkap", "Mohon isi Nama File (Keterangan Charge) dan Qty.", "warning");
+                return;
+            }
+        } else {
+            // Validasi Normal
+            if (!file || !p || !l || !bahanId || !operatorId || !qty) {
+                Swal.fire("Data Belum Lengkap", "Mohon lengkapi data item.", "warning");
+                return;
+            }
         }
 
-        // 3. HAPUS BARIS "BELUM ADA ITEM"
-        let rowKosong = document.getElementById('row-kosong');
-        if (rowKosong) rowKosong.remove();
+        // Tentukan Warna Badge
+        let colors = { 'outdoor': 'warning', 'indoor': 'success', 'multi': 'info', 'dtf': 'primary', 'charge': 'dark' };
+        let badgeColor = colors[jenis] || 'secondary';
 
-        // 4. BUAT HTML ROW BARU
-        // Warna badge pembeda
-        let badgeColor = (jenis === 'outdoor') ? 'warning' : 'success';
+        if (editId !== null) {
+            let row = document.getElementById(`item-${editId}`);
+            row.innerHTML = buatHtmlRow(editId, jenis, badgeColor, operatorId, operatorNama, file, catatan, p, l, bahanId, bahanNama, qty, finishing);
+            editId = null;
+        } else {
+            let rowKosong = document.getElementById('row-kosong');
+            if (rowKosong) rowKosong.remove();
+            let html = `<tr id="item-${itemIndex}">${buatHtmlRow(itemIndex, jenis, badgeColor, operatorId, operatorNama, file, catatan, p, l, bahanId, bahanNama, qty, finishing)}</tr>`;
+            document.getElementById('tabelItemBody').insertAdjacentHTML('beforeend', html);
+            itemIndex++;
+        }
 
-        let html = `
-            <tr id="item-${itemIndex}">
-                <td>
-                    <span class="badge bg-gradient-${badgeColor} mb-1">${jenis.toUpperCase()}</span><br>
-                    <span class="text-xs font-weight-bold text-dark"><i class="fa fa-user me-1"></i> ${operatorNama}</span>
+        resetModal();
+        bootstrap.Modal.getInstance(document.getElementById('modalTambahItem')).hide();
+    }
 
-                    {{-- Input Hidden untuk dikirim ke Controller --}}
-                    <input type="hidden" name="items[${itemIndex}][jenis]" value="${jenis}">
-                    <input type="hidden" name="items[${itemIndex}][operator_id]" value="${operatorId}">
-                </td>
-                <td>
-                    <h6 class="mb-0 text-sm text-truncate" style="max-width: 150px;">${file}</h6>
-                    <small class="text-xxs text-secondary">${catatan || '-'}</small>
-                    <input type="hidden" name="items[${itemIndex}][file]" value="${file}">
-                    <input type="hidden" name="items[${itemIndex}][catatan]" value="${catatan}">
-                </td>
-                <td class="text-xs font-weight-bold">
-                    ${p} x ${l}
-                    <input type="hidden" name="items[${itemIndex}][p]" value="${p}">
-                    <input type="hidden" name="items[${itemIndex}][l]" value="${l}">
-                </td>
-                <td class="text-xs font-weight-bold">
-                    ${bahanNama}
-                    <input type="hidden" name="items[${itemIndex}][bahan_id]" value="${bahanId}">
-                </td>
-                <td class="text-center text-sm">
-                    ${qty}
-                    <input type="hidden" name="items[${itemIndex}][qty]" value="${qty}">
-                    <input type="hidden" name="items[${itemIndex}][finishing]" value="${finishing}">
-                </td>
-                <td class="text-center">
-                    <button type="button" class="btn btn-link text-danger text-gradient px-3 mb-0" onclick="hapusItem(${itemIndex})">
-                        <i class="material-icons text-sm">delete</i>
-                    </button>
-                </td>
-            </tr>
+    // Fungsi Helper buat isi Row (agar bisa dipakai Tambah & Edit)
+    function buatHtmlRow(idx, jenis, badgeColor, operatorId, operatorNama, file, catatan, p, l, bahanId, bahanNama, qty, finishing) {
+        // Logika tampilan jika Charge Desain
+        const displayUkuran = (jenis === 'charge') ? '-' : `${p} x ${l}`;
+        const displayBahan = (jenis === 'charge') ? '-' : bahanNama;
+        const displayOperator = (jenis === 'charge') ? '<i class="fa fa-paint-brush me-1"></i> Biaya Desain' : `<i class="fa fa-user me-1"></i> ${operatorNama}`;
+
+        return `
+            <td>
+                <span class="badge bg-gradient-${badgeColor} mb-1">${jenis.toUpperCase()}</span><br>
+                <span class="text-xs font-weight-bold text-dark">${displayOperator}</span>
+                <input type="hidden" name="items[${idx}][jenis]" value="${jenis}">
+                <input type="hidden" name="items[${idx}][operator_id]" value="${operatorId}">
+            </td>
+            <td>
+                <h6 class="mb-0 text-sm text-truncate" style="max-width: 150px;">${file}</h6>
+                <small class="text-xxs text-secondary">${catatan || '-'}</small>
+                <input type="hidden" name="items[${idx}][file]" value="${file}">
+                <input type="hidden" name="items[${idx}][catatan]" value="${catatan}">
+            </td>
+            <td class="text-xs font-weight-bold">
+                ${displayUkuran}
+                <input type="hidden" name="items[${idx}][p]" value="${p}">
+                <input type="hidden" name="items[${idx}][l]" value="${l}">
+            </td>
+            <td class="text-xs font-weight-bold">
+                ${displayBahan}
+                <input type="hidden" name="items[${idx}][bahan_id]" value="${bahanId}">
+            </td>
+            <td class="text-center text-sm">
+                ${qty}
+                <input type="hidden" name="items[${idx}][qty]" value="${qty}">
+                <input type="hidden" name="items[${idx}][finishing]" value="${finishing}">
+            </td>
+            <td class="text-center">
+                <button type="button" class="btn btn-link text-info px-2 mb-0" onclick="editItem(${idx})"><i class="material-icons text-sm">edit</i></button>
+                <button type="button" class="btn btn-link text-danger px-2 mb-0" onclick="hapusItem(${idx})"><i class="material-icons text-sm">delete</i></button>
+            </td>
         `;
+    }
 
-        // 5. MASUKKAN KE TABEL
-        document.getElementById('tabelItemBody').insertAdjacentHTML('beforeend', html);
-        itemIndex++;
+    function resetModal() {
+        editId = null;
 
-        // 6. RESET FORM MODAL
+        // Jangan gunakan form.reset() karena akan menghapus Nama Pelanggan & Data Lembur
+        // Reset fields modal secara manual
         document.getElementById('modal_nama_file').value = "";
         document.getElementById('modal_catatan').value = "";
-        // Opsional: Reset ukuran ke 0 atau kosong
-        // document.getElementById('modal_p').value = "";
+        document.getElementById('modal_p').value = "0";
+        document.getElementById('modal_l').value = "0";
+        document.getElementById('modal_qty').value = "1";
 
-        // 7. TUTUP MODAL
-        var modalEl = document.getElementById('modalTambahItem');
-        var modal = bootstrap.Modal.getInstance(modalEl);
-        modal.hide();
+        // Reset Select2
+        $('#modal_operator').val('').trigger('change');
+        $('#modal_bahan').val('').trigger('change');
+        $('#modal_finishing').val('').trigger('change');
 
-        // Notif Kecil
-        Swal.fire({
-            icon: 'success',
-            title: 'Item Ditambahkan',
-            text: 'Item berhasil masuk ke daftar sementara.',
-            timer: 1000,
-            showConfirmButton: false
-        });
+        // Kembalikan tampilan modal ke mode normal (Tampilkan semua field)
+        const operatorSection = document.getElementById('modal_operator').closest('.col-md-6');
+        const specSection = document.getElementById('modal_p').closest('.row');
+        const finishingSection = document.getElementById('modal_finishing').closest('.col-md-6');
+
+        operatorSection.style.display = 'block';
+        specSection.querySelectorAll('.col-md-3, .col-md-4, .col-md-2').forEach(el => el.style.display = 'block');
+        finishingSection.style.display = 'block';
+
+        // Defaultkan kembali ke radio 'outdoor'
+        document.getElementById('m_outdoor').checked = true;
+        document.getElementById('modalLabel').innerText = "Tambah Detail Item";
+    }
+
+    function editItem(id) {
+        editId = id;
+        let row = document.getElementById(`item-${id}`);
+
+        // Ambil data dari input hidden di dalam row tersebut
+        let jenis = row.querySelector(`input[name="items[${id}][jenis]"]`).value;
+        let opId = row.querySelector(`input[name="items[${id}][operator_id]"]`).value;
+        let file = row.querySelector(`input[name="items[${id}][file]"]`).value;
+        let p = row.querySelector(`input[name="items[${id}][p]"]`).value;
+        let l = row.querySelector(`input[name="items[${id}][l]"]`).value;
+        let bahanId = row.querySelector(`input[name="items[${id}][bahan_id]"]`).value;
+        let qty = row.querySelector(`input[name="items[${id}][qty]"]`).value;
+        let catatan = row.querySelector(`input[name="items[${id}][catatan]"]`).value;
+        let finishing = row.querySelector(`input[name="items[${id}][finishing]"]`).value;
+
+        // Set value ke modal
+        document.querySelector(`input[name="modal_jenis"][value="${jenis}"]`).checked = true;
+        document.getElementById('modal_nama_file').value = file;
+        document.getElementById('modal_p').value = p;
+        document.getElementById('modal_l').value = l;
+        document.getElementById('modal_qty').value = qty;
+        document.getElementById('modal_catatan').value = catatan;
+
+        // Set Select2 (trigger change agar tampil di UI)
+        $('#modal_operator').val(opId).trigger('change');
+        $('#modal_bahan').val(bahanId).trigger('change');
+        $('#modal_finishing').val(finishing).trigger('change');
+
+        // Ubah judul modal agar user tau sedang mengedit
+        document.getElementById('modalLabel').innerText = "Edit Detail Item";
+
+        // Tampilkan modal
+        var myModal = new bootstrap.Modal(document.getElementById('modalTambahItem'));
+        myModal.show();
     }
 
     function hapusItem(id) {
@@ -421,6 +498,25 @@
             e.preventDefault();
             Swal.fire("Tabel Kosong", "Anda belum menambahkan item pesanan apapun.", "error");
         }
+    });
+
+    document.querySelectorAll('input[name="modal_jenis"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const isCharge = this.value === 'charge';
+            const operatorSection = document.getElementById('modal_operator').closest('.col-md-6');
+            const specSection = document.getElementById('modal_p').closest('.row'); // Baris P, L, Bahan, Qty
+            const finishingSection = document.getElementById('modal_finishing').closest('.col-md-6');
+
+            if (isCharge) {
+                operatorSection.style.display = 'none';
+                specSection.querySelectorAll('.col-md-3, .col-md-4').forEach(el => el.style.display = 'none'); // Sembunyikan P, L, Bahan
+                finishingSection.style.display = 'none';
+            } else {
+                operatorSection.style.display = 'block';
+                specSection.querySelectorAll('.col-md-3, .col-md-4, .col-md-2').forEach(el => el.style.display = 'block');
+                finishingSection.style.display = 'block';
+            }
+        });
     });
 </script>
 

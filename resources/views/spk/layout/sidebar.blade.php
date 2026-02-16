@@ -133,7 +133,7 @@
             @endhasrole
 
             {{-- 5. OPERASIONAL / PRODUKSI (Operator & Manajemen) --}}
-            @hasrole('manajemen|operator indoor|operator outdoor|operator multi')
+            @hasrole('manajemen|operator indoor|operator outdoor|operator multi|operator dtf')
             <li class="nav-item mt-3">
                 <h6 class="ps-4 ms-2 text-uppercase text-xs text-white font-weight-bolder opacity-8">Produksi</h6>
             </li>
@@ -174,7 +174,7 @@
                 <h6 class="ps-4 ms-2 text-uppercase text-xs text-white font-weight-bolder opacity-8">Laporan & Riwayat</h6>
             </li>
 
-            @hasrole('manajemen|admin|operator indoor|operator outdoor|operator multi')
+            @hasrole('manajemen|admin|operator indoor|operator outdoor|operator multi|operator dtf')
             <li class="nav-item">
                 <a class="nav-link text-white {{ request()->routeIs('spk.riwayat') ? 'active bg-gradient-primary' : '' }}"
                     href="{{ route('spk.riwayat') }}">
@@ -206,7 +206,7 @@
             @endif
             @endhasrole
 
-            @hasrole('manajemen|admin|operator indoor|operator outdoor|operator multi|designer')
+            @hasrole('manajemen|admin|operator indoor|operator outdoor|operator multi|operator dtf|designer')
             <li class="nav-item">
                 <a class="nav-link text-white {{ request()->routeIs('laporan.index') ? 'active bg-gradient-primary' : '' }}"
                     href="{{ route('laporan.index') }}">

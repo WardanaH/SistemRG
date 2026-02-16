@@ -111,7 +111,7 @@ class LaporanController extends Controller
         }
 
         // C. Jika OPERATOR (Lihat Diri Sendiri)
-        elseif ($user->hasRole(['operator indoor', 'operator outdoor', 'operator multi'])) {
+        elseif ($user->hasRole(['operator indoor', 'operator outdoor', 'operator multi', 'operator dtf'])) {
             $operators = $mapUserData(collect([$user]), 'operator');
         }
 
