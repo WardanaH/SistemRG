@@ -78,24 +78,29 @@ $unreadCount = 0;
         {{-- =====================
         BREADCRUMB & TITLE
         ===================== --}}
-        <nav aria-label="breadcrumb">
-            {{-- <ol class="breadcrumb bg-transparent mb-0 pb-0 pt-1 px-0 me-sm-6 me-5">
-                @if($pageTitle)
-                    <li class="breadcrumb-item text-sm text-dark active">
-                        {{ $pageTitle }}
-            </li>
-            @endif
-            </ol> --}}
+<div class="mobile-header-left">
 
-            <h6 class="font-weight-bolder mb-0">
-                {{ $pageTitle ?? $areaTitle }}
-            </h6>
-        </nav>
+    {{-- HAMBURGER DI KIRI --}}
+    <a href="javascript:;" class="nav-link text-body p-0 mobile-hamburger" id="iconNavbarSidenav">
+        <div class="sidenav-toggler-inner">
+            <i class="sidenav-toggler-line"></i>
+            <i class="sidenav-toggler-line"></i>
+            <i class="sidenav-toggler-line"></i>
+        </div>
+    </a>
+
+    {{-- TITLE --}}
+    <h6 class="font-weight-bolder mb-0 mobile-title">
+        {{ $pageTitle ?? $areaTitle }}
+    </h6>
+
+</div>
+
 
         {{-- =====================
         RIGHT NAVBAR
         ===================== --}}
-        <div class="collapse navbar-collapse mt-sm-0 mt-2 me-md-0 me-sm-4">
+        <div class="collapse navbar-collapse mt-sm-0 mt-2 me-md-0 me-sm-4 mobile-right-menu">
             <ul class="navbar-nav ms-auto align-items-center">
 
                 {{-- SEARCH --}}
@@ -212,7 +217,7 @@ $unreadCount = 0;
                 </li>
 
                 {{-- C. HAMBURGER MENU (Toggler Sidenav) --}}
-                <li class="nav-item d-xl-none ps-3 d-flex align-items-center">
+                {{-- <li class="nav-item d-xl-none ps-3 d-flex align-items-center">
                     <a href="javascript:;" class="nav-link text-body p-0" id="iconNavbarSidenav">
                         <div class="sidenav-toggler-inner">
                             <i class="sidenav-toggler-line"></i>
@@ -220,16 +225,225 @@ $unreadCount = 0;
                             <i class="sidenav-toggler-line"></i>
                         </div>
                     </a>
-                </li>
+                </li> --}}
 
             </ul>
         </div>
     </div>
 </nav>
 
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const hamburger = document.querySelector(".mobile-hamburger");
+    const btn = document.getElementById("iconNavbarSidenav");
+    const body = document.body;
+    const rightMenu = document.querySelector(".mobile-right-menu");
+
+    btn.addEventListener("click", function () {
+
+        setTimeout(() => {
+
+            if (body.classList.contains("g-sidenav-pinned") ||
+                body.classList.contains("sidebar-open") ||
+                body.classList.contains("sidenav-open")) {
+
+                hamburger.classList.add("hamburger-shift");
+                rightMenu.classList.add("hide-right-menu");
+
+            } else {
+
+                hamburger.classList.remove("hamburger-shift");
+                rightMenu.classList.remove("hide-right-menu");
+
+            }
+
+        }, 200);
+    });
+
+});
+</script>
 
 
 <style>
+    .mobile-hamburger {
+        display: none;
+    }
+    /* =======================================================
+   MOBILE RESPONSIVE + COMPACT (FINAL FIX)
+   ======================================================= */
+@media (max-width: 768px) {
+
+    .notification-wrapper {
+        position: static !important;
+    }
+
+    .notification-bubble {
+
+        position: fixed !important;
+
+        top: 58px !important;
+
+        left: 8px !important;
+        right: 8px !important;
+
+        width: auto !important;
+        max-width: none !important;
+
+        border-radius: 10px;
+        padding-top: 4px;
+
+        font-size: 13px;
+
+        z-index: 99999;
+    }
+
+    /* arrow tetap */
+    .notification-bubble::before {
+        right: 18px !important;
+        width: 10px;
+        height: 10px;
+        top: -5px;
+    }
+
+    /* header */
+    .notification-header {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+
+    /* body */
+    .notification-body {
+        max-height: 260px;
+    }
+
+    /* item */
+    .notification-item {
+        padding: 8px 10px;
+        gap: 8px;
+    }
+
+    /* icon */
+    .notif-icon {
+        width: 28px;
+        height: 28px;
+        font-size: 11px;
+    }
+
+    .notif-icon i {
+        font-size: 11px;
+    }
+
+    /* title */
+    .notif-title {
+        font-size: 12.5px;
+        line-height: 1.2;
+    }
+
+    /* text */
+    .notif-text {
+        font-size: 11.5px;
+    }
+
+    /* time */
+    .notif-time {
+        font-size: 10.5px;
+    }
+
+    /* empty */
+    .notification-empty {
+        padding: 14px;
+        font-size: 12px;
+    }
+
+    /* badge */
+    #badge-notif {
+        font-size: 9px;
+        padding: 3px 5px;
+    }
+
+    .mobile-header-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .mobile-hamburger {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .mobile-title {
+        font-size: 15px;
+        margin: 0;
+        position: relative;
+        top: 14px;
+    }
+
+    .mobile-hamburger {
+        position: relative;
+        left: 0px;
+        top: 14px;
+        z-index: 1300;
+        transition: all 0.3s ease;
+        gap: 10px;
+    }
+
+    .mobile-hamburger.hamburger-shift {
+        position: fixed !important;
+        right: 16px;
+        left: auto !important;
+        top: 14px;
+        z-index: 1300;
+    }
+
+    .mobile-right-menu.hide-right-menu {
+        opacity: 0;
+        pointer-events: none;
+        transition: all .2s ease;
+    }
+
+    .navbar .container-fluid {
+        position: relative;
+    }
+
+    .mobile-right-menu {
+        margin-left: auto !important;
+        white-space: nowrap;
+    }
+
+    .mobile-header-left {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .mobile-title {
+        white-space: nowrap;
+        /* overflow: hidden; */
+        text-overflow: ellipsis;
+        max-width: 100%;
+    }
+
+    .mobile-right-menu {
+        position: fixed;
+        right: 20px;
+        top: 19px;
+        z-index: 1200;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* biar icon tidak melebar */
+    .mobile-right-menu a,
+    .mobile-right-menu button {
+        padding: 6px 6px !important;
+    }
+}
+
     /* =======================================================
    WRAPPER — jadi anchor dropdown
    ======================================================= */

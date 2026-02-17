@@ -121,6 +121,104 @@
     .select-status{
         border-radius:10px !important;
     }
+/* =====================================
+RESPONSIVE FIX (AMAN)
+===================================== */
+
+@media (max-width: 768px){
+
+    /* perkecil padding table */
+    .table-modern td{
+        padding:12px !important;
+    }
+
+    .table-modern thead th{
+        font-size:11px;
+    }
+
+    /* sembunyikan avatar biar hemat space */
+    .table-modern .avatar{
+        display:none;
+    }
+
+    /* tombol lebih kecil */
+    .action-btn{
+        width:30px;
+        height:30px;
+    }
+
+    /* badge lebih kecil */
+    .badge{
+        font-size:10px;
+        padding:4px 8px;
+    }
+
+    /* tombol proses */
+    .btn-proses{
+        padding:4px 10px;
+        font-size:12px;
+    }
+
+    /* modal full width mobile */
+    .modal-dialog{
+        margin:10px;
+        max-width:100%;
+    }
+
+       /* =============================
+    FIX TABLE DI DALAM MODAL
+    ============================= */
+
+    /* modal body jangan melebar */
+    .modal-body{
+        overflow-x:auto;
+        padding:12px;
+    }
+
+    /* wrapper table modal */
+    .modal-body .table-responsive{
+        overflow-x:auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* table modal jangan paksa lebar */
+    .modal-body .table{
+        width:100%;
+        min-width:500px; /* biar tetap rapi, tapi bisa scroll */
+    }
+
+    /* kecilkan font table modal */
+    .modal-body .table td,
+    .modal-body .table th{
+        font-size:12px;
+        padding:10px !important;
+        white-space:nowrap;
+    }
+
+    /* input dalam table */
+    .modal-body input.form-control{
+        min-width:120px;
+        font-size:12px;
+        padding:6px 8px;
+    }
+
+    /* modal full width */
+    .modal-dialog{
+        margin:8px;
+        max-width:100%;
+    }
+}
+html, body{
+    overflow-x:hidden;
+}
+
+.container-fluid{
+    max-width:100%;
+}
+
+.table{
+    width:100%;
+}
 
 </style>
 
@@ -323,7 +421,8 @@ document.addEventListener('DOMContentLoaded', function () {
                             : json_decode($item->keterangan, true);
 
                         $catTerima = $item->catatan_terima
-                            ?? "-";
+                            ?? $detail
+                            ?? null;
                         @endphp
 
                         <tr>
@@ -513,6 +612,7 @@ MODAL PROSES PERMINTAAN
           <p><b>Kode:</b> <span id="kode_permintaan"></span></p>
           <p><b>Cabang:</b> <span id="nama_cabang"></span></p>
 
+          <div class="table-responsive">
           <table class="table table-modern modal-table align-items-center mb-0">
             <thead class="table-light">
               <tr>
@@ -528,6 +628,7 @@ MODAL PROSES PERMINTAAN
               {{-- diisi JS --}}
             </tbody>
           </table>
+        </div>
 
         <div class="alert border-0 shadow-sm" id="catatanPermintaanBox" style="display:none">
             <b>Catatan Permintaan Cabang</b><br>
@@ -573,6 +674,7 @@ MODAL EDIT PENGIRIMAN (PERBAIKAN)
                     <p><b>Kode Pengiriman:</b> <span id="edit_kode"></span></p>
                     <p><b>Cabang Tujuan:</b> <span id="edit_cabang"></span></p>
 
+                    <div class="table-responsive">
                     <table class="table table-modern modal-table align-items-center mb-0">
                     <thead class="table-light">
                         <tr>
@@ -587,6 +689,7 @@ MODAL EDIT PENGIRIMAN (PERBAIKAN)
                             <tr><td colspan="5" class="text-center text-muted">Memuat data...</td></tr>
                         </tbody>
                     </table>
+                </div>
                     <div class="alert mt-3" id="editCatatanPermintaanBox" style="display:none">
                         <b>Catatan Permintaan Cabang</b><br>
                         <span id="editCatatanPermintaan"></span>
