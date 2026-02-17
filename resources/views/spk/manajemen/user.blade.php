@@ -170,10 +170,27 @@
     <div class="col-12">
         <div class="card my-4">
             <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
-                <div class="bg-gradient-info shadow-primary border-radius-lg pt-4 pb-3">
-                    <h6 class="text-white text-capitalize ps-3">Tabel Manajemen User</h6>
+                <div class="bg-gradient-info shadow-primary border-radius-lg pt-4 pb-3 d-flex justify-content-between align-items-center px-3">
+
+                    {{-- Judul --}}
+                    <h6 class="text-white text-capitalize mb-0">Tabel Manajemen User</h6>
+
+                    {{-- Form Search --}}
+                    <form action="{{ route('manajemen.user') }}" method="GET" class="d-flex align-items-center">
+                        <div class="input-group input-group-sm bg-white border-radius-md px-2" style="width: 250px;">
+                            <span class="input-group-text border-0"><i class="material-icons text-body">search</i></span>
+                            <input type="text" name="search" class="form-control border-0 ps-2"
+                                    placeholder="Cari Nama / Email..."
+                                    value="{{ request('search') }}">
+                        </div>
+                        @if(request('search'))
+                            <a href="{{ route('manajemen.user') }}" class="btn btn-sm btn-danger ms-2 mb-0" title="Reset"><i class="material-icons">close</i></a>
+                        @endif
+                    </form>
+
                 </div>
             </div>
+
             <div class="card-body px-0 pb-2">
                 <div class="table-responsive p-0">
                     <table class="table align-items-center mb-0">
@@ -254,6 +271,20 @@
                     </table>
                 </div>
             </div>
+
+            {{-- FOOTER: PAGINATION --}}
+            <div class="card-footer py-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="text-secondary text-xs">
+                        Menampilkan {{ $users->firstItem() }} sampai {{ $users->lastItem() }} dari {{ $users->total() }} user
+                    </div>
+                    <div>
+                        {{-- Menggunakan style pagination bawaan Bootstrap 5 --}}
+                        {{ $users->withQueryString()->links('pagination::bootstrap-5') }}
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 </div>

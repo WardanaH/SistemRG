@@ -13,13 +13,29 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // ambil data yang diperlukan untuk tabel + form tambah user di halaman index
-        $users = User::with('cabang', 'roles')->paginate(1000);
-        $roles = Role::all();         // <-- pastikan ini ada
-        $cabangs = MCabang::all();    // <-- dan ini juga
+        $roles = Role::all();
+        $cabangs = MCabang::all();
         $title = 'Manajemen User';
+
+        // Logika Pencarian
+        $query = User::with('cabang', 'roles');
+
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nama', 'like', "%{$search}%")
+                    ->orWhere('username', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhereHas('cabang', function ($c) use ($search) {
+                        $c->where('nama', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        // Pagination: 10 data per halaman
+        $users = $query->latest()->paginate(10);
 
         return view('spk.manajemen.user', compact('users', 'roles', 'cabangs', 'title'));
     }
