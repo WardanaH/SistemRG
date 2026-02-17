@@ -129,11 +129,12 @@ class GudangCabangController extends Controller
             'barang' => 'required|array',
             'foto'   => 'required|image|max:2048',
         ]);
+        // dd($request->all());
 
         DB::beginTransaction();
         try {
 
-            $catatan_terima = $request->keterangan_terima;
+            $catatan_terima = $request->catatan_terima;
 
             $barangPermintaan = collect(
                 is_string($pengiriman->permintaan->detail_barang)
@@ -247,6 +248,7 @@ class GudangCabangController extends Controller
             'tanggal_permintaan' => 'required|date',
             'barang'             => 'required|array'
         ]);
+        // dd($request->all());
 
         $detailBarang = [];
 
@@ -270,7 +272,19 @@ class GudangCabangController extends Controller
                 'keterangan'      => $item['keterangan'] ?? null
             ];
 
+            // dd($detailBarang);
         }
+
+        $debug = [
+            'kode_permintaan'    => 'REQ-' . date('Ymd') . '-' . strtoupper(Str::random(4)),
+            'cabang_id'          => Auth::user()->cabang_id,
+            'tanggal_permintaan' => $request->tanggal_permintaan,
+            'status'             => 'Menunggu',
+            'detail_barang'      => $detailBarang,
+            'catatan'            => $request->catatan
+        ];
+
+        // dd($debug);
 
         MPermintaanPengiriman::create([
             'kode_permintaan'    => 'REQ-' . date('Ymd') . '-' . strtoupper(Str::random(4)),
@@ -862,51 +876,83 @@ class GudangCabangController extends Controller
     }
 
     // SIMPAN + QR
-    public function inventarisStore(Request $req)
-    {
-        $req->validate([
-            'kode_barang'   => 'required|unique:inventaris_cabangs',
-            'nama_barang'   => 'required',
-            'jumlah'        => 'required|numeric|min:1',
-            'kondisi'       => 'required',
-            'tanggal_input' => 'required|date',
-            'foto'          => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-        ]);
+public function inventarisStore(Request $req)
+{
+    $req->validate([
+        'nama_barang'   => 'required',
+        'jumlah'        => 'required|numeric|min:1',
+        'kondisi'       => 'required',
+        'tanggal_input' => 'required|date',
+        'foto'          => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+    ]);
 
-        // upload foto
-        $fotoPath = null;
-        if ($req->hasFile('foto')) {
-            $fotoPath = $req->file('foto')->store('inventaris', 'public');
-        }
+    $cabangId = Auth::user()->cabang_id;
 
-        $inventaris = MInventarisCabang::create([
-            'cabang_id'     => Auth::user()->cabang_id,
-            'kode_barang'   => $req->kode_barang,
-            'nama_barang'   => $req->nama_barang,
-            'jumlah'        => $req->jumlah,
-            'kondisi'       => $req->kondisi,
-            'lokasi'        => $req->lokasi,
-            'tanggal_input' => $req->tanggal_input,
-            'foto'          => $fotoPath, // ✅ SIMPAN FOTO
-        ]);
+    // ambil nama cabang
+    $cabang = \App\Models\MCabang::find($cabangId);
 
-        // QR SVG
-        $qrUrl = route('inventaris.qr.public', $inventaris->kode_barang);
+    // tentukan prefix kode
+    $cabangId = Auth::user()->cabang_id;
 
-        $svg = QrCode::format('svg')
-            ->size(300)
-            ->margin(2)
-            ->generate($qrUrl);
+    $cabang = \App\Models\MCabang::findOrFail($cabangId);
 
-        $path = 'qr_inventaris/qr_'.$inventaris->id.'.svg';
-        Storage::disk('public')->put($path, $svg);
+    $parts = explode('-', $cabang->kode);
+    $prefix = end($parts);
 
-        $inventaris->update(['qr_code' => $path]);
+    // ambil kode terakhir berdasarkan cabang
+    $last = MInventarisCabang::where('cabang_id', $cabangId)
+        ->where('kode_barang', 'like', $prefix.'-%')
+        ->orderBy('kode_barang', 'desc')
+        ->first();
 
-        return redirect()
-            ->route('gudangcabang.inventaris.index')
-            ->with('success','Inventaris berhasil ditambahkan');
+    if ($last) {
+        $lastNumber = (int) substr($last->kode_barang, -4);
+        $newNumber = $lastNumber + 1;
+    } else {
+        $newNumber = 1;
     }
+
+    $kodeBarang = $prefix . '-' . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
+
+    // upload foto
+    $fotoPath = null;
+    if ($req->hasFile('foto')) {
+        $fotoPath = $req->file('foto')->store('inventaris', 'public');
+    }
+
+    // simpan inventaris
+    $inventaris = MInventarisCabang::create([
+        'cabang_id'     => $cabangId,
+        'kode_barang'   => $kodeBarang,
+        'nama_barang'   => $req->nama_barang,
+        'jumlah'        => $req->jumlah,
+        'kondisi'       => $req->kondisi,
+        'lokasi'        => $req->lokasi,
+        'tanggal_input' => $req->tanggal_input,
+        'foto'          => $fotoPath,
+    ]);
+
+    // generate QR
+    $qrUrl = route('inventaris.qr.public', $inventaris->kode_barang);
+
+    $svg = QrCode::format('svg')
+        ->size(300)
+        ->margin(2)
+        ->generate($qrUrl);
+
+    $path = 'qr_inventaris/qr_'.$inventaris->id.'.svg';
+
+    Storage::disk('public')->put($path, $svg);
+
+    $inventaris->update([
+        'qr_code' => $path
+    ]);
+
+    return redirect()
+        ->route('gudangcabang.inventaris.index')
+        ->with('success','Inventaris berhasil ditambahkan');
+}
+
 
     // AMBIL DATA UNTUK MODAL EDIT (AJAX)
     public function inventarisEdit($id)

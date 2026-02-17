@@ -119,6 +119,8 @@
                                     @if($item->jenis_order == 'outdoor') <span class="badge badge-sm bg-gradient-warning">OUTDOOR</span>
                                     @elseif($item->jenis_order == 'indoor') <span class="badge badge-sm bg-gradient-warning">INDOOR</span>
                                     @elseif($item->jenis_order == 'multi') <span class="badge badge-sm bg-gradient-warning">MULTI</span>
+                                    @elseif($item->jenis_order == 'dtf') <span class="badge badge-sm bg-gradient-warning">DTF UV</span>
+                                    @elseif($item->jenis_order == 'charge') <span class="badge badge-sm bg-gradient-warning">CHARGE DESAIN</span>
                                     @endif
                                 </td>
 

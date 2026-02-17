@@ -133,13 +133,14 @@
                                             {{-- TOMBOL UPDATE STATUS (ACC) --}}
                                             @php $isFinal = in_array($spk->status_spk, ['acc', 'reject']); @endphp
                                             <button type="button"
-                                                class="badge {{ $isFinal ? 'bg-secondary' : 'bg-gradient-success' }} border-0 text-white text-xs btn-modal-status"
-                                                {{ $isFinal ? 'disabled' : 'data-bs-toggle=modal data-bs-target=#modalUpdateStatus' }}
-                                                data-id="{{ $spk->id }}"
-                                                data-no="{{ $spk->no_spk }}"
-                                                data-status="{{ $spk->status_spk }}"
-                                                data-toggle="tooltip" title="Approval Status">
-                                                <i class="material-icons text-xs position-relative" style="top: 1px;">
+                                                    class="badge {{ $isFinal ? 'bg-secondary' : 'bg-gradient-success' }} border-0 text-white text-xs btn-modal-status"
+                                                    {{ $isFinal ? 'disabled' : '' }}
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#modalUpdateStatus"
+                                                    data-id="{{ $spk->id }}"
+                                                    data-no="{{ $spk->no_spk }}"
+                                                    data-status="{{ $spk->status_spk }}">
+                                                <i class="material-icons text-xs">
                                                     {{ $isFinal ? 'lock' : 'verified' }}
                                                 </i>
                                             </button>

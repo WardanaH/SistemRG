@@ -130,6 +130,7 @@
                                     </select>
                                 </div>
 
+
                                 <div class="col-md-2">
                                     <label class="form-label">Jumlah</label>
                                     <input type="text"

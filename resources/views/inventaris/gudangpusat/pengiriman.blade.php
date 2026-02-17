@@ -317,11 +317,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     <tbody>
                     @forelse($pengiriman as $index => $item)
-@php
-$detail = is_array($item->keterangan)
-    ? $item->keterangan
-    : json_decode($item->keterangan, true);
-@endphp
+                        @php
+                        $detail = is_array($item->keterangan)
+                            ? $item->keterangan
+                            : json_decode($item->keterangan, true);
+
+                        $catTerima = $item->catatan_terima
+                            ?? "-";
+                        @endphp
 
                         <tr>
                             <td class="text-center">{{ $pengiriman->firstItem() + $index }}</td>
@@ -430,16 +433,18 @@ $detail = is_array($item->keterangan)
                             </td>
 
                             <td class="text-center">
-                                <button type="button"
-                                    class="btn btn-link text-primary btn-detail"
-                                    data-detail='@json($detail)'
-                                    data-kode="{{ $item->kode_pengiriman }}"
-                                    data-cabang="{{ $item->cabang->nama }}"
-                                    data-foto="{{ $item->status_pengiriman === 'Diterima' ? $item->foto_penerimaan : '' }}"
-                                    data-catatan-permintaan='@json(optional($item->permintaan)->catatan)'
-                                    data-catatan-gudang="{{ $item->catatan_gudang ?? '' }}"
-                                    data-catatan-terima='@json($item->keterangan_terima)'>
-                                    <i class="material-icons-round">receipt_long</i>
+<button type="button"
+    class="btn btn-link text-primary btn-detail"
+    data-detail='@json($detail)'
+    data-kode="{{ $item->kode_pengiriman }}"
+    data-cabang="{{ $item->cabang->nama }}"
+    data-foto="{{ $item->status_pengiriman === 'Diterima' ? $item->foto_penerimaan : '' }}"
+    data-catatan-permintaan='@json(optional($item->permintaan)->catatan)'
+    data-catatan-gudang="{{ $item->catatan_gudang ?? '' }}"
+    data-catatan-terima='@json($catTerima)'>
+
+    <i class="material-icons-round">receipt_long</i>
+
                                 </button>
                             </td>
                         </tr>
@@ -610,49 +615,55 @@ MODAL EDIT PENGIRIMAN (PERBAIKAN)
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-$(document).on('click', '.btn-detail', function () {
+$(document).on('click', '.btn-detail', function() {
 
-    let detail = $(this).data('detail') || [];
-    let kode   = $(this).data('kode');
+    let detail = $(this).data('detail');
+    let kode = $(this).data('kode');
     let cabang = $(this).data('cabang');
-    let foto   = $(this).data('foto');
+    let tanggal = $(this).data('tanggal');
+    let foto = $(this).data('foto');
 
     let catPermintaan = $(this).data('catatan-permintaan');
-    let catGudang     = $(this).data('catatan-gudang');
-    let catTerima     = $(this).data('catatan-terima');
+    let catGudang = $(this).data('catatan-gudang');
+    let catTerima = $(this).data('catatan-terima');
 
-    // 🔥 anti JSON string
-    if (typeof catPermintaan === 'string') {
-        try { catPermintaan = JSON.parse(catPermintaan); } catch {}
+    // normalisasi jika array
+    if (Array.isArray(catPermintaan)) {
+        catPermintaan = catPermintaan.join(', ');
     }
 
-    if (typeof catTerima === 'string') {
-        try { catTerima = JSON.parse(catTerima); } catch {}
+    if (Array.isArray(catGudang)) {
+        catGudang = catGudang.join(', ');
     }
 
-    // =============================
-    // HEADER
-    // =============================
     let html = `
     <div class="card shadow-sm border-0 mb-3">
         <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
+
+            <div class="row mb-3">
+
+                <div class="col-md-4">
                     <div class="text-xs text-muted">Kode Pengiriman</div>
                     <div class="fw-bold">${kode}</div>
                 </div>
-                <div class="col-md-6">
-                    <div class="text-xs text-muted">Cabang Tujuan</div>
+
+                <div class="col-md-4">
+                    <div class="text-xs text-muted">Cabang</div>
                     <div class="fw-bold">${cabang}</div>
                 </div>
+
+                <div class="col-md-4">
+                    <div class="text-xs text-muted">Tanggal</div>
+                    <div class="fw-bold">${tanggal}</div>
+                </div>
+
             </div>
+
         </div>
     </div>
     `;
 
-    // =============================
     // FOTO
-    // =============================
     if (foto) {
         html += `
         <div class="card shadow-sm mb-3">
@@ -660,25 +671,25 @@ $(document).on('click', '.btn-detail', function () {
                 <div class="fw-bold mb-2">Foto Penerimaan</div>
                 <img src="/storage/${foto}" class="img-fluid rounded border">
             </div>
-        </div>`;
+        </div>
+        `;
     }
 
-    // =============================
     // DETAIL BARANG
-    // =============================
     html += `
-    <div class="card shadow-sm mt-3">
-        <div class="card-header bg-gradient-success text-white fw-bold">
+    <div class="card shadow-sm">
+        <div class="card-header fw-bold"
+            style="background:linear-gradient(135deg,#3b82f6,#2563eb); color:white;">
             Detail Barang Dikirim
         </div>
 
-        <div class="table-responsive p-3">
-            <table class="table table-modern modal-table align-items-center mb-0">
-                <thead>
+        <div class="table-responsive">
+            <table class="table align-items-center mb-0">
+                <thead class="bg-light">
                     <tr>
-                        <th class="text-center">No</th>
+                        <th>No</th>
                         <th>Barang</th>
-                        <th>Jumlah</th>
+                        <th>Qty</th>
                         <th>Satuan</th>
                         <th>Keterangan</th>
                     </tr>
@@ -686,76 +697,95 @@ $(document).on('click', '.btn-detail', function () {
                 <tbody>
     `;
 
-    detail.forEach((d, i) => {
-        html += `
-        <tr>
-            <td class="text-center">${i + 1}</td>
-            <td>${d.nama_barang}</td>
-            <td>${d.jumlah}</td>
-            <td>${d.satuan}</td>
-            <td>${d.keterangan ?? '-'}</td>
-        </tr>
-        `;
-    });
+    if (Array.isArray(detail)) {
+        detail.forEach((d, i) => {
 
-    html += `</tbody></table></div></div>`;
+            html += `
+            <tr>
+                <td>${i + 1}</td>
+                <td class="fw-semibold">${d.nama_barang}</td>
+                <td>${d.jumlah}</td>
+                <td>${d.satuan}</td>
+                <td class="text-muted">${d.keterangan ? d.keterangan : '-'}</td>
+            </tr>
+            `;
 
-    // =============================
+        });
+    }
+
+    html += `
+                </tbody>
+            </table>
+        </div>
+    </div>
+    `;
+
     // CATATAN PERMINTAAN
-    // =============================
     if (catPermintaan && catPermintaan !== '') {
-
-        if (Array.isArray(catPermintaan)) {
-            catPermintaan = catPermintaan.join('<br>');
-        }
 
         html += `
         <div class="alert border-0 shadow-sm">
             <b>Catatan Permintaan</b><br>
             ${catPermintaan}
-        </div>`;
+        </div>
+        `;
     }
 
-    // =============================
     // CATATAN GUDANG
-    // =============================
-    if (catGudang && catGudang.trim() !== '') {
+    if (catGudang && catGudang !== '') {
 
         html += `
         <div class="alert border-0 shadow-sm">
             <b>Catatan Pengiriman Gudang</b><br>
             ${catGudang}
-        </div>`;
+        </div>
+        `;
     }
 
-    // =============================
-    // CATATAN PENERIMAAN (🔥 penting)
-    // =============================
+    // CATATAN PENERIMAAN (STRING)
+    if (catTerima && typeof catTerima === 'string') {
+
+        html += `
+        <div class="alert border-0 shadow-sm">
+            <b>Catatan Penerimaan Cabang</b><br>
+            ${catTerima}
+        </div>
+        `;
+    }
+
+    // KETERANGAN PER BARANG (ARRAY)
     if (Array.isArray(catTerima)) {
 
         let list = '';
 
         catTerima.forEach(item => {
-            if(item.keterangan && item.keterangan.trim() !== ''){
+
+            if (item.keterangan && item.keterangan.trim() !== '') {
+
                 list += `• ${item.nama_barang} : ${item.keterangan}<br>`;
+
             }
+
         });
 
-        // tampil hanya kalau ADA isi
-        if(list !== ''){
+        if (list !== '') {
+
             html += `
-                <div class="alert border-0 shadow-sm">
-                    <b>Catatan Penerimaan Cabang</b><br>
-                    ${list}
-                </div>
+            <div class="alert border-0 shadow-sm">
+                <b>Keterangan Barang Diterima</b><br>
+                ${list}
+            </div>
             `;
         }
     }
 
     $('#notaContent').html(html);
-    new bootstrap.Modal(document.getElementById('modalDetail')).show();
-});
 
+    new bootstrap.Modal(
+        document.getElementById('modalDetail')
+    ).show();
+
+});
 </script>
 
 <script>

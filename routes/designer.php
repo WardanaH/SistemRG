@@ -57,4 +57,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/spk-bantuan/cetak/{id}', [SpkBantuanController::class, 'cetakSpkBantuan'])
         ->middleware('role:manajemen|designer|admin')
         ->name('spk-bantuan.cetak-spk-bantuan');
+
+    Route::get('/spk-charge', [MSpkController::class, 'indexCharge'])
+        ->middleware('role:manajemen|designer|admin')
+        ->name('spk-charge.index');
+    Route::get('/spk-charge/cetak/{id}', [MSpkController::class, 'printCharge'])
+        ->middleware('role:manajemen|designer|admin')
+        ->name('spk-charge.cetak');
 });

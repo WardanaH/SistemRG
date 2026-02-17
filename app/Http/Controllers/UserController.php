@@ -157,7 +157,7 @@ class UserController extends Controller
 
     public function getOperatorsByCabang()
     {
-        $operators = User::role(['operator indoor', 'operator outdoor', 'operator multi'])
+        $operators = User::role(['operator indoor', 'operator outdoor', 'operator multi', 'operator dtf'])
             ->get()
             ->map(function ($user) {
                 return [
