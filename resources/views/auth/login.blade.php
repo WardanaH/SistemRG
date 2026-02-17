@@ -131,13 +131,6 @@
                                         <input type="password" name="password" class="form-control">
                                     </div>
 
-                                    <div class="form-check form-switch d-flex align-items-center mb-3">
-                                        <input class="form-check-input" type="checkbox" id="rememberMe" name="remember">
-                                        <label class="form-check-label mb-0 ms-2" for="rememberMe">
-                                            Remember me
-                                        </label>
-                                    </div>
-
                                     <div class="text-center">
                                         <button type="submit" class="btn bg-gradient-primary w-100 my-4 mb-2">
                                             Login
@@ -149,11 +142,6 @@
                                         <span class="text-sm">{{ $errors->first() }}</span>
                                     </div>
                                     @endif
-
-                                    <p class="mt-4 text-sm text-center">
-                                        Don't have an account?
-                                        <a href="#" class="text-primary text-gradient font-weight-bold">Sign up</a>
-                                    </p>
 
                                 </form>
                             </div>
@@ -170,13 +158,10 @@
                     <div class="row align-items-center justify-content-lg-between">
                         <div class="col-12 col-md-6 my-auto">
                             <div class="copyright text-center text-sm text-white text-lg-start">
-                                © <script>
-                                    document.write(new Date().getFullYear())
-                                </script>,
-                                made with <i class="fa fa-heart"></i> by
-                                <a href="https://www.creative-tim.com"
+                                © {{ now()->year }}, made with ❤️ by
+                                <a href="https://www.instagram.com/wrdxxzz/"
                                     class="font-weight-bold text-white" target="_blank">
-                                    Creative Tim
+                                    Wardana
                                 </a>
                             </div>
                         </div>
