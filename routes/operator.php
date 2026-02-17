@@ -1,9 +1,10 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AdvertisingController;
 use App\Http\Controllers\MSpkController;
 use App\Http\Controllers\OperatorController;
 use App\Http\Controllers\SpkBantuanController;
+use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth')->group(function () {
     Route::get('/operator/dashboard', [OperatorController::class, 'index'])
@@ -33,4 +34,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/produksi-lembur/riwayat', [MSpkController::class, 'riwayatLembur'])
         ->middleware('role:manajemen|admin|operator indoor|operator outdoor|operator multi|operator dtf')
         ->name('spk-lembur.riwayat');
+
+    Route::get('/produksi-advertising', [AdvertisingController::class, 'produksiIndex'])
+        ->middleware('role:operator indoor|operator outdoor|operator multi|operator dtf')
+        ->name('advertising.produksi-index');
+    Route::put('/produksi-advertising/{id}/update', [AdvertisingController::class, 'updateStatusProduksi'])
+        ->middleware('role:operator indoor|operator outdoor|operator multi|operator dtf')
+        ->name('advertising.produksi-update');
+    Route::get('/produksi-advertising/riwayat', [AdvertisingController::class, 'riwayatOperator'])
+        ->middleware('role:operator indoor|operator outdoor|operator multi|operator dtf')
+        ->name('advertising.produksi-riwayat');
 });

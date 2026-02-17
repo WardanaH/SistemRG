@@ -26,6 +26,7 @@ require __DIR__.'/operator.php';
 require __DIR__.'/designer.php';
 require __DIR__.'/gudang_pusat.php';
 require __DIR__.'/gudang_cabang.php';
+require __DIR__.'/advertising.php';
 
 Route::get('/', function () {
     $user = auth()->user();
@@ -38,6 +39,8 @@ Route::get('/', function () {
         return redirect()->route('designer.dashboard');
     } elseif ($user->hasrole('admin')) {
         return redirect()->route('admin.dashboard');
+    } elseif ($user->hasrole('advertising')) {
+        return redirect()->route('advertising.dashboard');
     }
 
     return redirect()->route('auth.index');

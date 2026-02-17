@@ -20,6 +20,10 @@ return new class extends Migration
             $table->string('nama_pelanggan');
             $table->string('no_telepon')->nullable();
 
+            // Advertising
+            $table->boolean('is_advertising')->default(false);
+            $table->string('folder')->nullable();
+
             // lembur
             $table->boolean('is_lembur')->default(false);
             $table->foreignId('cabang_lembur_id')->nullable()->constrained('m_cabangs')->onDelete('set null');

@@ -23,6 +23,7 @@ class UserSeeder extends Seeder
 
         // 2. Buat User Berdasarkan Role & Cabang
         $this->createUser('Manajemen', 'manajemen', 'manajemen@restuguru.com', 'manajemen', $c['utm']->id);
+        $this->createUser('Advertising MTP', 'advertising', 'advertising@restuguru.com', 'advertising', $c['utm']->id);
 
         // MARTAPURA (MTP)
         foreach (['rahmawati', 'egydinda', 'zaidadmin', 'rizkymahdini'] as $u) $this->createUser(ucfirst($u), $u, "$u@restuguru.com", 'admin', $c['mtp']->id);

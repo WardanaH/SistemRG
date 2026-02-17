@@ -64,6 +64,12 @@ class AuthController extends Controller
                 $this->log($isi, "Login");
                 return redirect()->route('manajemen.dashboard')
                     ->with('success', 'Selamat datang kembali!');
+            } elseif ($user->hasRole('advertising')){
+                $isi = Auth::user()
+                    ->username . " telah login dicabang " . Auth::user()->cabang->nama . ".";
+                $this->log($isi, "Login");
+                return redirect()->route('advertising.dashboard')
+                    ->with('success', 'Selamat datang kembali!');
             } elseif ($user->hasRole('admin')){
                 $isi = Auth::user()
                     ->username . " telah login dicabang " . Auth::user()->cabang->nama . ".";
