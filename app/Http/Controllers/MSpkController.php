@@ -70,10 +70,7 @@ class MSpkController extends Controller
         $query = MSpk::with(['designer', 'cabang', 'items'])
             ->withCount('items') // Menghitung jumlah item di sub_spk
             ->where('is_bantuan', false)
-            ->where('is_lembur', false)
-            ->whereDoesntHave('items', function ($q) {
-                $q->where('jenis_order', 'charge');
-            });
+            ->where('is_lembur', false);
 
         // 1. Logika Filter Cabang
         if ($user->cabang->jenis !== 'pusat') {
@@ -322,14 +319,10 @@ class MSpkController extends Controller
                     ]);
                 }
 
-                if ($isCharge == false) {
-                    if ($isLembur == true) {
-                        event(new \App\Events\NotifikasiSpkLembur($newNoSpk, 'Lembur', $user->nama));
-                    } else {
-                        event(new \App\Events\NotifikasiSpkBaru($newNoSpk, 'Reguler', $targetCabangId, $user->nama));
-                    }
+                if ($isLembur == true) {
+                    event(new \App\Events\NotifikasiSpkLembur($newNoSpk, 'Lembur', $user->nama));
                 } else {
-                    event(new \App\Events\NotifikasiSpkBaru($newNoSpk, 'Charge', $targetCabangId, $user->nama));
+                    event(new \App\Events\NotifikasiSpkBaru($newNoSpk, 'Reguler', $targetCabangId, $user->nama));
                 }
             });
 
@@ -473,7 +466,6 @@ class MSpkController extends Controller
             } else {
                 return redirect()->route('spk.index')->with('success', 'Data SPK berhasil diperbarui!');
             }
-
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Gagal update SPK: ' . $e->getMessage());
             return back()->with('error', 'Gagal update: ' . $e->getMessage());
