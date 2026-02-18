@@ -39,7 +39,7 @@
 
                     {{-- SEARCH BAR --}}
                     <div>
-                        <form action="{{ route('spk.index') }}" method="GET">
+                        <form action="{{ route('spk-lembur.index') }}" method="GET">
                             <div class="bg-white rounded d-flex align-items-center px-2" style="height: 40px; min-width: 250px;">
                                 <i class="material-icons text-secondary text-sm">search</i>
                                 <input type="text" name="search" class="form-control border-0 ps-2"
@@ -47,7 +47,7 @@
                                     style="box-shadow: none !important; height: 100%; background: transparent;">
 
                                 @if(request('search'))
-                                <a href="{{ route('spk.index') }}" class="text-danger d-flex align-items-center cursor-pointer" title="Reset">
+                                <a href="{{ route('spk-lembur.index') }}" class="text-danger d-flex align-items-center cursor-pointer" title="Reset">
                                     <i class="material-icons text-sm">close</i>
                                 </a>
                                 @endif

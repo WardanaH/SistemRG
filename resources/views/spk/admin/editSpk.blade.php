@@ -47,7 +47,7 @@
                     {{-- II. ITEM EDITOR --}}
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <p class="text-sm text-uppercase font-weight-bold mb-0">II. Edit Detail Item</p>
-                        <button type="button" class="btn btn-sm btn-info mb-0" data-bs-toggle="modal" data-bs-target="#modalTambahItem">
+                        <button type="button" class="btn btn-sm btn-info mb-0" onclick="openModalTambah()">
                             <i class="fa fa-plus me-1"></i> Tambah Item
                         </button>
                     </div>
@@ -60,6 +60,7 @@
                                         <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Info Item</th>
                                         <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-2">Spesifikasi</th>
                                         <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">Qty</th>
+                                        <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">Catatan</th>
                                         <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">Aksi</th>
                                     </tr>
                                 </thead>
@@ -82,8 +83,7 @@
     </div>
 </div>
 
-{{-- INCLUDE MODAL TAMBAH ITEM (Sama persis dengan create.blade.php) --}}
-{{-- MODAL TAMBAH ITEM (POPUP) --}}
+{{-- MODAL TAMBAH/EDIT ITEM (POPUP) --}}
 <div class="modal fade" id="modalTambahItem" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true" data-bs-backdrop="static">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
@@ -94,12 +94,14 @@
                 </button>
             </div>
             <div class="modal-body">
+                {{-- input hidden untuk menandai baris yang sedang di-edit --}}
+                <input type="hidden" id="edit_index" value="">
 
                 {{-- 1. Jenis Order & Operator --}}
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label class="form-label text-xs font-weight-bold">Jenis Order:</label>
-                        <div class="d-flex gap-3 mt-1">
+                        <div class="d-flex gap-3 mt-1 flex-wrap">
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="modal_jenis" id="m_outdoor" value="outdoor" checked>
                                 <label class="custom-control-label" for="m_outdoor">Outdoor</label>
@@ -112,16 +114,30 @@
                                 <input class="form-check-input" type="radio" name="modal_jenis" id="m_multi" value="multi">
                                 <label class="custom-control-label" for="m_multi">Multi</label>
                             </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_jenis" id="m_dtf" value="dtf">
+                                <label class="custom-control-label" for="m_dtf">DTF</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="modal_jenis" id="m_charge" value="charge">
+                                <label class="custom-control-label text-danger" for="m_charge">Charge Desain</label>
+                            </div>
                         </div>
                     </div>
                     {{-- Operator Dipilih Disini (Per Item) --}}
                     <div class="col-md-6">
-                        <div class="input-group input-group-outline is-filled">
-                            <label class="form-label">Operator (Penanggung Jawab)</label>
-                            <select id="modal_operator" class="form-control" style="appearance: auto;">
+                        <div class="input-group input-group-outline">
+                            <select id="modal_operator" class="form-control select2" data-placeholder="Cari & Pilih Operator..." style="appearance: auto;">
                                 <option value="" disabled selected>Pilih Operator...</option>
                                 @foreach($operators as $op)
-                                <option value="{{ $op->id }}" data-nama="{{ $op->nama }}">{{ $op->nama }} - {{ $op->roles()->pluck('name')->implode(', ') }}</option>
+                                    <option value="{{ $op->id }}" data-nama="{{ $op->nama }}">
+                                        {{ $op->nama }}
+                                        ({{ $op->roles()->pluck('name')->implode(', ') }})
+                                        {{-- Info tambahan jika lembur --}}
+                                        @if($spk->is_lembur && $op->cabang)
+                                            - {{ $op->cabang->nama }}
+                                        @endif
+                                    </option>
                                 @endforeach
                             </select>
                         </div>
@@ -131,7 +147,7 @@
                 {{-- 2. Nama File --}}
                 <div class="row mb-3">
                     <div class="col-md-12">
-                        <div class="input-group input-group-outline">
+                        <div class="input-group input-group-outline is-filled">
                             <label class="form-label">Nama File</label>
                             <input type="text" id="modal_nama_file" class="form-control">
                         </div>
@@ -141,20 +157,20 @@
                 {{-- 3. Spesifikasi --}}
                 <div class="row mb-3">
                     <div class="col-md-3">
-                        <div class="input-group input-group-outline">
+                        <div class="input-group input-group-outline is-filled">
                             <label class="form-label">P (cm)</label>
                             <input type="number" step="0.01" id="modal_p" class="form-control">
                         </div>
                     </div>
                     <div class="col-md-3">
-                        <div class="input-group input-group-outline">
+                        <div class="input-group input-group-outline is-filled">
                             <label class="form-label">L (cm)</label>
                             <input type="number" step="0.01" id="modal_l" class="form-control">
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="input-group input-group-outline">
-                            <select id="modal_bahan" class="form-control" style="appearance: auto;">
+                        <div class="input-group input-group-outline is-filled">
+                            <select id="modal_bahan" class="form-control select2" data-placeholder="Cari & Pilih Bahan..." style="appearance: auto;">
                                 <option value="" disabled selected>Pilih Bahan</option>
                                 @foreach($bahans as $b)
                                 <option value="{{ $b->id }}" data-nama="{{ $b->nama_bahan }}">{{ $b->nama_bahan }}</option>
@@ -163,7 +179,7 @@
                         </div>
                     </div>
                     <div class="col-md-2">
-                        <div class="input-group input-group-outline">
+                        <div class="input-group input-group-outline is-filled">
                             <label class="form-label">Qty</label>
                             <input type="number" id="modal_qty" class="form-control" value="1" min="1">
                         </div>
@@ -173,8 +189,8 @@
                 {{-- 4. Finishing & Catatan --}}
                 <div class="row">
                     <div class="col-md-6">
-                        <div class="input-group input-group-outline">
-                            <select id="modal_finishing" class="form-control" style="appearance: auto;">
+                        <div class="input-group input-group-outline is-filled">
+                            <select id="modal_finishing" class="form-control select2" data-placeholder="Cari & Pilih Finishing..." style="appearance: auto;">
                                 <option value="" disabled selected>Pilih Finishing...</option>
                                 @foreach($finishings as $f)
                                 <option value="{{ $f->nama_finishing }}">{{ $f->nama_finishing }}</option>
@@ -183,7 +199,7 @@
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="input-group input-group-outline">
+                        <div class="input-group input-group-outline is-filled">
                             <label class="form-label">Catatan Item</label>
                             <input type="text" id="modal_catatan" class="form-control">
                         </div>
@@ -193,7 +209,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
-                <button type="button" class="btn bg-gradient-info" onclick="tambahItem()">Simpan ke Daftar</button>
+                <button type="button" class="btn bg-gradient-info" onclick="simpanItem()">Simpan ke Daftar</button>
             </div>
         </div>
     </div>
@@ -206,89 +222,103 @@
     let itemIndex = 0;
 
     // Data existing dari database (dikirim controller)
-    const existingItems = @json($spk -> items);
+    const existingItems = @json($spk->items);
 
     document.addEventListener("DOMContentLoaded", function() {
         // Load data lama ke tabel
         existingItems.forEach(item => {
+            let opNama = item.operator ? item.operator.nama : 'Tidak Ada';
+            let bhnNama = item.bahan ? item.bahan.nama_bahan : '-';
 
-            let opNama = 'Unknown';
-            if (item.operator) {
-                opNama = item.operator.nama; // Sesuaikan dengan kolom nama di tabel users
-            }
-
-            let bhnNama = 'Unknown';
-            if (item.bahan) {
-                bhnNama = item.bahan.nama_bahan;
-            }
             addItemToTable({
                 jenis: item.jenis_order,
                 file: item.nama_file,
-                p: item.p,
-                l: item.l,
-                bahanId: item.bahan_id,
-                bahanNama: item.bahan ? item.bahan.nama_bahan : 'Unknown', // Handle null check
+                p: item.p || 0,
+                l: item.l || 0,
+                bahanId: item.bahan_id || '',
+                bahanNama: bhnNama,
                 qty: item.qty,
-                finishing: item.finishing,
-                catatan: item.catatan,
-                operatorId: item.operator_id,
-                operatorNama: item.operator ? item.operator.nama : 'Unknown' // Handle null check
+                finishing: item.finishing || '-',
+                catatan: item.catatan || '-',
+                operatorId: item.operator_id || '',
+                operatorNama: opNama
             });
         });
     });
 
-    // Fungsi Render Baris (Dipakai saat Load Awal & Saat Tambah Baru)
-    function addItemToTable(data) {
-        let badgeColor = (data.jenis === 'outdoor') ? 'warning' : 'success';
+    // --- 1. BUKA MODAL TAMBAH BARU ---
+    function openModalTambah() {
+        resetModal();
+        document.getElementById('modalLabel').innerText = 'Tambah Detail Item';
+        new bootstrap.Modal(document.getElementById('modalTambahItem')).show();
+    }
 
-        let html = `
-            <tr id="item-${itemIndex}">
-                <td>
-                    <span class="badge bg-gradient-${badgeColor} mb-1">${data.jenis.toUpperCase()}</span><br>
-                    <strong>${data.file}</strong><br>
-                    <small class="text-xs text-secondary"><i class="fa fa-user me-1"></i> ${data.operatorNama}</small>
+    // --- 2. TEMPLATE RENDER BARIS HTML ---
+    function generateRowHtml(id, data, innerOnly = false) {
+        // Penyesuaian warna badge
+        let badgeColor = 'secondary';
+        if(data.jenis === 'outdoor') badgeColor = 'warning';
+        else if(data.jenis === 'indoor') badgeColor = 'success';
+        else if(data.jenis === 'multi') badgeColor = 'info';
+        else if(data.jenis === 'dtf') badgeColor = 'primary';
+        else if(data.jenis === 'charge') badgeColor = 'danger';
 
-                    <input type="hidden" name="items[${itemIndex}][jenis]" value="${data.jenis}">
-                    <input type="hidden" name="items[${itemIndex}][file]" value="${data.file}">
-                    <input type="hidden" name="items[${itemIndex}][operator_id]" value="${data.operatorId}">
-                    <input type="hidden" name="items[${itemIndex}][catatan]" value="${data.catatan || ''}">
-                </td>
-                <td class="text-xs">
-                    ${data.p} x ${data.l} cm <br>
-                    Bahan: <strong>${data.bahanNama}</strong> <br>
-                    Fin: ${data.finishing || '-'}
+        let content = `
+            <td>
+                <span class="badge bg-gradient-${badgeColor} mb-1">${data.jenis.toUpperCase()}</span><br>
+                <strong>${data.file}</strong><br>
+                <small class="text-xs text-secondary"><i class="fa fa-user me-1"></i> ${data.operatorNama}</small>
 
-                    <input type="hidden" name="items[${itemIndex}][p]" value="${data.p}">
-                    <input type="hidden" name="items[${itemIndex}][l]" value="${data.l}">
-                    <input type="hidden" name="items[${itemIndex}][bahan_id]" value="${data.bahanId}">
-                    <input type="hidden" name="items[${itemIndex}][finishing]" value="${data.finishing || ''}">
-                </td>
-                <td class="text-center text-sm font-weight-bold">
-                    ${data.qty}
-                    <input type="hidden" name="items[${itemIndex}][qty]" value="${data.qty}">
-                </td>
-                <td class="text-center">
-                    <button type="button" class="btn btn-link text-danger px-3 mb-0" onclick="hapusItem(${itemIndex})">
-                        <i class="material-icons text-sm">delete</i>
-                    </button>
-                </td>
-            </tr>
+                <input type="hidden" name="items[${id}][jenis]" value="${data.jenis}" class="val-jenis">
+                <input type="hidden" name="items[${id}][file]" value="${data.file}" class="val-file">
+                <input type="hidden" name="items[${id}][operator_id]" value="${data.operatorId}" class="val-op-id">
+                <input type="hidden" name="items[${id}][catatan]" value="${data.catatan || ''}" class="val-catatan">
+                <input type="hidden" class="val-op-nama" value="${data.operatorNama}">
+            </td>
+            <td class="text-xs">
+                ${data.jenis === 'charge' ? '<span class="text-danger font-weight-bold">Biaya Desain (Charge)</span>' : `${data.p} x ${data.l} cm <br> Bahan: <strong>${data.bahanNama}</strong> <br> Fin: ${data.finishing || '-'}`}
+
+                <input type="hidden" name="items[${id}][p]" value="${data.p}" class="val-p">
+                <input type="hidden" name="items[${id}][l]" value="${data.l}" class="val-l">
+                <input type="hidden" name="items[${id}][bahan_id]" value="${data.bahanId}" class="val-bahan-id">
+                <input type="hidden" name="items[${id}][finishing]" value="${data.finishing || ''}" class="val-finishing">
+                <input type="hidden" class="val-bahan-nama" value="${data.bahanNama}">
+            </td>
+            <td class="text-center text-sm font-weight-bold">
+                ${data.qty}
+                <input type="hidden" name="items[${id}][qty]" value="${data.qty}" class="val-qty">
+            </td>
+            <td class="text-center text-sm font-weight-bold">
+                ${data.catatan || '-'}
+                <input type="hidden" name="items[${id}][catatan]" value="${data.catatan}" class="val-catatan">
+            </td>
+            <td class="text-center">
+                <button type="button" class="btn btn-link text-warning px-2 mb-0" onclick="editItem(${id})">
+                    <i class="material-icons text-sm">edit</i>
+                </button>
+                <button type="button" class="btn btn-link text-danger px-2 mb-0" onclick="hapusItem(${id})">
+                    <i class="material-icons text-sm">delete</i>
+                </button>
+            </td>
         `;
+        return innerOnly ? content : `<tr id="item-${id}">${content}</tr>`;
+    }
 
+    // --- 3. TAMBAH BARIS BARU KE TABEL ---
+    function addItemToTable(data) {
+        let html = generateRowHtml(itemIndex, data);
         document.getElementById('tabelItemBody').insertAdjacentHTML('beforeend', html);
         itemIndex++;
     }
 
-    // Fungsi Hapus Baris
-    function hapusItem(id) {
-        document.getElementById('item-' + id).remove();
+    // --- 4. UPDATE BARIS LAMA DI TABEL ---
+    function updateItemInTable(id, data) {
+        let row = document.getElementById('item-' + id);
+        row.innerHTML = generateRowHtml(id, data, true); // True = update inner HTML-nya saja
     }
 
-    // Fungsi Tambah dari Modal (Panggil ini di tombol Simpan Modal)
-    function tambahItem() {
-        // ... (Logika ambil value dari modal sama persis dengan create.blade.php) ...
-        // Bedanya panggil addItemToTable() di akhir
-
+    // --- 5. LOGIKA SIMPAN (BARU / UPDATE) ---
+    function simpanItem() {
         let jenis = document.querySelector('input[name="modal_jenis"]:checked').value;
         let operatorSelect = document.getElementById('modal_operator');
         let file = document.getElementById('modal_nama_file').value;
@@ -299,31 +329,107 @@
         let finishing = document.getElementById('modal_finishing').value;
         let catatan = document.getElementById('modal_catatan').value;
 
-        if (!file || !p || !l || !bahanSelect.value || !operatorSelect.value) {
-            Swal.fire("Data Belum Lengkap", "Mohon lengkapi data item.", "warning");
-            return;
+        // --- VALIDASI CONDITIONAL ---
+        if (jenis === 'charge') {
+            // Jika Charge, yang wajib cuma File & Qty
+            if (!file || !qty) {
+                Swal.fire("Data Belum Lengkap", "Mohon lengkapi Nama File dan Qty untuk Charge Desain.", "warning");
+                return;
+            }
+        } else {
+            // Jika selain Charge, wajib semua (kecuali catatan & finishing bisa '-')
+            if (!file || !p || !l || !bahanSelect.value || !operatorSelect.value) {
+                Swal.fire("Data Belum Lengkap", "Mohon lengkapi Nama File, Ukuran, Bahan, dan Operator.", "warning");
+                return;
+            }
         }
 
-        addItemToTable({
+        // Ambil nama dari dropdown (Handle kemungkinan null/tidak dipilih)
+        let opNama = operatorSelect.value ? operatorSelect.options[operatorSelect.selectedIndex].text : 'Tidak Ada (Charge)';
+        let bhnNama = bahanSelect.value ? bahanSelect.options[bahanSelect.selectedIndex].text : '-';
+
+        let data = {
             jenis: jenis,
             file: file,
-            p: p,
-            l: l,
-            bahanId: bahanSelect.value,
-            bahanNama: bahanSelect.options[bahanSelect.selectedIndex].text,
+            // Paksa set 0/kosong jika jenisnya charge agar bersih
+            p: (jenis === 'charge') ? 0 : p,
+            l: (jenis === 'charge') ? 0 : l,
+            bahanId: (jenis === 'charge') ? '' : bahanSelect.value,
+            bahanNama: (jenis === 'charge') ? '-' : bhnNama,
             qty: qty,
-            finishing: finishing,
+            finishing: (jenis === 'charge') ? '-' : finishing,
             catatan: catatan,
-            operatorId: operatorSelect.value,
-            operatorNama: operatorSelect.options[operatorSelect.selectedIndex].text
-        });
+            operatorId: (jenis === 'charge') ? '' : operatorSelect.value,
+            operatorNama: opNama
+        };
 
-        // Tutup Modal & Reset
-        var modalEl = document.getElementById('modalTambahItem');
-        var modal = bootstrap.Modal.getInstance(modalEl);
-        modal.hide();
+        let editIdx = document.getElementById('edit_index').value;
 
-        // Reset form modal manual jika perlu
+        if (editIdx !== "") {
+            // Jika ada isinya, berarti UPDATE data
+            updateItemInTable(editIdx, data);
+        } else {
+            // Jika kosong, berarti TAMBAH BARU
+            addItemToTable(data);
+        }
+
+        // Tutup Modal
+        bootstrap.Modal.getInstance(document.getElementById('modalTambahItem')).hide();
+    }
+
+    // --- 6. TARIK DATA DARI TABEL KE MODAL (EDIT) ---
+    function editItem(id) {
+        let row = document.getElementById('item-' + id);
+
+        // Ambil data dari hidden input yang ada di dalam row tersebut
+        let file = row.querySelector('.val-file').value;
+        let catatan = row.querySelector('.val-catatan').value;
+        let jenis = row.querySelector('.val-jenis').value;
+        let opId = row.querySelector('.val-op-id').value;
+        let p = row.querySelector('.val-p').value;
+        let l = row.querySelector('.val-l').value;
+        let bahanId = row.querySelector('.val-bahan-id').value;
+        let qty = row.querySelector('.val-qty').value;
+        let finishing = row.querySelector('.val-finishing').value;
+
+        // Isi form modal dengan data yang ditarik
+        document.getElementById('modal_nama_file').value = file;
+        document.getElementById('modal_catatan').value = catatan;
+        document.querySelector(`input[name="modal_jenis"][value="${jenis}"]`).checked = true;
+
+        // Handle select jika kosong (karena sebelumnya charge)
+        document.getElementById('modal_operator').value = opId || "";
+        document.getElementById('modal_p').value = p || "";
+        document.getElementById('modal_l').value = l || "";
+        document.getElementById('modal_bahan').value = bahanId || "";
+        document.getElementById('modal_qty').value = qty;
+        document.getElementById('modal_finishing').value = finishing || "";
+
+        // Tandai bahwa ini adalah proses Edit (Simpan ID ke hidden input modal)
+        document.getElementById('edit_index').value = id;
+        document.getElementById('modalLabel').innerText = 'Edit Detail Item';
+
+        // Tampilkan Modal
+        new bootstrap.Modal(document.getElementById('modalTambahItem')).show();
+    }
+
+    // --- 7. HAPUS BARIS ---
+    function hapusItem(id) {
+        document.getElementById('item-' + id).remove();
+    }
+
+    // --- 8. RESET MODAL FORM ---
+    function resetModal() {
+        document.getElementById('edit_index').value = ""; // Kosongkan state edit
+        document.getElementById('modal_nama_file').value = "";
+        document.getElementById('modal_catatan').value = "";
+        document.getElementById('modal_p').value = "";
+        document.getElementById('modal_l').value = "";
+        document.getElementById('modal_qty').value = "1";
+        document.getElementById('modal_operator').selectedIndex = 0;
+        document.getElementById('modal_bahan').selectedIndex = 0;
+        document.getElementById('modal_finishing').selectedIndex = 0;
+        document.getElementById('m_outdoor').checked = true;
     }
 </script>
 @endpush

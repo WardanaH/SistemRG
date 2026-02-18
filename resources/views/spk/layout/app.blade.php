@@ -272,12 +272,8 @@
 
         if (isAdmin) {
             pusher.subscribe('channel-admin-' + cabangId).bind('spk-dibuat', (data) => {
-                if (data.tipe !== 'Charge') {
-                    let url = data.tipe === 'Reguler' ? "{{ url('/spk') }}" : "{{ url('/spk-bantuan') }}";
-                    handleIncomingNotif(`SPK ${data.tipe} Baru!`, data, `${url}?search=${data.no_spk}`);
-                } else {
-                    handleIncomingNotif(`SPK Charge Baru!`, data, "{{ url('/spk-charge') }}?search=${data.no_spk}");
-                }
+                let url = data.tipe === 'Reguler' ? "{{ url('/spk') }}" : "{{ url('/spk-bantuan') }}";
+                handleIncomingNotif(`SPK ${data.tipe} Baru!`, data, `${url}?search=${data.no_spk}`);
             });
 
             pusher.subscribe('channel-lembur').bind('spk-lembur-dibuat', (data) => {

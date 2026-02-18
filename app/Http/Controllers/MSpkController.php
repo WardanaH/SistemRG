@@ -349,11 +349,20 @@ class MSpkController extends Controller
     {
         // 1. Ambil Data SPK beserta Items-nya
         $spk = MSpk::with(['items.operator', 'items.bahan'])->findOrFail($id);
-        // dd($spk);
 
         // 2. Validasi Akses Cabang
-        if (Auth::user()->cabang->jenis !== 'pusat' && $spk->cabang_id !== Auth::user()->cabang_id) {
-            abort(403, 'Akses ditolak');
+        $user = Auth::user();
+        if ($user->cabang->jenis !== 'pusat') {
+            if ($spk->is_lembur) {
+                // Jika SPK Lembur: Izinkan jika user adalah PEMBUATNYA (designer) atau dari cabang tujuan
+                if ($spk->designer_id !== $user->id && $spk->cabang_id !== $user->cabang_id) {
+                    abort(403, 'Akses ditolak. Anda tidak berhak mengedit SPK Lembur ini.');
+                }
+            } else {
+                if ($spk->cabang_id !== $user->cabang_id) {
+                    abort(403, 'Akses ditolak');
+                }
+            }
         }
 
         // 3. Data Pendukung untuk Dropdown
@@ -362,9 +371,18 @@ class MSpkController extends Controller
 
         $cabangId = $spk->cabang_id;
         $designers = User::role('designer')->where('cabang_id', $cabangId)->get();
-        // Ambil semua operator di cabang ini
-        $operators = User::role(['operator indoor', 'operator outdoor', 'operator multi'])
-            ->where('cabang_id', $cabangId)->get();
+
+        // --- PERBAIKAN LOGIKA OPERATOR ---
+        $rolesOperator = ['operator indoor', 'operator outdoor', 'operator multi', 'operator dtf'];
+
+        if ($spk->is_lembur) {
+            // JIKA LEMBUR: Ambil SEMUA operator dari seluruh cabang
+            // (with 'cabang' agar kita bisa tampilkan nama cabangnya di dropdown)
+            $operators = User::with('cabang')->role($rolesOperator)->get();
+        } else {
+            // JIKA REGULER: Ambil operator khusus di cabang SPK tersebut saja
+            $operators = User::role($rolesOperator)->where('cabang_id', $cabangId)->get();
+        }
 
         return view('spk.admin.editSpk', [
             'title'      => 'Edit SPK',
@@ -380,58 +398,84 @@ class MSpkController extends Controller
     {
         $spk = MSpk::findOrFail($id);
 
-        // 1. Validasi Header & Items
+        // 1. Bersihkan data secara manual untuk jenis 'charge' (SAMA SEPERTI STORE)
+        $items = $request->items;
+        foreach ($items as $key => $item) {
+            if (isset($item['jenis']) && $item['jenis'] === 'charge') {
+                $items[$key]['bahan_id'] = null;
+                $items[$key]['operator_id'] = null;
+                $items[$key]['p'] = 0;
+                $items[$key]['l'] = 0;
+            }
+        }
+        // Masukkan kembali data yang sudah dibersihkan ke dalam request
+        $request->merge(['items' => $items]);
+
+        // 2. Validasi Header & Items (SAMA SEPERTI STORE)
         $request->validate([
             // Header
             'nama_pelanggan' => 'required|string|max:255',
             'no_telepon'     => 'nullable|string',
             'items'          => 'required|array|min:1',
 
-            // Detail Items (Validasi Array)
-            'items.*.jenis'       => 'required|in:outdoor,indoor,multi',
+            // Detail Items (Validasi Kondisional)
+            'items.*.jenis'       => 'required|in:outdoor,indoor,multi,dtf,charge', // dtf & charge ditambahkan
             'items.*.file'        => 'required|string',
-            'items.*.p'           => 'required|numeric|min:0',
-            'items.*.l'           => 'required|numeric|min:0',
-            'items.*.bahan_id'    => 'required|exists:m_bahan_bakus,id',
             'items.*.qty'         => 'required|integer|min:1',
-            'items.*.operator_id' => 'required|exists:users,id',
+
+            'items.*.p'           => 'required_unless:items.*.jenis,charge|numeric|min:0',
+            'items.*.l'           => 'required_unless:items.*.jenis,charge|numeric|min:0',
+            'items.*.bahan_id'    => 'required_unless:items.*.jenis,charge|nullable|exists:m_bahan_bakus,id',
+            'items.*.operator_id' => 'required_unless:items.*.jenis,charge|nullable|exists:users,id',
+
+            'items.*.finishing'   => 'nullable|string',
+            'items.*.catatan'     => 'nullable|string',
         ]);
 
         try {
             DB::transaction(function () use ($request, $spk) {
-                // 2. Update Header
+                // 3. Update Header
                 $spk->update([
                     'nama_pelanggan' => $request->nama_pelanggan,
                     'no_telepon'     => $request->no_telepon,
-                    // designer_id jarang berubah, tapi kalau mau diupdate silakan tambahkan
                 ]);
 
-                // 3. Hapus Semua Item Lama (Reset)
-                // Cara paling aman & mudah untuk update one-to-many adalah hapus dulu, lalu buat baru
-                // Kecuali Anda butuh tracking ID item yang persis sama
+                // 4. Hapus Semua Item Lama (Reset)
                 $spk->items()->delete();
 
-                // 4. Buat Ulang Item Baru
+                // 5. Buat Ulang Item Baru (SAMA SEPERTI STORE)
                 foreach ($request->items as $item) {
+                    $isCharge = $item['jenis'] === 'charge';
+
                     MSubSpk::create([
                         'spk_id'          => $spk->id,
                         'nama_file'       => $item['file'],
                         'jenis_order'     => $item['jenis'],
-                        'p'               => $item['p'],
-                        'l'               => $item['l'],
-                        'bahan_id'        => $item['bahan_id'],
+                        'p'               => $isCharge ? null : $item['p'],
+                        'l'               => $isCharge ? null : $item['l'],
+                        'bahan_id'        => $isCharge ? null : $item['bahan_id'],
+                        'operator_id'     => $isCharge ? null : $item['operator_id'],
                         'qty'             => $item['qty'],
-                        'finishing'       => $item['finishing'] ?? '-',
+                        'finishing'       => $isCharge ? null : ($item['finishing'] ?? '-'),
                         'catatan'         => $item['catatan'] ?? '-',
-                        'operator_id'     => $item['operator_id'],
                         'status_produksi' => 'pending', // Reset status jika diedit total
                     ]);
                 }
             });
 
-            $route = $spk->is_bantuan ? 'spk-bantuan.index' : 'spk.index';
-            return redirect()->route($route)->with('success', 'Data SPK berhasil diperbarui!');
+            // Tentukan arah redirect berdasarkan tipe SPK
+            if ($spk->is_advertising) {
+                return redirect()->route('advertising.index')->with('success', 'Data SPK Advertising berhasil diperbarui!');
+            } elseif ($spk->is_bantuan) {
+                return redirect()->route('spk-bantuan.index')->with('success', 'Data SPK Bantuan berhasil diperbarui!');
+            } elseif ($spk->is_lembur) {
+                return redirect()->route('spk-lembur.index')->with('success', 'Data SPK Lembur berhasil diperbarui!');
+            } else {
+                return redirect()->route('spk.index')->with('success', 'Data SPK berhasil diperbarui!');
+            }
+
         } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Gagal update SPK: ' . $e->getMessage());
             return back()->with('error', 'Gagal update: ' . $e->getMessage());
         }
     }
