@@ -506,7 +506,6 @@ class MSpkController extends Controller
     {
         try {
             $request->validate([
-                // Sesuaikan 'reject' atau 'rejected' dengan struktur tabel DB Anda
                 'status_spk' => 'required|in:pending,acc,rejected',
             ]);
 
@@ -518,12 +517,23 @@ class MSpkController extends Controller
 
             // Kirim notifikasi jika ACC
             if ($request->status_spk === 'acc') {
+
+                // 1. TENTUKAN TIPE SPK SECARA MANUAL BERDASARKAN BOOLEAN
+                $tipe = 'reguler'; // Default
+                if ($spk->is_advertising == true) {
+                    $tipe = 'advertising';
+                } elseif ($spk->is_bantuan == true) {
+                    $tipe = 'bantuan';
+                } elseif ($spk->is_lembur == true) {
+                    $tipe = 'lembur';
+                }
+
                 foreach ($spk->items as $item) {
-                    // Tambahkan pengecekan agar tidak mengirim notifikasi untuk 'charge desain'
-                    // karena charge desain biasanya tidak punya operator_id
+                    // Tidak mengirim notif untuk charge desain
                     if ($item->operator_id) {
                         event(new NotifikasiOperator(
                             $spk->no_spk,
+                            $tipe, // <-- Gunakan variabel tipe yang sudah dicek di atas
                             $item->nama_file,
                             $item->operator_id
                         ));

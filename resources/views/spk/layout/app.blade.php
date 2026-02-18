@@ -282,7 +282,23 @@
         }
 
         pusher.subscribe('operator.' + authUserId).bind('kerjaan-baru', (data) => {
-            handleIncomingNotif('Tugas Baru Masuk!', data, "{{ route('spk.produksi') }}");
+            // Log untuk ngecek apakah tipe sudah masuk
+            console.log("Data tipe order masuk:", data.tipe);
+
+            if (data.tipe === 'advertising') {
+                // Sesuaikan nama route ini dengan yang ada di web.php Anda
+                handleIncomingNotif('Tugas Advertising Masuk!', data, "{{ route('advertising.produksi-index') }}");
+            }
+            else if (data.tipe === 'lembur') {
+                handleIncomingNotif('Tugas Lembur Masuk!', data, "{{ route('spk-lembur.produksi') }}");
+            }
+            else if (data.tipe === 'bantuan') {
+                handleIncomingNotif('Tugas Bantuan Masuk!', data, "{{ route('spk-bantuan.produksi') }}");
+                // Catatan: Biasanya SPK Bantuan numpuk di antrean reguler, kalau halamannya dipisah, sesuaikan routenya.
+            }
+            else {
+                handleIncomingNotif('Tugas Reguler Masuk!', data, "{{ route('spk.produksi') }}");
+            }
         });
 
         // Jalankan saat pertama kali buka halaman atau refresh

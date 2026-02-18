@@ -133,7 +133,7 @@ class AdvertisingController extends Controller
                     ]);
 
                     // Trigger Pusher ke Operator
-                    event(new NotifikasiOperator($newNoSpk, $sub->nama_file, $sub->operator_id));
+                    event(new NotifikasiOperator($newNoSpk, "advertising", $sub->nama_file, $sub->operator_id));
                 }
             });
 

@@ -63,8 +63,8 @@
                                 {{-- KOLOM 1: INFO SPK PARENT --}}
                                 <td class="ps-3">
                                     <div class="d-flex flex-column justify-content-center">
-                                        <h6 class="mb-0 text-sm text-primary font-weight-bold">{{ $item->spk->no_spk }}</h6>
-                                        <p class="text-xs text-secondary mb-0">{{ $item->spk->nama_pelanggan }}</p>
+                                        <h4 class="text-primary mb-1">{{ $item->spk->nama_pelanggan }}</p>
+                                        <p class="mb-0 text-sm text-secondary font-weight-bold">{{ $item->spk->no_spk }}</h6>
                                         <span class="text-xxs text-muted">
                                             {{ \Carbon\Carbon::parse($item->spk->tanggal_spk)->format('d M Y') }}
                                         </span>
