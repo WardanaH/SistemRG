@@ -62,6 +62,15 @@
                                 <input type="text" name="folder" class="form-control">
                             </div>
                         </div>
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="form-check form-switch ps-0">
+                                <input class="form-check-input ms-auto" type="checkbox" id="is_bantuan" name="is_bantuan" value="1">
+                                <label class="form-check-label text-body ms-3 text-truncate w-80 mb-0" for="is_bantuan">
+                                    <span class="badge bg-gradient-warning text-xxs me-2">SPK Bantuan</span>
+                                    Tandai ini sebagai pekerjaan bantuan
+                                </label>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="d-flex justify-content-between mb-2">

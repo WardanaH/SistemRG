@@ -23,28 +23,43 @@ class AdvertisingController extends Controller
 
         // 1. Ambil Statistik untuk Card Dashboard
         $stats = [
-            'total_spk' => MSpk::where('designer_id', $userId)->count(),
+            // Total Keseluruhan
+            'total_semua' => MSpk::where('designer_id', $userId)
+                                 ->where('is_advertising', true)->count(),
 
-            'item_proses' => MSubSpk::whereHas('spk', function ($q) use ($userId) {
-                $q->where('designer_id', $userId);
-            })->whereIn('status_produksi', ['pending', 'ripping', 'ongoing'])->count(),
+            // Hitung yang biasa (Bukan bantuan)
+            'total_biasa' => MSpk::where('designer_id', $userId)
+                                 ->where('is_advertising', true)
+                                 ->where('is_bantuan', false)->count(),
 
-            'item_selesai' => MSubSpk::whereHas('spk', function ($q) use ($userId) {
-                $q->where('designer_id', $userId);
+            // Hitung yang bantuan
+            'total_bantuan' => MSpk::where('designer_id', $userId)
+                                   ->where('is_advertising', true)
+                                   ->where('is_bantuan', true)->count(),
+
+            // Item yang sedang dikerjakan operator
+            'item_proses' => MSubSpk::whereHas('spk', function($q) use ($userId) {
+                $q->where('designer_id', $userId)->where('is_advertising', true);
+            })->whereIn('status_produksi', ['pending', 'ripping', 'ongoing', 'finishing'])->count(),
+
+            // Item yang sudah selesai
+            'item_selesai' => MSubSpk::whereHas('spk', function($q) use ($userId) {
+                $q->where('designer_id', $userId)->where('is_advertising', true);
             })->where('status_produksi', 'completed')->count(),
-
-            'total_omset' => 0 // Bisa diisi logic hitung harga jika ada
         ];
 
         // 2. Data Tabel SPK
         $query = MSpk::with(['items', 'items.operator'])
             ->withCount('items')
             ->where('designer_id', $userId)
+            ->where('is_advertising', true) // Pastikan hanya data advertising
             ->latest();
 
         if ($request->has('search')) {
-            $query->where('no_spk', 'like', '%' . $request->search . '%')
-                ->orWhere('nama_pelanggan', 'like', '%' . $request->search . '%');
+            $query->where(function($q) use ($request) {
+                $q->where('no_spk', 'like', '%' . $request->search . '%')
+                  ->orWhere('nama_pelanggan', 'like', '%' . $request->search . '%');
+            });
         }
 
         $spks = $query->paginate(10);
@@ -100,40 +115,43 @@ class AdvertisingController extends Controller
                 $nextNum = $lastSpk ? ((int)Str::afterLast($lastSpk->no_spk, '-') + 1) : 1;
                 $newNoSpk = $prefix . '-' . str_pad($nextNum, 6, '0', STR_PAD_LEFT);
 
+                // --- TANGKAP NILAI CHECKBOX BANTUAN ---
+                $isBantuan = $request->has('is_bantuan') ? true : false;
+
                 // 2. Simpan Header
                 $spk = MSpk::create([
-                    'no_spk' => $newNoSpk,
-                    'tanggal_spk' => now(),
+                    'no_spk'         => $newNoSpk,
+                    'tanggal_spk'    => now(),
                     'nama_pelanggan' => $request->nama_pelanggan,
-                    'no_telepon' => $request->no_telepon,
-                    'cabang_id' => $cabang->id,
-                    'designer_id' => $user->id,
-                    'admin_id' => $user->id,
-                    'status_spk' => 'acc',
-                    'is_lembur' => false,
-                    'is_bantuan' => false,
+                    'no_telepon'     => $request->no_telepon,
+                    'cabang_id'      => $cabang->id,
+                    'designer_id'    => $user->id,
+                    'admin_id'       => $user->id,
+                    'status_spk'     => 'acc',
+                    'is_lembur'      => false,
+                    'is_bantuan'     => $isBantuan, // <--- UBAH DI SINI
                     'is_advertising' => true,
-                    'folder' => $request->folder,
+                    'folder'         => $request->folder,
                 ]);
 
                 // 3. Simpan Items & Kirim Notif
                 foreach ($request->items as $item) {
                     $sub = MSubSpk::create([
-                        'spk_id' => $spk->id,
-                        'nama_file' => $item['file'],
-                        'jenis_order' => $item['jenis'],
-                        'p' => $item['p'] ?? 0,
-                        'l' => $item['l'] ?? 0,
-                        'qty' => $item['qty'],
-                        'bahan_id' => $item['bahan_id'],
-                        'operator_id' => $item['operator_id'],
-                        'finishing' => $item['finishing'] ?? '-',
-                        'catatan' => $item['catatan'] ?? '-',
+                        'spk_id'          => $spk->id,
+                        'nama_file'       => $item['file'],
+                        'jenis_order'     => $item['jenis'],
+                        'p'               => $item['p'] ?? 0,
+                        'l'               => $item['l'] ?? 0,
+                        'qty'             => $item['qty'],
+                        'bahan_id'        => $item['bahan_id'],
+                        'operator_id'     => $item['operator_id'],
+                        'finishing'       => $item['finishing'] ?? '-',
+                        'catatan'         => $item['catatan'] ?? '-',
                         'status_produksi' => 'pending'
                     ]);
 
-                    // Trigger Pusher ke Operator
-                    event(new NotifikasiOperator($newNoSpk, $sub->nama_file, $sub->operator_id));
+                    // Trigger Pusher ke Operator (tetap dikirim sebagai advertising)
+                    event(new NotifikasiOperator($newNoSpk, "advertising", $sub->nama_file, $sub->operator_id));
                 }
             });
 

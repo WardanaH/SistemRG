@@ -18,18 +18,20 @@ class NotifikasiOperator implements ShouldBroadcastNow
     public $nama_file;
     public $operator_id;
     public $pesan;
+    public $tipe;
 
     /**
      * Terima data detail SPK saat event dipanggil
      */
-    public function __construct($no_spk, $nama_file, $operator_id)
+    public function __construct($no_spk, $tipe, $nama_file, $operator_id)
     {
         $this->no_spk = $no_spk;
         $this->nama_file = $nama_file;
         $this->operator_id = $operator_id;
         $this->pesan = "Ada tugas baru: $nama_file ($no_spk)";
+        $this->tipe = $tipe;
 
-        Log::info("EVENT CONSTRUCT: Notifikasi tugas baru untuk Operator ID: $operator_id");
+        Log::info("EVENT CONSTRUCT: Notifikasi tugas produksi $tipe baru untuk Operator ID: $operator_id");
     }
 
     /**
@@ -56,11 +58,12 @@ class NotifikasiOperator implements ShouldBroadcastNow
     public function broadcastWith()
     {
         return [
-            'no_spk' => $this->no_spk,
-            'nama_file' => $this->nama_file,
+            'no_spk'      => $this->no_spk,
+            'nama_file'   => $this->nama_file,
             'operator_id' => $this->operator_id,
-            'pesan' => $this->pesan,
-            'waktu' => now()->format('H:i:s')
+            'pesan'       => $this->pesan,
+            'waktu'       => now()->format('H:i:s'),
+            'tipe'        => $this->tipe
         ];
     }
 }
