@@ -281,24 +281,51 @@ class MSpkController extends Controller
                 }
 
                 // 3. SIMPAN HEADER (M_SPK)
+                // Tentukan status default SPK
+                $statusSpk = 'pending';
+
+                // LOGIKA CERDAS (Opsional):
+                // Jika SPK ini isinya HANYA 1 item dan itu adalah 'Charge Desain',
+                // maka SPK langsung dianggap selesai ('done' atau 'acc').
+                if (count($request->items) == 1 && $request->items[0]['jenis'] === 'charge') {
+                    $statusSpk = 'done'; // (Ganti 'acc' jika di sistem Anda tidak ada status 'done' untuk header SPK)
+                }
+
                 $spk = MSpk::create([
                     'no_spk'           => $newNoSpk,
                     'tanggal_spk'      => $tgl,
                     'nama_pelanggan'   => $request->nama_pelanggan,
                     'no_telepon'       => $request->no_telepon,
-
-                    // PENTING: Cabang ID diisi Cabang Target agar masuk ke Admin sana
                     'cabang_id'        => $targetCabangId,
-
-                    // Info Designer & Lembur
                     'designer_id'      => $user->id,
                     'is_lembur'        => $isLembur,
                     'cabang_lembur_id' => $isLembur ? $targetCabangId : null,
-                    'asal_cabang_id'   => $isLembur ? $user->cabang_id : null, // Mencatat asal designer
-
-                    'status_spk'       => 'pending',
+                    'asal_cabang_id'   => $isLembur ? $user->cabang_id : null,
                     'is_bantuan'       => false,
+
+                    // Masukkan variabel status yang sudah dikalkulasi di atas
+                    'status_spk'       => $statusSpk,
                 ]);
+
+                // 3. SIMPAN HEADER (M_SPK)
+                // $spk = MSpk::create([
+                //     'no_spk'           => $newNoSpk,
+                //     'tanggal_spk'      => $tgl,
+                //     'nama_pelanggan'   => $request->nama_pelanggan,
+                //     'no_telepon'       => $request->no_telepon,
+
+                //     // PENTING: Cabang ID diisi Cabang Target agar masuk ke Admin sana
+                //     'cabang_id'        => $targetCabangId,
+
+                //     // Info Designer & Lembur
+                //     'designer_id'      => $user->id,
+                //     'is_lembur'        => $isLembur,
+                //     'cabang_lembur_id' => $isLembur ? $targetCabangId : null,
+                //     'asal_cabang_id'   => $isLembur ? $user->cabang_id : null, // Mencatat asal designer
+
+                //     'status_spk'       => 'pending',
+                //     'is_bantuan'       => false,
+                // ]);
 
                 // 4. SIMPAN ITEMS (M_SUB_SPK)
                 foreach ($request->items as $item) {
@@ -315,7 +342,7 @@ class MSpkController extends Controller
                         'finishing'       => $isCharge ? null : $item['finishing'],
                         'qty'             => $item['qty'],
                         'catatan'         => $item['catatan'] ?? '-',
-                        'status_produksi' => 'pending',
+                        'status_produksi' => $isCharge ? 'done' : 'pending',
                     ]);
                 }
 

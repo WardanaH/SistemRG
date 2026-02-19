@@ -14,7 +14,7 @@
 
 {{-- BAGIAN 1: STATISTIK CARDS --}}
 <div class="row mb-4">
-    {{-- Card 1: Total SPK --}}
+    {{-- Card 1: Total SPK (Dipecah jadi Biasa & Bantuan) --}}
     <div class="col-xl-4 col-sm-6 mb-xl-0 mb-4">
         <div class="card">
             <div class="card-header p-3 pt-2">
@@ -23,12 +23,13 @@
                 </div>
                 <div class="text-end pt-1">
                     <p class="text-sm mb-0 text-capitalize">Total SPK Dibuat</p>
-                    <h4 class="mb-0">{{ $stats['total_spk'] }}</h4>
+                    <h4 class="mb-0">{{ $stats['total_semua'] }}</h4>
                 </div>
             </div>
             <hr class="dark horizontal my-0">
-            <div class="card-footer p-3">
-                <p class="mb-0 text-xs">Total SPK Advertising</p>
+            <div class="card-footer p-3 d-flex justify-content-between">
+                <p class="mb-0 text-xs"><span class="text-info font-weight-bolder">{{ $stats['total_biasa'] }}</span> Biasa</p>
+                <p class="mb-0 text-xs"><span class="text-warning font-weight-bolder">{{ $stats['total_bantuan'] }}</span> Bantuan</p>
             </div>
         </div>
     </div>
@@ -82,7 +83,7 @@
 
                     <div class="d-flex gap-2">
                         {{-- Search --}}
-                        <form action="{{ route('advertising.dashboard') }}" method="GET" class="me-2">
+                        <form action="{{ route('advertising.index') }}" method="GET" class="me-2">
                             <div class="input-group input-group-sm bg-white rounded px-2">
                                 <span class="input-group-text border-0"><i class="material-icons text-body">search</i></span>
                                 <input type="text" name="search" class="form-control border-0" placeholder="Cari SPK..." value="{{ request('search') }}">
@@ -105,6 +106,7 @@
                                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder ps-3">No SPK / Tanggal</th>
                                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder">Pelanggan</th>
                                 <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">Jml Item</th>
+                                <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder">Tipe Order</th>
                                 <th class="text-secondary opacity-7"></th>
                             </tr>
                         </thead>
@@ -114,7 +116,8 @@
                                 <td class="ps-3">
                                     <div class="d-flex py-1">
                                         <div>
-                                            <div class="avatar avatar-sm me-3 border-radius-lg bg-gradient-dark">
+                                            {{-- Warna Icon Berubah Tergantung Bantuan atau Biasa --}}
+                                            <div class="avatar avatar-sm me-3 border-radius-lg {{ $spk->is_bantuan ? 'bg-gradient-warning' : 'bg-gradient-dark' }}">
                                                 <i class="material-icons text-white text-sm">campaign</i>
                                             </div>
                                         </div>
@@ -133,6 +136,16 @@
                                 <td class="align-middle text-center">
                                     <span class="text-secondary text-xs font-weight-bold">{{ $spk->items_count }} Item</span>
                                 </td>
+
+                                {{-- KOLOM BARU: Tipe Order (Biasa / Bantuan) --}}
+                                <td class="align-middle text-center">
+                                    @if($spk->is_bantuan)
+                                        <span class="badge badge-sm bg-gradient-warning">BANTUAN</span>
+                                    @else
+                                        <span class="badge badge-sm bg-gradient-info">REGULER</span>
+                                    @endif
+                                </td>
+
                                 <td class="align-middle text-end pe-4">
                                     <a href="{{ route('advertising.show', $spk->id) }}" class="text-secondary font-weight-bold text-xs me-3" data-toggle="tooltip" title="Lihat Detail">
                                         <i class="material-icons text-sm">visibility</i>
@@ -140,7 +153,6 @@
                                     <a href="{{ route('advertising.print', $spk->id) }}" target="_blank" class="text-secondary font-weight-bold text-xs me-3" data-toggle="tooltip" title="Print SPK">
                                         <i class="material-icons text-sm">print</i>
                                     </a>
-                                    {{-- Hapus hanya jika belum dikerjakan operator (opsional logic) --}}
                                     <form action="{{ route('advertising.destroy', $spk->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin hapus SPK ini?')">
                                         @csrf @method('DELETE')
                                         <button type="submit" class="border-0 bg-transparent text-secondary font-weight-bold text-xs" data-toggle="tooltip" title="Hapus">

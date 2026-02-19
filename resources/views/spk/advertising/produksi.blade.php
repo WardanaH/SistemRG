@@ -62,7 +62,7 @@
                                     <div class="d-flex flex-column">
                                         <h6 class="mb-0 text-sm">{{ $item->spk->no_spk }}</h6>
                                         <span class="text-xs text-secondary">{{ $item->spk->created_at->format('d/m/y H:i') }}</span>
-                                        <span class="badge badge-sm bg-outline-info mt-1" style="width:fit-content">{{ $item->spk->nama_pelanggan }}</span>
+                                        <span class="badge badge-sm bg-primary mt-1" style="width:fit-content">{{ $item->spk->nama_pelanggan }}</span>
                                     </div>
                                 </td>
 
