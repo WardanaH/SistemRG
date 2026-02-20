@@ -219,12 +219,20 @@
                     </div>
                 </div>
 
-                {{-- 2. Nama File --}}
+                {{-- 2. Nama File & Harga (Khusus Charge) --}}
                 <div class="row mb-3">
-                    <div class="col-md-12">
+                    <div class="col-md-12 mb-3">
                         <div class="input-group input-group-outline">
-                            <label class="form-label">Nama File</label>
+                            <label class="form-label">Nama File / Keterangan Desain</label>
                             <input type="text" id="modal_nama_file" class="form-control">
+                        </div>
+                    </div>
+
+                    {{-- Input Harga (Disembunyikan default, hanya muncul jika Charge) --}}
+                    <div class="col-md-12" id="sec_harga" style="display: none;">
+                        <div class="input-group input-group-outline">
+                            <label class="form-label">Nominal Harga (Rp)</label>
+                            <input type="number" id="modal_harga" class="form-control" min="0">
                         </div>
                     </div>
                 </div>
@@ -327,10 +335,13 @@
         let finishing = document.getElementById('modal_finishing').value || '-';
         let catatan = document.getElementById('modal_catatan').value;
 
+        // AMBIL VALUE HARGA
+        let harga = document.getElementById('modal_harga').value || 0;
+
         // VALIDASI KHUSUS CHARGE DESAIN
         if (jenis === 'charge') {
-            if (!file || !qty) {
-                Swal.fire("Data Belum Lengkap", "Mohon isi Nama File (Keterangan Charge) dan Qty.", "warning");
+            if (!file || !qty || !harga) {
+                Swal.fire("Data Belum Lengkap", "Mohon isi Nama File, Qty, dan Nominal Harga!", "warning");
                 return;
             }
         } else {
@@ -347,12 +358,12 @@
 
         if (editId !== null) {
             let row = document.getElementById(`item-${editId}`);
-            row.innerHTML = buatHtmlRow(editId, jenis, badgeColor, operatorId, operatorNama, file, catatan, p, l, bahanId, bahanNama, qty, finishing);
+            row.innerHTML = buatHtmlRow(editId, jenis, badgeColor, operatorId, operatorNama, file, catatan, p, l, bahanId, bahanNama, qty, finishing, harga);
             editId = null;
         } else {
             let rowKosong = document.getElementById('row-kosong');
             if (rowKosong) rowKosong.remove();
-            let html = `<tr id="item-${itemIndex}">${buatHtmlRow(itemIndex, jenis, badgeColor, operatorId, operatorNama, file, catatan, p, l, bahanId, bahanNama, qty, finishing)}</tr>`;
+            let html = `<tr id="item-${itemIndex}">${buatHtmlRow(itemIndex, jenis, badgeColor, operatorId, operatorNama, file, catatan, p, l, bahanId, bahanNama, qty, finishing, harga)}</tr>`;
             document.getElementById('tabelItemBody').insertAdjacentHTML('beforeend', html);
             itemIndex++;
         }
@@ -362,11 +373,15 @@
     }
 
     // Fungsi Helper buat isi Row (agar bisa dipakai Tambah & Edit)
-    function buatHtmlRow(idx, jenis, badgeColor, operatorId, operatorNama, file, catatan, p, l, bahanId, bahanNama, qty, finishing) {
-        // Logika tampilan jika Charge Desain
+    // Tambahkan parameter harga di fungsi ini
+    function buatHtmlRow(idx, jenis, badgeColor, operatorId, operatorNama, file, catatan, p, l, bahanId, bahanNama, qty, finishing, harga) {
         const displayUkuran = (jenis === 'charge') ? '-' : `${p} x ${l}`;
         const displayBahan = (jenis === 'charge') ? '-' : bahanNama;
         const displayOperator = (jenis === 'charge') ? '<i class="fa fa-paint-brush me-1"></i> Biaya Desain' : `<i class="fa fa-user me-1"></i> ${operatorNama}`;
+
+        // Format angka jadi Rupiah
+        let formatRupiah = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(harga);
+        const displayHarga = (jenis === 'charge') ? `<br><span class="text-success font-weight-bold text-xs">${formatRupiah}</span>` : '';
 
         return `
             <td>
@@ -378,8 +393,10 @@
             <td>
                 <h6 class="mb-0 text-sm text-truncate" style="max-width: 150px;">${file}</h6>
                 <small class="text-xxs text-secondary">${catatan || '-'}</small>
+                ${displayHarga}
                 <input type="hidden" name="items[${idx}][file]" value="${file}">
                 <input type="hidden" name="items[${idx}][catatan]" value="${catatan}">
+                <input type="hidden" name="items[${idx}][harga]" value="${harga}">
             </td>
             <td class="text-xs font-weight-bold">
                 ${displayUkuran}
@@ -405,29 +422,27 @@
     function resetModal() {
         editId = null;
 
-        // Jangan gunakan form.reset() karena akan menghapus Nama Pelanggan & Data Lembur
-        // Reset fields modal secara manual
         document.getElementById('modal_nama_file').value = "";
         document.getElementById('modal_catatan').value = "";
         document.getElementById('modal_p').value = "0";
         document.getElementById('modal_l').value = "0";
         document.getElementById('modal_qty').value = "1";
+        document.getElementById('modal_harga').value = ""; // Reset harga
 
-        // Reset Select2
         $('#modal_operator').val('').trigger('change');
         $('#modal_bahan').val('').trigger('change');
         $('#modal_finishing').val('').trigger('change');
 
-        // Kembalikan tampilan modal ke mode normal (Tampilkan semua field)
         const operatorSection = document.getElementById('modal_operator').closest('.col-md-6');
         const specSection = document.getElementById('modal_p').closest('.row');
         const finishingSection = document.getElementById('modal_finishing').closest('.col-md-6');
+        const hargaSection = document.getElementById('sec_harga'); // Bagian Harga
 
         operatorSection.style.display = 'block';
         specSection.querySelectorAll('.col-md-3, .col-md-4, .col-md-2').forEach(el => el.style.display = 'block');
         finishingSection.style.display = 'block';
+        hargaSection.style.display = 'none'; // Sembunyikan harga default
 
-        // Defaultkan kembali ke radio 'outdoor'
         document.getElementById('m_outdoor').checked = true;
         document.getElementById('modalLabel').innerText = "Tambah Detail Item";
     }
@@ -436,7 +451,6 @@
         editId = id;
         let row = document.getElementById(`item-${id}`);
 
-        // Ambil data dari input hidden di dalam row tersebut
         let jenis = row.querySelector(`input[name="items[${id}][jenis]"]`).value;
         let opId = row.querySelector(`input[name="items[${id}][operator_id]"]`).value;
         let file = row.querySelector(`input[name="items[${id}][file]"]`).value;
@@ -446,26 +460,29 @@
         let qty = row.querySelector(`input[name="items[${id}][qty]"]`).value;
         let catatan = row.querySelector(`input[name="items[${id}][catatan]"]`).value;
         let finishing = row.querySelector(`input[name="items[${id}][finishing]"]`).value;
+        let harga = row.querySelector(`input[name="items[${id}][harga]"]`) ? row.querySelector(`input[name="items[${id}][harga]"]`).value : '';
 
-        // Set value ke modal
-        document.querySelector(`input[name="modal_jenis"][value="${jenis}"]`).checked = true;
+        // T-rigger event change pada radio untuk mengubah tampilan form
+        let radioJenis = document.querySelector(`input[name="modal_jenis"][value="${jenis}"]`);
+        radioJenis.checked = true;
+        radioJenis.dispatchEvent(new Event('change')); // Memicu script show/hide di bawah
+
         document.getElementById('modal_nama_file').value = file;
         document.getElementById('modal_p').value = p;
         document.getElementById('modal_l').value = l;
         document.getElementById('modal_qty').value = qty;
         document.getElementById('modal_catatan').value = catatan;
+        document.getElementById('modal_harga').value = harga;
 
-        // Set Select2 (trigger change agar tampil di UI)
+        // Fix Material Dashboard floating label
+        if(harga) document.getElementById('modal_harga').parentElement.classList.add('is-filled');
+
         $('#modal_operator').val(opId).trigger('change');
         $('#modal_bahan').val(bahanId).trigger('change');
         $('#modal_finishing').val(finishing).trigger('change');
 
-        // Ubah judul modal agar user tau sedang mengedit
         document.getElementById('modalLabel').innerText = "Edit Detail Item";
-
-        // Tampilkan modal
-        var myModal = new bootstrap.Modal(document.getElementById('modalTambahItem'));
-        myModal.show();
+        new bootstrap.Modal(document.getElementById('modalTambahItem')).show();
     }
 
     function hapusItem(id) {
@@ -515,6 +532,29 @@
                 operatorSection.style.display = 'block';
                 specSection.querySelectorAll('.col-md-3, .col-md-4, .col-md-2').forEach(el => el.style.display = 'block');
                 finishingSection.style.display = 'block';
+            }
+        });
+    });
+
+    // EVENT LISTENER RADIO BUTTON (Tampilkan/Sembunyikan Field)
+    document.querySelectorAll('input[name="modal_jenis"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const isCharge = this.value === 'charge';
+            const operatorSection = document.getElementById('modal_operator').closest('.col-md-6');
+            const specSection = document.getElementById('modal_p').closest('.row');
+            const finishingSection = document.getElementById('modal_finishing').closest('.col-md-6');
+            const hargaSection = document.getElementById('sec_harga'); // Bagian Harga
+
+            if (isCharge) {
+                operatorSection.style.display = 'none';
+                specSection.querySelectorAll('.col-md-3, .col-md-4').forEach(el => el.style.display = 'none');
+                finishingSection.style.display = 'none';
+                hargaSection.style.display = 'block'; // Tampilkan Harga
+            } else {
+                operatorSection.style.display = 'block';
+                specSection.querySelectorAll('.col-md-3, .col-md-4, .col-md-2').forEach(el => el.style.display = 'block');
+                finishingSection.style.display = 'block';
+                hargaSection.style.display = 'none'; // Sembunyikan Harga
             }
         });
     });

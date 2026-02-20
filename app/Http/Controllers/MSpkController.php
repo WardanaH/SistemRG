@@ -221,6 +221,7 @@ class MSpkController extends Controller
             'items.*.qty'        => 'required|integer|min:1',
 
             // Validasi Kondisional: Wajib diisi KECUALI jenisnya 'charge'
+            'items.*.harga'       => 'required_if:items.*.jenis,charge|nullable|numeric|min:0',
             'items.*.p'           => 'required_unless:items.*.jenis,charge|numeric|min:0',
             'items.*.l'           => 'required_unless:items.*.jenis,charge|numeric|min:0',
             'items.*.bahan_id'    => 'required_unless:items.*.jenis,charge|nullable|exists:m_bahan_bakus,id',
@@ -288,7 +289,7 @@ class MSpkController extends Controller
                 // Jika SPK ini isinya HANYA 1 item dan itu adalah 'Charge Desain',
                 // maka SPK langsung dianggap selesai ('done' atau 'acc').
                 if (count($request->items) == 1 && $request->items[0]['jenis'] === 'charge') {
-                    $statusSpk = 'done'; // (Ganti 'acc' jika di sistem Anda tidak ada status 'done' untuk header SPK)
+                    $statusSpk = 'acc'; // (Ganti 'acc' jika di sistem Anda tidak ada status 'done' untuk header SPK)
                 }
 
                 $spk = MSpk::create([
@@ -342,6 +343,7 @@ class MSpkController extends Controller
                         'finishing'       => $isCharge ? null : $item['finishing'],
                         'qty'             => $item['qty'],
                         'catatan'         => $item['catatan'] ?? '-',
+                        'harga'           => $isCharge ? ($item['harga'] ?? 0) : 0,
                         'status_produksi' => $isCharge ? 'done' : 'pending',
                     ]);
                 }
