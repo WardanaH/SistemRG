@@ -73,7 +73,7 @@
 
     <div class="row">
 
-        {{-- A. TABEL DESIGNER --}}
+        {{-- A. TABEL DESIGNER (KINERJA INPUT) --}}
         @if($designers->isNotEmpty())
         <div class="col-lg-4 col-md-6 mb-4">
             <div class="card h-100">
@@ -86,7 +86,43 @@
                 <div class="card-body p-3">
                     <ul class="list-group">
                         @foreach($designers as $user)
-                        @include('spk.laporan.partials.user_kpi_item', ['user' => $user, 'type' => 'input'])
+                            @include('spk.laporan.partials.user_kpi_item', ['user' => $user, 'type' => 'input'])
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        {{-- A.2 TABEL LAPORAN CHARGE DESAIN (KHUSUS DESIGNER) --}}
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header p-3 bg-gradient-dark d-flex justify-content-between align-items-center">
+                    <div class="text-white">
+                        <h6 class="text-white mb-0"><i class="material-icons text-sm me-2">monetization_on</i>Pendapatan Charge</h6>
+                        <span class="text-xs opacity-8">Rekap Biaya Desain (Charge)</span>
+                    </div>
+                </div>
+                <div class="card-body p-3">
+                    <ul class="list-group">
+                        @foreach($designers as $user)
+                        <li class="list-group-item border-0 ps-0 mb-3 border-radius-lg bg-gray-100 p-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                {{-- Kiri: Nama & Cabang --}}
+                                <div class="d-flex align-items-center ms-2">
+                                    <div class="d-flex flex-column">
+                                        <h6 class="mb-0 text-dark text-sm font-weight-bold">{{ $user->nama }}</h6>
+                                        <span class="text-xs text-secondary">{{ $user->cabang->nama ?? 'Pusat' }}</span>
+                                    </div>
+                                </div>
+                                {{-- Kanan: Nominal Harga & Qty --}}
+                                <div class="text-end me-2">
+                                    <h6 class="text-success text-sm font-weight-bolder mb-0">
+                                        Rp {{ number_format($user->charge_nominal, 0, ',', '.') }}
+                                    </h6>
+                                    <span class="text-xs text-secondary">{{ $user->charge_count }} Item Dikerjakan</span>
+                                </div>
+                            </div>
+                        </li>
                         @endforeach
                     </ul>
                 </div>
@@ -107,7 +143,7 @@
                 <div class="card-body p-3">
                     <ul class="list-group">
                         @foreach($admins as $user)
-                        @include('spk.laporan.partials.user_kpi_item', ['user' => $user, 'type' => 'acc'])
+                            @include('spk.laporan.partials.user_kpi_item', ['user' => $user, 'type' => 'acc'])
                         @endforeach
                     </ul>
                 </div>
@@ -128,7 +164,7 @@
                 <div class="card-body p-3">
                     <ul class="list-group">
                         @foreach($operators as $user)
-                        @include('spk.laporan.partials.user_kpi_item', ['user' => $user, 'type' => 'produksi'])
+                            @include('spk.laporan.partials.user_kpi_item', ['user' => $user, 'type' => 'produksi'])
                         @endforeach
                     </ul>
                 </div>
@@ -163,7 +199,6 @@
 
                     <div class="input-group input-group-outline mb-4 is-filled">
                         <label class="form-label">Bulan Target</label>
-                        {{-- Input type month memudahkan user memilih Bulan & Tahun --}}
                         <input type="month" name="bulan" class="form-control" value="{{ date('Y-m') }}" required>
                     </div>
 
@@ -180,9 +215,7 @@
         </div>
     </div>
 </div>
-@endhasrole
 
-@hasrole('manajemen|admin')
 {{-- MODAL ATUR TARGET MASSAL (PER ROLE) --}}
 <div class="modal fade" id="modalTargetMassal" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
@@ -254,4 +287,5 @@
         myModal.show();
     }
 </script>
+
 @endsection

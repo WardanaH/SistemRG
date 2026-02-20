@@ -23,11 +23,9 @@
     <div class="col-12">
         <div class="card my-4">
 
-            {{-- HEADER: JUDUL & PENCARIAN --}}
-            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
-                {{-- Gunakan warna gradient-dark atau info untuk membedakan dengan reguler (opsional) --}}
+            {{-- HEADER: JUDUL & TOMBOL BUAT --}}
+            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 mb-3">
                 <div class="bg-gradient-dark shadow-dark border-radius-lg pt-4 pb-3 d-flex justify-content-between align-items-center px-3">
-
                     <div class="d-flex align-items-center">
                         <h6 class="text-white text-capitalize mb-0">Daftar SPK Bantuan (Eksternal)</h6>
 
@@ -37,29 +35,58 @@
                         </a>
                         @endhasrole
                     </div>
-
-                    {{-- SEARCH BAR --}}
-                    <div>
-                        <form action="{{ route('spk-bantuan.index') }}" method="GET">
-                            <div class="bg-white rounded d-flex align-items-center px-2" style="height: 40px; min-width: 250px;">
-                                <i class="material-icons text-secondary text-sm">search</i>
-                                <input type="text" name="search" class="form-control border-0 ps-2"
-                                    placeholder="Cari No SPK / Pelanggan..." value="{{ request('search') }}"
-                                    style="box-shadow: none !important; height: 100%; background: transparent;">
-
-                                @if(request('search'))
-                                <a href="{{ route('spk-bantuan.index') }}" class="text-danger d-flex align-items-center cursor-pointer" title="Reset">
-                                    <i class="material-icons text-sm">close</i>
-                                </a>
-                                @endif
-                            </div>
-                        </form>
-                    </div>
                 </div>
             </div>
 
-            {{-- BODY: TABEL DATA SPK --}}
-            <div class="card-body px-0 pb-2">
+            <div class="card-body px-3 pb-2">
+
+                {{-- AREA FILTER & PENCARIAN --}}
+                <form action="{{ route('spk-bantuan.index') }}" method="GET" class="mb-4 bg-gray-100 p-3 border-radius-lg">
+                    <div class="row align-items-end">
+                        {{-- Filter Tanggal Awal --}}
+                        <div class="col-md-2 col-sm-6 mb-2">
+                            <label class="text-xs font-weight-bold mb-0">Dari Tanggal</label>
+                            <input type="date" name="start_date" class="form-control border px-2 text-sm bg-white" value="{{ request('start_date') }}">
+                        </div>
+
+                        {{-- Filter Tanggal Akhir --}}
+                        <div class="col-md-2 col-sm-6 mb-2">
+                            <label class="text-xs font-weight-bold mb-0">Sampai Tanggal</label>
+                            <input type="date" name="end_date" class="form-control border px-2 text-sm bg-white" value="{{ request('end_date') }}">
+                        </div>
+
+                        {{-- Filter Status --}}
+                        <div class="col-md-2 col-sm-6 mb-2">
+                            <label class="text-xs font-weight-bold mb-0">Status SPK</label>
+                            <select name="status_filter" class="form-control border px-2 text-sm bg-white" style="appearance: auto;">
+                                <option value="">Semua Status</option>
+                                <option value="pending" {{ request('status_filter') == 'pending' ? 'selected' : '' }}>Pending</option>
+                                <option value="acc" {{ request('status_filter') == 'acc' ? 'selected' : '' }}>ACC</option>
+                                <option value="rejected" {{ request('status_filter') == 'rejected' ? 'selected' : '' }}>Ditolak</option>
+                            </select>
+                        </div>
+
+                        {{-- Kolom Pencarian --}}
+                        <div class="col-md-4 col-sm-6 mb-2">
+                            <label class="text-xs font-weight-bold mb-0">Pencarian</label>
+                            <input type="text" name="search" class="form-control border px-2 text-sm bg-white" placeholder="No SPK / Pelanggan..." value="{{ request('search') }}">
+                        </div>
+
+                        {{-- Tombol Submit / Reset --}}
+                        <div class="col-md-2 col-sm-12 mb-2 d-flex gap-2">
+                            <button type="submit" class="btn btn-sm btn-info w-100 mb-0" title="Terapkan Filter">
+                                <i class="material-icons text-sm">search</i> Filter
+                            </button>
+                            @if(request('search') || request('start_date') || request('status_filter'))
+                            <a href="{{ route('spk-bantuan.index') }}" class="btn btn-sm btn-outline-danger w-100 mb-0" title="Reset Filter">
+                                <i class="material-icons text-sm">close</i> Reset
+                            </a>
+                            @endif
+                        </div>
+                    </div>
+                </form>
+
+                {{-- TABEL DATA SPK --}}
                 <div class="table-responsive p-0">
                     <table class="table align-items-center mb-0">
                         <thead>
@@ -124,7 +151,7 @@
                                     <span class="badge badge-sm bg-gradient-warning">Pending</span>
                                     @elseif($spk->status_spk == 'acc')
                                     <span class="badge badge-sm bg-gradient-success">Acc</span>
-                                    @elseif($spk->status_spk == 'reject')
+                                    @elseif($spk->status_spk == 'rejected')
                                     <span class="badge badge-sm bg-gradient-danger">Ditolak</span>
                                     @endif
                                 </td>
@@ -139,18 +166,15 @@
                                         </a>
 
                                         @hasrole('manajemen|admin')
-                                        {{-- 2. UPDATE STATUS --}}
-                                        @php $isFinal = in_array($spk->status_spk, ['acc', 'reject']); @endphp
+                                        {{-- 2. UPDATE STATUS (TIDAK DIKUNCI) --}}
                                         <button type="button"
-                                            class="badge {{ $isFinal ? 'bg-secondary' : 'bg-gradient-success' }} border-0 text-white text-xs btn-modal-status"
-                                            {{ $isFinal ? 'disabled' : 'data-bs-toggle=modal data-bs-target=#modalUpdateStatus' }}
+                                            class="badge bg-gradient-dark border-0 text-white text-xs btn-modal-status cursor-pointer"
+                                            data-bs-toggle="modal" data-bs-target="#modalUpdateStatus"
                                             data-id="{{ $spk->id }}"
                                             data-no="{{ $spk->no_spk }}"
                                             data-status="{{ $spk->status_spk }}"
-                                            data-toggle="tooltip" title="Approval Status">
-                                            <i class="material-icons text-xs position-relative" style="top: 1px;">
-                                                {{ $isFinal ? 'lock' : 'verified' }}
-                                            </i>
+                                            data-toggle="tooltip" title="Ubah Status SPK">
+                                            <i class="material-icons text-xs position-relative" style="top: 1px;">verified_user</i>
                                         </button>
                                         @endhasrole
 
@@ -175,7 +199,7 @@
                             @empty
                             <tr>
                                 <td colspan="8" class="text-center py-5">
-                                    <h6 class="text-secondary font-weight-normal">Belum ada data SPK Bantuan.</h6>
+                                    <h6 class="text-secondary font-weight-normal">Belum ada data SPK Bantuan yang sesuai filter.</h6>
                                 </td>
                             </tr>
                             @endforelse
@@ -196,7 +220,7 @@
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title font-weight-normal">Update Status SPK Bantuan</h5>
+                <h5 class="modal-title font-weight-normal" id="modalStatusLabel">Update Status SPK Bantuan</h5>
                 <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -209,7 +233,7 @@
                     <p class="text-sm mb-3">Update status untuk No. SPK: <strong id="spkNoDisplay"></strong></p>
                     <div class="input-group input-group-outline mb-3 is-filled">
                         <select name="status_spk" id="selectStatus" class="form-control" style="appearance: auto; padding-left: 10px;">
-                            <option value="pending">Pending</option>
+                            <option value="pending">Pending (Kembalikan ke awal)</option>
                             <option value="acc">ACC (Setujui)</option>
                             <option value="rejected">Reject (Tolak)</option>
                         </select>

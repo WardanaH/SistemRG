@@ -65,20 +65,30 @@ class MSpkController extends Controller
     {
         $user = Auth::user();
 
-        // PERBAIKAN: Hapus 'bahan' & 'operator' karena sudah pindah ke tabel items
-        // Tambahkan 'withCount' untuk menghitung jumlah item di tabel depan
+        // Base Query
         $query = MSpk::with(['designer', 'cabang', 'items'])
-            ->withCount('items') // Menghitung jumlah item di sub_spk
+            ->withCount('items')
             ->where('is_bantuan', false)
             ->where('is_lembur', false);
 
-        // 1. Logika Filter Cabang
+        // Logika Filter Cabang
         if ($user->cabang->jenis !== 'pusat') {
             $query->where('cabang_id', $user->cabang_id);
         }
 
-        // 2. Logika Pencarian
-        if ($request->has('search') && $request->search != '') {
+        // --- FILTER TANGGAL ---
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $query->whereDate('tanggal_spk', '>=', $request->start_date)
+                ->whereDate('tanggal_spk', '<=', $request->end_date);
+        }
+
+        // --- FILTER STATUS SPK ---
+        if ($request->filled('status_filter')) {
+            $query->where('status_spk', $request->status_filter);
+        }
+
+        // Logika Pencarian (Search text)
+        if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('no_spk', 'like', "%$search%")
@@ -88,7 +98,7 @@ class MSpkController extends Controller
 
         $spks = $query->latest()->paginate(10);
 
-        return view('spk.designer.indexSpk', [ // Sesuaikan folder view Anda
+        return view('spk.designer.indexSpk', [
             'title' => 'Manajemen SPK',
             'spks' => $spks
         ]);
@@ -99,25 +109,31 @@ class MSpkController extends Controller
         $user = Auth::user();
 
         // Eager load relasi yang dibutuhkan
-        // 'cabang' = Cabang Tujuan (Tempat lembur)
-        // 'cabangAsal' = Cabang Asal Designer (Penting untuk ditampilkan di tabel)
         $query = MSpk::with(['designer', 'cabang', 'cabangAsal'])
             ->withCount('items') // Menghitung jumlah item
             ->where('is_lembur', true); // Hanya ambil data lembur
 
         // 1. LOGIKA FILTER AKSES
         if ($user->cabang->jenis !== 'pusat') {
-
             if ($user->hasRole('designer')) {
                 // A. DESIGNER: Melihat riwayat lembur yang DIA kerjakan (Outgoing)
-                // Filter berdasarkan 'designer_id', bukan cabang.
-                // Karena saat lembur, cabang_id SPK = Cabang Tujuan, sedangkan user->cabang_id = Cabang Asal.
                 $query->where('designer_id', $user->id);
             }
         }
 
+        // --- FILTER TANGGAL ---
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $query->whereDate('tanggal_spk', '>=', $request->start_date)
+                  ->whereDate('tanggal_spk', '<=', $request->end_date);
+        }
+
+        // --- FILTER STATUS SPK ---
+        if ($request->filled('status_filter')) {
+            $query->where('status_spk', $request->status_filter);
+        }
+
         // 2. LOGIKA PENCARIAN
-        if ($request->has('search') && $request->search != '') {
+        if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('no_spk', 'like', "%$search%")
@@ -727,6 +743,7 @@ class MSpkController extends Controller
 
         // 1. Query ke Tabel ITEM (MSubSpk)
         $query = MSubSpk::with(['spk', 'spk.designer', 'bahan'])
+            ->where('jenis_order', '!=', 'charge')
             ->whereHas('spk', function ($q) use ($user) {
                 // Filter Cabang (Hanya riwayat pekerjaan di cabang sendiri)
                 if ($user->cabang->jenis !== 'pusat') {

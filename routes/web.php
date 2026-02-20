@@ -60,4 +60,12 @@ Route::middleware(['auth'])->group(function () {
         ->name('laporan.storeTarget');
     Route::post('/laporan-kinerja/set-target-role', [LaporanController::class, 'storeTargetByRole'])
         ->name('laporan.storeTargetByRole');
+
+    // laporan charge
+    Route::get('/laporan-charge', [LaporanController::class, 'laporanCharge'])
+        ->name('laporan.charge');
+    Route::get('/laporan-charge/pdf', [LaporanController::class, 'exportChargePdf'])
+        ->name('laporan.charge.pdf');
+    Route::get('/laporan-charge/excel', [LaporanController::class, 'exportChargeExcel'])
+        ->name('laporan.charge.excel');
 });

@@ -34,8 +34,19 @@ class SpkBantuanController extends Controller
             $query->where('cabang_id', $user->cabang_id);
         }
 
+        // --- FILTER TANGGAL ---
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $query->whereDate('tanggal_spk', '>=', $request->start_date)
+                ->whereDate('tanggal_spk', '<=', $request->end_date);
+        }
+
+        // --- FILTER STATUS SPK ---
+        if ($request->filled('status_filter')) {
+            $query->where('status_spk', $request->status_filter);
+        }
+
         // 2. Logika Pencarian (No SPK atau Nama Pelanggan)
-        if ($request->has('search') && $request->search != '') {
+        if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('no_spk', 'like', "%$search%")
@@ -45,10 +56,9 @@ class SpkBantuanController extends Controller
 
         // 3. Ambil data (Paginate 10 per halaman) & urutkan terbaru
         $spks = $query->latest()->paginate(10);
-        // dd($spks->get());
 
         return view('spk.designer.indexSpkBantuan', [
-            'title' => 'Manajemen SPK',
+            'title' => 'Manajemen SPK Bantuan', // Sesuaikan dengan title Anda
             'spks' => $spks
         ]);
     }

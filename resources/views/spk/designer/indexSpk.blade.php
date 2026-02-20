@@ -1,4 +1,4 @@
-    @extends('spk.layout.app')
+@extends('spk.layout.app')
 
     @section('content')
 
@@ -23,10 +23,9 @@
         <div class="col-12">
             <div class="card my-4">
 
-                {{-- HEADER: JUDUL & PENCARIAN --}}
-                <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+                {{-- HEADER CARD --}}
+                <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 mb-3">
                     <div class="bg-gradient-primary shadow-primary border-radius-lg pt-4 pb-3 d-flex justify-content-between align-items-center px-3">
-
                         <div class="d-flex align-items-center">
                             <h6 class="text-white text-capitalize mb-0">Daftar SPK (Surat Perintah Kerja)</h6>
 
@@ -36,29 +35,58 @@
                             </a>
                             @endhasrole
                         </div>
-
-                        {{-- SEARCH BAR --}}
-                        <div>
-                            <form action="{{ route('spk.index') }}" method="GET">
-                                <div class="bg-white rounded d-flex align-items-center px-2" style="height: 40px; min-width: 250px;">
-                                    <i class="material-icons text-secondary text-sm">search</i>
-                                    <input type="text" name="search" class="form-control border-0 ps-2"
-                                        placeholder="Cari No SPK / Pelanggan..." value="{{ request('search') }}"
-                                        style="box-shadow: none !important; height: 100%; background: transparent;">
-
-                                    @if(request('search'))
-                                    <a href="{{ route('spk.index') }}" class="text-danger d-flex align-items-center cursor-pointer" title="Reset">
-                                        <i class="material-icons text-sm">close</i>
-                                    </a>
-                                    @endif
-                                </div>
-                            </form>
-                        </div>
                     </div>
                 </div>
 
-                {{-- BODY: TABEL DATA SPK --}}
-                <div class="card-body px-0 pb-2">
+                <div class="card-body px-3 pb-2">
+
+                    {{-- AREA FILTER & PENCARIAN --}}
+                    <form action="{{ route('spk.index') }}" method="GET" class="mb-4 bg-gray-100 p-3 border-radius-lg">
+                        <div class="row align-items-end">
+                            {{-- Filter Tanggal Awal --}}
+                            <div class="col-md-2 col-sm-6 mb-2">
+                                <label class="text-xs font-weight-bold mb-0">Dari Tanggal</label>
+                                <input type="date" name="start_date" class="form-control border px-2 text-sm bg-white" value="{{ request('start_date') }}">
+                            </div>
+
+                            {{-- Filter Tanggal Akhir --}}
+                            <div class="col-md-2 col-sm-6 mb-2">
+                                <label class="text-xs font-weight-bold mb-0">Sampai Tanggal</label>
+                                <input type="date" name="end_date" class="form-control border px-2 text-sm bg-white" value="{{ request('end_date') }}">
+                            </div>
+
+                            {{-- Filter Status --}}
+                            <div class="col-md-2 col-sm-6 mb-2">
+                                <label class="text-xs font-weight-bold mb-0">Status SPK</label>
+                                <select name="status_filter" class="form-control border px-2 text-sm bg-white" style="appearance: auto;">
+                                    <option value="">Semua Status</option>
+                                    <option value="pending" {{ request('status_filter') == 'pending' ? 'selected' : '' }}>Pending</option>
+                                    <option value="acc" {{ request('status_filter') == 'acc' ? 'selected' : '' }}>ACC</option>
+                                    <option value="rejected" {{ request('status_filter') == 'rejected' ? 'selected' : '' }}>Ditolak</option>
+                                </select>
+                            </div>
+
+                            {{-- Kolom Pencarian --}}
+                            <div class="col-md-4 col-sm-6 mb-2">
+                                <label class="text-xs font-weight-bold mb-0">Pencarian</label>
+                                <input type="text" name="search" class="form-control border px-2 text-sm bg-white" placeholder="No SPK / Pelanggan..." value="{{ request('search') }}">
+                            </div>
+
+                            {{-- Tombol Submit / Reset --}}
+                            <div class="col-md-2 col-sm-12 mb-2 d-flex gap-2">
+                                <button type="submit" class="btn btn-sm btn-info w-100 mb-0" title="Terapkan Filter">
+                                    <i class="material-icons text-sm">search</i> Filter
+                                </button>
+                                @if(request('search') || request('start_date') || request('status_filter'))
+                                <a href="{{ route('spk.index') }}" class="btn btn-sm btn-outline-danger w-100 mb-0" title="Reset Filter">
+                                    <i class="material-icons text-sm">close</i> Reset
+                                </a>
+                                @endif
+                            </div>
+                        </div>
+                    </form>
+
+                    {{-- TABEL DATA SPK --}}
                     <div class="table-responsive p-0">
                         <table class="table align-items-center mb-0">
                             <thead>
@@ -85,7 +113,7 @@
                                             <div class="d-flex flex-column justify-content-center">
                                                 <h6 class="mb-0 text-sm">{{ $spk->no_spk }}</h6>
                                                 <p class="text-xs text-secondary mb-0">
-                                                    {{ \Carbon\Carbon::parse($spk->tanggal_spk)->format('d/m/Y H:i:s') }}
+                                                    {{ \Carbon\Carbon::parse($spk->tanggal_spk)->format('d/m/Y H:i') }}
                                                 </p>
                                             </div>
                                         </div>
@@ -95,7 +123,7 @@
                                     <td>
                                         <h6 class="mb-0 text-sm">{{ Str::limit($spk->nama_pelanggan, 25) }}</h6>
                                         @if($spk->no_telepon)
-                                        <p class="text-xs text-secondary mb-0"></i> {{ $spk->no_telepon }}</p>
+                                        <p class="text-xs text-secondary mb-0"><i class="fa fa-phone me-1"></i>{{ $spk->no_telepon }}</p>
                                         @endif
                                     </td>
 
@@ -115,12 +143,12 @@
                                         <span class="badge badge-sm bg-gradient-warning">Pending</span>
                                         @elseif($spk->status_spk == 'acc')
                                         <span class="badge badge-sm bg-gradient-success">Acc</span>
-                                        @elseif($spk->status_spk == 'reject')
+                                        @elseif($spk->status_spk == 'rejected')
                                         <span class="badge badge-sm bg-gradient-danger">Ditolak</span>
                                         @endif
                                     </td>
 
-                                    {{-- KOLOM 7: AKSI --}}
+                                    {{-- KOLOM 6: AKSI --}}
                                     <td class="align-middle text-end pe-4">
                                         <div class="d-flex justify-content-end align-items-center gap-2">
 
@@ -130,21 +158,19 @@
                                             </a>
 
                                             @hasrole('manajemen|admin')
-                                            {{-- TOMBOL UPDATE STATUS (ACC) --}}
-                                            @php $isFinal = in_array($spk->status_spk, ['acc', 'reject']); @endphp
+                                            {{-- TOMBOL UPDATE STATUS (TIDAK LAGI DIKUNCI) --}}
                                             <button type="button"
-                                                    class="badge {{ $isFinal ? 'bg-secondary' : 'bg-gradient-success' }} border-0 text-white text-xs btn-modal-status"
-                                                    {{ $isFinal ? 'disabled' : '' }}
+                                                    class="badge bg-gradient-success border-0 text-white text-xs btn-modal-status cursor-pointer"
+                                                    data-toggle="tooltip" title="Ubah Status"
                                                     data-bs-toggle="modal"
                                                     data-bs-target="#modalUpdateStatus"
                                                     data-id="{{ $spk->id }}"
                                                     data-no="{{ $spk->no_spk }}"
                                                     data-status="{{ $spk->status_spk }}">
-                                                <i class="material-icons text-xs">
-                                                    {{ $isFinal ? 'lock' : 'verified' }}
-                                                </i>
+                                                <i class="material-icons text-xs position-relative" style="top: 1px;">verified_user</i>
                                             </button>
 
+                                            {{-- TOMBOL EDIT DATA --}}
                                             <a href="{{ route('spk.edit', $spk->id) }}" class="badge bg-gradient-warning text-white text-xs" data-toggle="tooltip" title="Edit Data">
                                                 <i class="material-icons text-xs position-relative" style="top: 1px;">edit</i>
                                             </a>
@@ -170,8 +196,8 @@
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="7" class="text-center py-5">
-                                        <h6 class="text-secondary font-weight-normal">Belum ada data SPK.</h6>
+                                    <td colspan="6" class="text-center py-5">
+                                        <h6 class="text-secondary font-weight-normal">Belum ada data SPK yang sesuai filter.</h6>
                                     </td>
                                 </tr>
                                 @endforelse
@@ -181,12 +207,14 @@
                 </div>
 
                 <div class="card-footer py-3">
+                    {{-- withQueryString() agar saat pindah halaman (pagination), filter tetap nempel --}}
                     {{ $spks->withQueryString()->links('pagination::bootstrap-5') }}
                 </div>
             </div>
         </div>
     </div>
 
+    {{-- MODAL UBAH STATUS --}}
     <div class="modal fade" id="modalUpdateStatus" tabindex="-1" role="dialog" aria-labelledby="modalStatusLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
@@ -199,23 +227,17 @@
 
                 <form id="formUpdateStatus" method="POST" action="">
                     @csrf
-                    @method('PUT') <div class="modal-body">
+                    @method('PUT')
+                    <div class="modal-body">
                         <p class="text-sm mb-3">Update status untuk No. SPK: <strong id="spkNoDisplay"></strong></p>
 
                         <div class="input-group input-group-outline mb-3 is-filled">
                             <select name="status_spk" id="selectStatus" class="form-control" style="appearance: auto; padding-left: 10px;">
-                                <option value="pending">Pending</option>
+                                <option value="pending">Pending (Kembalikan ke awal)</option>
                                 <option value="acc">ACC (Setujui)</option>
                                 <option value="rejected">Reject (Tolak)</option>
                             </select>
                         </div>
-
-                        {{--
-                        <div class="input-group input-group-outline mb-0">
-                            <label class="form-label">Catatan / Alasan (Opsional)</label>
-                            <input type="text" name="note" class="form-control">
-                        </div>
-                        --}}
                     </div>
 
                     <div class="modal-footer">
@@ -231,7 +253,7 @@
     @push('scripts')
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            // DELETE BUTTON
+            // LOGIC HAPUS
             document.querySelectorAll(".btn-delete").forEach(btn => {
                 btn.addEventListener("click", function() {
                     let form = this.closest("form");
@@ -249,7 +271,7 @@
                 });
             });
 
-            // 2. LOGIC MODAL STATUS (BARU)
+            // LOGIC MODAL STATUS
             const statusButtons = document.querySelectorAll(".btn-modal-status");
             const modalForm = document.getElementById('formUpdateStatus');
             const spkNoDisplay = document.getElementById('spkNoDisplay');
@@ -257,17 +279,14 @@
 
             statusButtons.forEach(btn => {
                 btn.addEventListener("click", function() {
-                    // Ambil data dari tombol
                     let id = this.getAttribute('data-id');
                     let no = this.getAttribute('data-no');
                     let currentStatus = this.getAttribute('data-status');
 
-                    // Update Teks di Modal
                     spkNoDisplay.textContent = no;
-                    selectStatus.value = currentStatus; // Set dropdown sesuai status sekarang
+                    selectStatus.value = currentStatus;
 
-                    // Update Action URL Form secara dinamis
-                    // Ganti '0' dengan ID yang sebenarnya
+                    // Buat Action URL Dinamis
                     let url = "{{ route('manajemen.spk.update-status', ':id') }}";
                     url = url.replace(':id', id);
                     modalForm.action = url;
