@@ -133,7 +133,7 @@ RESPONSIVE FIX (AMAN)
     }
 
     .table-modern thead th{
-        font-size:11px;
+        font-size:16px;
     }
 
     /* sembunyikan avatar biar hemat space */
@@ -149,14 +149,14 @@ RESPONSIVE FIX (AMAN)
 
     /* badge lebih kecil */
     .badge{
-        font-size:10px;
+        font-size:16px;
         padding:4px 8px;
     }
 
     /* tombol proses */
     .btn-proses{
         padding:4px 10px;
-        font-size:12px;
+        font-size:16px;
     }
 
     /* modal full width mobile */
@@ -190,7 +190,7 @@ RESPONSIVE FIX (AMAN)
     /* kecilkan font table modal */
     .modal-body .table td,
     .modal-body .table th{
-        font-size:12px;
+        font-size:16px;
         padding:10px !important;
         white-space:nowrap;
     }
@@ -198,7 +198,7 @@ RESPONSIVE FIX (AMAN)
     /* input dalam table */
     .modal-body input.form-control{
         min-width:120px;
-        font-size:12px;
+        font-size:16px;
         padding:6px 8px;
     }
 

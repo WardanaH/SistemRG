@@ -51,7 +51,7 @@ Route::middleware(['auth', 'role:inventory cabang'])
 
         Route::get('/laporan/excel',[GudangCabangController::class, 'laporanExcel'])
             ->name('laporan.excel');
-            
+
 
         //notif
         Route::post('/notif/read/{id}', [GudangCabangController::class, 'markNotifRead'])
@@ -78,6 +78,9 @@ Route::middleware(['auth', 'role:inventory cabang'])
 
         Route::post('/permintaan-pengiriman/store', [GudangCabangController::class, 'permintaanStore'])
             ->name('permintaan.store');
+
+        Route::delete('/permintaan-pengiriman/{id}',[GudangCabangController::class, 'permintaanDestroy'])
+            ->name('permintaan.destroy');
 
         // AMBIL
         Route::get('/ambil', [GudangCabangController::class, 'ambilIndex'])

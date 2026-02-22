@@ -205,6 +205,8 @@
                                     <th>Kode</th>
                                     <th>Tanggal</th>
                                     <th class="text-center">Status</th>
+                                    <th class="text-center">Detail</th>
+                                    <th class="text-center">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -256,6 +258,36 @@
                                         <span class="text-muted">{{ $row->status }}</span>
                                     @endif
                                 </td>
+
+                                {{-- DETAIL --}}
+                                <td class="text-center">
+                                    <button type="button"
+                                        class="btn btn-link text-primary btn-detail"
+                                        data-kode="{{ $row->kode_permintaan }}"
+                                        data-tanggal="{{ $row->tanggal_permintaan }}"
+                                        data-detail='@json($row->detail_barang)'
+                                        data-catatan="{{ $row->catatan }}">
+                                        <i class="material-icons-round">receipt_long</i>
+                                    </button>
+                                </td>
+
+                                {{-- AKSI --}}
+                                <td class="text-center">
+                                    @if($row->status === 'Menunggu')
+                                        <form action="{{ route('gudangcabang.permintaan.destroy', $row->id) }}"
+                                            method="POST"
+                                            class="form-hapus d-inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="button"
+                                                class="btn btn-sm btn-danger btn-hapus">
+                                                <i class="material-icons text-sm">delete</i>
+                                            </button>
+                                        </form>
+                                    @else
+                                        <span class="text-muted">-</span>
+                                    @endif
+                                </td>
                             </tr>
                             @empty
                             <tr>
@@ -281,6 +313,22 @@
         </div>
     </div>
 </div>
+{{-- modal detail --}}
+<div class="modal fade" id="modalDetail">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Detail Permintaan</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body" id="detailContent"></div>
+
+        </div>
+    </div>
+</div>
+
 @endsection
 @push('scripts')
 <script>
@@ -340,6 +388,90 @@ $('#btnTambahBarang').on('click', function () {
 
 $(document).on('click', '.btn-remove-barang', function () {
     $(this).closest('.barang-item').remove();
+});
+</script>
+<script>
+// DETAIL
+$(document).on('click', '.btn-detail', function() {
+
+    let kode = $(this).data('kode');
+    let tanggal = $(this).data('tanggal');
+    let detail = $(this).data('detail');
+    let catatan = $(this).data('catatan');
+
+    let html = `
+        <div class="mb-3">
+            <b>Kode:</b> ${kode}<br>
+            <b>Tanggal:</b> ${tanggal}
+        </div>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>Barang</th>
+                    <th>Qty</th>
+                    <th>Satuan</th>
+                    <th>Keterangan</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    if (Array.isArray(detail)) {
+        detail.forEach((d, i) => {
+            html += `
+                <tr>
+                    <td>${i+1}</td>
+                    <td>${d.nama_barang}</td>
+                    <td>${d.jumlah}</td>
+                    <td>${d.satuan}</td>
+                    <td>${d.keterangan ?? '-'}</td>
+                </tr>
+            `;
+        });
+    }
+
+    html += `
+            </tbody>
+        </table>
+    `;
+
+    if (catatan) {
+        html += `
+            <div class="alert alert-info">
+                <b>Catatan:</b><br>
+                ${catatan}
+            </div>
+        `;
+    }
+
+    $('#detailContent').html(html);
+
+    new bootstrap.Modal(
+        document.getElementById('modalDetail')
+    ).show();
+});
+
+
+// KONFIRMASI HAPUS
+$(document).on('click', '.btn-hapus', function() {
+
+    let form = $(this).closest('.form-hapus');
+
+    Swal.fire({
+        title: 'Yakin hapus?',
+        text: 'Permintaan akan dihapus permanen',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        confirmButtonText: 'Ya, hapus'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            form.submit();
+        }
+    });
+
 });
 </script>
 @endpush
