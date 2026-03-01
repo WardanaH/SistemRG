@@ -92,11 +92,19 @@
 
                                 {{-- Kolom Spesifikasi --}}
                                 <td>
-                                    <p class="text-xs font-weight-bold mb-0">Bahan: {{ $item->bahan->nama_bahan ?? '-' }}</p>
-                                    <p class="text-xs text-secondary mb-0">
-                                        Ukuran: {{ $item->p }} x {{ $item->l }} cm
-                                    </p>
-                                    <p class="text-xs text-secondary mb-0">Finishing: {{ $item->finishing ?? '-' }}</p>
+                                    @if ($item->jenis_order === 'charge')
+                                        {{-- Tampilan Jika Charge Desain --}}
+                                        <p class="text-sm text-success font-weight-bold mb-0">
+                                            Rp {{ number_format($item->harga, 0, ',', '.') }}
+                                        </p>
+                                    @else
+                                        {{-- Tampilan Jika Cetakan Fisik Normal --}}
+                                        <p class="text-xs font-weight-bold mb-0">Bahan: {{ $item->bahan->nama_bahan ?? '-' }}</p>
+                                        <p class="text-xs text-secondary mb-0">
+                                            Ukuran: {{ $item->p }} x {{ $item->l }} cm
+                                        </p>
+                                        <p class="text-xs text-secondary mb-0">Fin: {{ $item->finishing ?? '-' }}</p>
+                                    @endif
                                 </td>
 
                                 {{-- Kolom Qty --}}

@@ -373,11 +373,15 @@
     }
 
     // Fungsi Helper buat isi Row (agar bisa dipakai Tambah & Edit)
+    // Fungsi Helper buat isi Row (agar bisa dipakai Tambah & Edit)
     // Tambahkan parameter harga di fungsi ini
     function buatHtmlRow(idx, jenis, badgeColor, operatorId, operatorNama, file, catatan, p, l, bahanId, bahanNama, qty, finishing, harga) {
         const displayUkuran = (jenis === 'charge') ? '-' : `${p} x ${l}`;
         const displayBahan = (jenis === 'charge') ? '-' : bahanNama;
         const displayOperator = (jenis === 'charge') ? '<i class="fa fa-paint-brush me-1"></i> Biaya Desain' : `<i class="fa fa-user me-1"></i> ${operatorNama}`;
+
+        // --- TAMPILKAN FINISHING JIKA ADA ---
+        const displayFinishing = (jenis === 'charge') ? '' : `<br><span class="text-xs font-weight-bold">Fin: ${finishing || '-'}</span>`;
 
         // Format angka jadi Rupiah
         let formatRupiah = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(harga);
@@ -405,6 +409,7 @@
             </td>
             <td class="text-xs font-weight-bold">
                 ${displayBahan}
+                ${displayFinishing}
                 <input type="hidden" name="items[${idx}][bahan_id]" value="${bahanId}">
             </td>
             <td class="text-center text-sm">

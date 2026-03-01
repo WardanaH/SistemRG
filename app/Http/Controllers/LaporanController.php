@@ -211,6 +211,7 @@ class LaporanController extends Controller
     }
 
     // 1. HELPER FUNGSI UNTUK MENGAMBIL QUERY CHARGE (Agar Web, PDF, & Excel filternya sama)
+    // 1. HELPER FUNGSI UNTUK MENGAMBIL QUERY CHARGE
     private function getChargeQueryData(Request $request)
     {
         $user = Auth::user();
@@ -241,10 +242,23 @@ class LaporanController extends Controller
 
         $query = MSubSpk::with(['spk', 'spk.designer'])
             ->where('jenis_order', 'charge')
-            ->whereHas('spk', function ($q) use ($user, $startDate, $endDate) {
+            ->whereHas('spk', function ($q) use ($user, $startDate, $endDate, $request) {
+                // Filter Tanggal
                 $q->whereBetween('created_at', [$startDate, $endDate]);
-                if (!$user->hasRole(['admin', 'manajemen'])) {
+
+                // --- 1. FILTER BERDASARKAN ROLE / CABANG ---
+                if ($user->hasRole('designer')) {
+                    // Designer hanya bisa melihat miliknya sendiri
                     $q->where('designer_id', $user->id);
+                } elseif ($user->hasRole('admin') && $user->cabang->jenis !== 'pusat') {
+                    // Admin hanya bisa melihat data di cabangnya sendiri
+                    $q->where('cabang_id', $user->cabang_id);
+                }
+                // Manajemen (Pusat) otomatis lolos tanpa pembatasan cabang/designer
+
+                // --- 2. FILTER BERDASARKAN INPUT DROPDOWN DESIGNER ---
+                if ($request->filled('designer_filter')) {
+                    $q->where('designer_id', $request->designer_filter);
                 }
             });
 
@@ -258,7 +272,22 @@ class LaporanController extends Controller
 
         $totalItem = $data['query']->count();
         $totalNominal = $data['query']->sum('harga');
-        $items = $data['query']->latest()->paginate(20); // Paginate untuk web
+        $items = $data['query']->latest()->paginate(20);
+
+        // --- AMBIL DAFTAR DESIGNER UNTUK DROPDOWN FILTER ---
+        $user = Auth::user();
+        $listDesigners = collect(); // Default kosong (untuk desainer)
+
+        // Hanya ambil daftar desainer jika role admin/manajemen
+        if ($user->hasRole(['admin', 'manajemen'])) {
+            $designersQuery = \App\Models\User::role('designer');
+
+            // Jika admin cabang, batas daftar desainer hanya yang ada di cabangnya
+            if ($user->hasRole('admin') && $user->cabang->jenis !== 'pusat') {
+                $designersQuery->where('cabang_id', $user->cabang_id);
+            }
+            $listDesigners = $designersQuery->get();
+        }
 
         return view('spk.laporan.charge', [
             'title'        => 'Laporan Pendapatan Charge Desain',
@@ -268,6 +297,7 @@ class LaporanController extends Controller
             'filterType'   => $data['filterType'],
             'startDate'    => $data['startDate'],
             'endDate'      => $data['endDate'],
+            'listDesigners'=> $listDesigners, // Kirim daftar designer ke view
         ]);
     }
 

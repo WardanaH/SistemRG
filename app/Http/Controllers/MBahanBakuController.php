@@ -18,7 +18,7 @@ class MBahanBakuController extends Controller
                 ->orWhere('kode_bahan', 'LIKE', "%{$search}%");
         }
 
-        $bahans = $query->get(); // atau paginate(10)
+        $bahans = $query->paginate(10); // atau paginate(10)
         $title = 'Manajemen Bahan Baku';
 
         return view('spk.manajemen.bahanbaku', compact('bahans', 'title'));

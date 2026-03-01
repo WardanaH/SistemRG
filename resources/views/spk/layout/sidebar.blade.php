@@ -11,6 +11,14 @@
 
     <hr class="horizontal light mt-0 mb-2">
 
+    {{-- WIDGET JAM REALTIME DI SIDEBAR --}}
+    <div class="mx-3 mb-3 mt-1 text-center">
+        <div class="bg-gradient-primary rounded p-2 d-flex justify-content-center align-items-center shadow-sm">
+            <i class="material-icons text-white text-sm me-2">schedule</i>
+            <span id="sidebar-clock" class="text-white font-weight-bold text-sm" style="letter-spacing: 1px;">00:00:00 WITA</span>
+        </div>
+    </div>
+
     <div class="collapse navbar-collapse w-auto" id="sidenav-collapse-main">
         <ul class="navbar-nav">
 
@@ -105,7 +113,6 @@
                 </a>
             </li>
             @endhasrole
-
 
             {{-- 4. MONITORING & DATA (Admin, Designer, Manajemen) --}}
             @hasrole('manajemen|designer|admin')
@@ -259,6 +266,9 @@
                     <span class="nav-link-text ms-1">Laporan Kinerja</span>
                 </a>
             </li>
+            @endhasrole
+
+            @hasrole('manajemen|admin|designer')
             <li class="nav-item">
                 <a class="nav-link text-white {{ request()->routeIs('laporan.charge') ? 'active bg-gradient-primary' : '' }}"
                     href="{{ route('laporan.charge') }}">

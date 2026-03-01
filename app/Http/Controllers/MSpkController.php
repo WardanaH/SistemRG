@@ -87,6 +87,11 @@ class MSpkController extends Controller
             $query->where('status_spk', $request->status_filter);
         }
 
+        // --- FILTER DESIGNER (BARU) ---
+        if ($request->filled('designer_filter')) {
+            $query->where('designer_id', $request->designer_filter);
+        }
+
         // Logika Pencarian (Search text)
         if ($request->filled('search')) {
             $search = $request->search;
@@ -98,9 +103,19 @@ class MSpkController extends Controller
 
         $spks = $query->latest()->paginate(10);
 
+        // Ambil Data Designer untuk Dropdown Filter
+        // Hanya ambil user dengan role 'designer'
+        // Jika cabang bukan pusat, batasi hanya designer di cabangnya
+        $designersQuery = \App\Models\User::role('designer');
+        if ($user->cabang->jenis !== 'pusat') {
+            $designersQuery->where('cabang_id', $user->cabang_id);
+        }
+        $listDesigners = $designersQuery->get();
+
         return view('spk.designer.indexSpk', [
             'title' => 'Manajemen SPK',
-            'spks' => $spks
+            'spks' => $spks,
+            'listDesigners' => $listDesigners // Kirim variabel baru ini
         ]);
     }
 
@@ -132,6 +147,11 @@ class MSpkController extends Controller
             $query->where('status_spk', $request->status_filter);
         }
 
+        // --- FILTER DESIGNER (BARU) ---
+        if ($request->filled('designer_filter')) {
+            $query->where('designer_id', $request->designer_filter);
+        }
+
         // 2. LOGIKA PENCARIAN
         if ($request->filled('search')) {
             $search = $request->search;
@@ -147,9 +167,17 @@ class MSpkController extends Controller
 
         $spks = $query->latest()->paginate(10);
 
+        // Ambil Data Designer untuk Dropdown Filter
+        $designersQuery = \App\Models\User::role('designer');
+        if ($user->cabang->jenis !== 'pusat') {
+            $designersQuery->where('cabang_id', $user->cabang_id);
+        }
+        $listDesigners = $designersQuery->get();
+
         return view('spk.designer.indexSpkLembur', [
             'title' => 'Manajemen SPK Lembur',
-            'spks'  => $spks
+            'spks'  => $spks,
+            'listDesigners' => $listDesigners // Kirim variabel ini ke view
         ]);
     }
 
@@ -461,6 +489,7 @@ class MSpkController extends Controller
             'items.*.file'        => 'required|string',
             'items.*.qty'         => 'required|integer|min:1',
 
+            'items.*.harga'       => 'required_if:items.*.jenis,charge|nullable|numeric|min:0',
             'items.*.p'           => 'required_unless:items.*.jenis,charge|numeric|min:0',
             'items.*.l'           => 'required_unless:items.*.jenis,charge|numeric|min:0',
             'items.*.bahan_id'    => 'required_unless:items.*.jenis,charge|nullable|exists:m_bahan_bakus,id',
@@ -489,6 +518,7 @@ class MSpkController extends Controller
                         'spk_id'          => $spk->id,
                         'nama_file'       => $item['file'],
                         'jenis_order'     => $item['jenis'],
+                        'harga'           => $isCharge ? ($item['harga'] ?? 0) : 0,
                         'p'               => $isCharge ? null : $item['p'],
                         'l'               => $isCharge ? null : $item['l'],
                         'bahan_id'        => $isCharge ? null : $item['bahan_id'],
@@ -611,13 +641,17 @@ class MSpkController extends Controller
                     ->where('is_lembur', false);
             });
 
-        // 2. PERBAIKAN: FILTER SPESIFIK PER USER
-        // Kita tidak lagi memfilter berdasarkan "Role", tapi langsung berdasarkan "operator_id"
-        // agar Operator A tidak melihat kerjaan Operator B meski role-nya sama.
+        // 2. FILTER SPESIFIK PER USER
         $query->where('operator_id', $user->id);
 
-        // 3. Filter Status Produksi (Hanya yang masih aktif)
-        $query->whereIn('status_produksi', ['pending', 'ripping', 'ongoing', 'finishing']);
+        // 3. --- FILTER STATUS PRODUKSI (BARU) ---
+        if ($request->filled('status_filter')) {
+            // Jika dropdown filter dipilih
+            $query->where('status_produksi', $request->status_filter);
+        } else {
+            // Default: Hanya yang masih aktif (belum done)
+            $query->whereIn('status_produksi', ['pending', 'ripping', 'ongoing', 'finishing']);
+        }
 
         // 4. Pencarian
         if ($request->has('search') && $request->search != '') {
@@ -646,32 +680,25 @@ class MSpkController extends Controller
         // 1. Mulai Query dari Item (MSubSpk)
         $query = MSubSpk::with(['spk.designer', 'spk.cabang', 'spk.cabangAsal', 'bahan'])
             ->whereHas('spk', function ($q) {
-
-                // --- HAPUS FILTER CABANG INI ---
-                // Masalahnya: User Cabang 6, SPK Cabang 5.
-                // Jika difilter pakai user->cabang_id (6), SPK Cabang 5 tidak akan ketemu.
-                // Karena ini LEMBUR, operator boleh mengerjakan lintas cabang.
-                /* if ($user->cabang->jenis !== 'pusat') {
-                    $q->where('cabang_id', $user->cabang_id);
-                }
-                */
-
                 // Filter Khusus Lembur & Status
-                // Gunakan whereIn status 'pending' & 'acc' supaya data muncul
-                // walaupun admin belum klik tombol ACC (untuk testing).
                 $q->whereIn('status_spk', ['acc'])
                     ->where('is_lembur', true);
             });
 
         // 2. FILTER UTAMA: Spesifik Item milik Operator yang Login
-        // Ini kuncinya. Budi (ID 41) hanya akan melihat item dimana dia ditugaskan.
         $query->where('operator_id', $user->id);
 
-        // 3. Filter Status Produksi Aktif
-        $query->whereIn('status_produksi', ['pending', 'ripping', 'ongoing', 'finishing']);
+        // 3. --- FILTER STATUS PRODUKSI ---
+        if ($request->filled('status_filter')) {
+            // Jika dropdown filter dipilih
+            $query->where('status_produksi', $request->status_filter);
+        } else {
+            // Default: Hanya yang masih aktif (belum done)
+            $query->whereIn('status_produksi', ['pending', 'ripping', 'ongoing', 'finishing']);
+        }
 
         // 4. Logika Pencarian
-        if ($request->has('search') && $request->search != '') {
+        if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('nama_file', 'like', "%$search%")
@@ -684,7 +711,6 @@ class MSpkController extends Controller
 
         $items = $query->oldest()->paginate(15);
 
-        // PENTING: Gunakan View Operator (Tabel Item), BUKAN View Designer (Tabel Header)
         return view('spk.operator.indexSpk', [
             'title' => 'Produksi Lembur',
             'items' => $items

@@ -174,7 +174,8 @@
                                                 'RIM' => 'layers',
                                                 'TANK' => 'propane_tank',
                                                 'BOTOL' => 'liquor',
-                                                'LUSIN' => 'view_comfy'
+                                                'LUSIN' => 'view_comfy',
+                                                'GABAR' => 'grid_view'
                                             ];
 
                                             $icon = $icons[strtoupper(trim($item->satuan))] ?? 'inventory_2';

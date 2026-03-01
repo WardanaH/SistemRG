@@ -171,6 +171,10 @@
                     </table>
                 </div>
             </div>
+            <div class="card-footer py-3">
+                    {{-- withQueryString() agar saat pindah halaman (pagination), filter tetap nempel --}}
+                    {{ $bahans->withQueryString()->links('pagination::bootstrap-5') }}
+                </div>
         </div>
 
     </div>

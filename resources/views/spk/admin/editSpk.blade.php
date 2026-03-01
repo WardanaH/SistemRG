@@ -144,12 +144,20 @@
                     </div>
                 </div>
 
-                {{-- 2. Nama File --}}
+                {{-- 2. Nama File & Harga --}}
                 <div class="row mb-3">
-                    <div class="col-md-12">
+                    <div class="col-md-12 mb-3">
                         <div class="input-group input-group-outline is-filled">
                             <label class="form-label">Nama File</label>
                             <input type="text" id="modal_nama_file" class="form-control">
+                        </div>
+                    </div>
+
+                    {{-- Input Harga (Disembunyikan default, hanya muncul jika Charge) --}}
+                    <div class="col-md-12" id="sec_harga" style="display: none;">
+                        <div class="input-group input-group-outline is-filled">
+                            <label class="form-label">Nominal Harga (Rp)</label>
+                            <input type="number" id="modal_harga" class="form-control" min="0">
                         </div>
                     </div>
                 </div>
@@ -225,9 +233,9 @@
     const existingItems = @json($spk->items);
 
     document.addEventListener("DOMContentLoaded", function() {
-        // Load data lama ke tabel
+        // Load data lama ke tabel saat halaman dimuat
         existingItems.forEach(item => {
-            let opNama = item.operator ? item.operator.nama : 'Tidak Ada';
+            let opNama = item.operator ? item.operator.nama : 'Tidak Ada (Charge)';
             let bhnNama = item.bahan ? item.bahan.nama_bahan : '-';
 
             addItemToTable({
@@ -241,83 +249,140 @@
                 finishing: item.finishing || '-',
                 catatan: item.catatan || '-',
                 operatorId: item.operator_id || '',
-                operatorNama: opNama
+                operatorNama: opNama,
+                harga: item.harga || 0 // <--- PASTIKAN HARGA DILOAD
+            });
+        });
+
+        // Event listener saat modal radio jenis berubah
+        document.querySelectorAll('input[name="modal_jenis"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                toggleModalFields(this.value);
             });
         });
     });
 
-    // --- 1. BUKA MODAL TAMBAH BARU ---
+    // FUNGSI UNTUK MENAMPILKAN/MENYEMBUNYIKAN FIELD BERDASARKAN JENIS ORDER
+    function toggleModalFields(jenis) {
+        const isCharge = jenis === 'charge';
+        const operatorSection = document.getElementById('modal_operator').closest('.col-md-6');
+        const specSection = document.getElementById('modal_p').closest('.row');
+        const finishingSection = document.getElementById('modal_finishing').closest('.col-md-6');
+        const hargaSection = document.getElementById('sec_harga');
+
+        if (isCharge) {
+            operatorSection.style.display = 'none';
+            specSection.querySelectorAll('.col-md-3, .col-md-4').forEach(el => el.style.display = 'none');
+            finishingSection.style.display = 'none';
+            hargaSection.style.display = 'block';
+        } else {
+            operatorSection.style.display = 'block';
+            specSection.querySelectorAll('.col-md-3, .col-md-4, .col-md-2').forEach(el => el.style.display = 'block');
+            finishingSection.style.display = 'block';
+            hargaSection.style.display = 'none';
+        }
+    }
+
     function openModalTambah() {
         resetModal();
         document.getElementById('modalLabel').innerText = 'Tambah Detail Item';
         new bootstrap.Modal(document.getElementById('modalTambahItem')).show();
     }
 
-    // --- 2. TEMPLATE RENDER BARIS HTML ---
     function generateRowHtml(id, data, innerOnly = false) {
-        // Penyesuaian warna badge
+        // Penentuan Warna Badge
         let badgeColor = 'secondary';
         if(data.jenis === 'outdoor') badgeColor = 'warning';
         else if(data.jenis === 'indoor') badgeColor = 'success';
         else if(data.jenis === 'multi') badgeColor = 'info';
         else if(data.jenis === 'dtf') badgeColor = 'primary';
-        else if(data.jenis === 'charge') badgeColor = 'danger';
+        else if(data.jenis === 'charge') badgeColor = 'dark';
 
+        // Logika Teks Operator
+        let infoOperator = (data.jenis === 'charge')
+            ? '<span class="text-danger"><i class="fa fa-paint-brush me-1"></i> Biaya Desain</span>'
+            : `<i class="fa fa-user me-1 text-secondary"></i> ${data.operatorNama}`;
+
+        // Logika Teks Spesifikasi / Harga
+        let spesifikasiHtml = '';
+        if (data.jenis === 'charge') {
+            let formatRupiah = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(data.harga);
+            spesifikasiHtml = `<span class="text-success font-weight-bold text-sm">${formatRupiah}</span>`;
+        } else {
+            spesifikasiHtml = `
+                <p class="text-xs font-weight-bold mb-0">Bahan: ${data.bahanNama}</p>
+                <p class="text-xs text-secondary mb-0">Ukuran: ${data.p} x ${data.l} cm</p>
+                <p class="text-xs text-secondary mb-0">Finishing: ${data.finishing || '-'}</p>
+            `;
+        }
+
+        // Tepat 5 Kolom Sesuai Header Tabel HTML Anda
         let content = `
-            <td>
-                <span class="badge bg-gradient-${badgeColor} mb-1">${data.jenis.toUpperCase()}</span><br>
-                <strong>${data.file}</strong><br>
-                <small class="text-xs text-secondary"><i class="fa fa-user me-1"></i> ${data.operatorNama}</small>
+            {{-- 1. INFO ITEM (Jenis, File, Operator) --}}
+            <td class="align-middle">
+                <span class="badge bg-gradient-${badgeColor} mb-2">${data.jenis.toUpperCase()}</span><br>
+                <h6 class="mb-1 text-sm text-wrap" style="max-width: 200px;">${data.file}</h6>
+                <span class="text-xs font-weight-bold text-dark">${infoOperator}</span>
 
+                {{-- Hidden Inputs (Wajib untuk dikirim ke Controller) --}}
                 <input type="hidden" name="items[${id}][jenis]" value="${data.jenis}" class="val-jenis">
-                <input type="hidden" name="items[${id}][file]" value="${data.file}" class="val-file">
                 <input type="hidden" name="items[${id}][operator_id]" value="${data.operatorId}" class="val-op-id">
-                <input type="hidden" name="items[${id}][catatan]" value="${data.catatan || ''}" class="val-catatan">
                 <input type="hidden" class="val-op-nama" value="${data.operatorNama}">
+                <input type="hidden" name="items[${id}][file]" value="${data.file}" class="val-file">
+                <input type="hidden" name="items[${id}][harga]" value="${data.harga || 0}" class="val-harga">
             </td>
-            <td class="text-xs">
-                ${data.jenis === 'charge' ? '<span class="text-danger font-weight-bold">Biaya Desain (Charge)</span>' : `${data.p} x ${data.l} cm <br> Bahan: <strong>${data.bahanNama}</strong> <br> Fin: ${data.finishing || '-'}`}
 
+            {{-- 2. SPESIFIKASI --}}
+            <td class="align-middle">
+                ${spesifikasiHtml}
+
+                {{-- Hidden Inputs --}}
                 <input type="hidden" name="items[${id}][p]" value="${data.p}" class="val-p">
                 <input type="hidden" name="items[${id}][l]" value="${data.l}" class="val-l">
                 <input type="hidden" name="items[${id}][bahan_id]" value="${data.bahanId}" class="val-bahan-id">
                 <input type="hidden" name="items[${id}][finishing]" value="${data.finishing || ''}" class="val-finishing">
                 <input type="hidden" class="val-bahan-nama" value="${data.bahanNama}">
             </td>
-            <td class="text-center text-sm font-weight-bold">
+
+            {{-- 3. QTY --}}
+            <td class="text-center align-middle text-sm font-weight-bold">
                 ${data.qty}
                 <input type="hidden" name="items[${id}][qty]" value="${data.qty}" class="val-qty">
             </td>
-            <td class="text-center text-sm font-weight-bold">
-                ${data.catatan || '-'}
-                <input type="hidden" name="items[${id}][catatan]" value="${data.catatan}" class="val-catatan">
+
+            {{-- 4. CATATAN --}}
+            <td class="text-center align-middle">
+                <h6 class="text-xs text-secondary font-weight-normal mb-0 text-wrap" style="max-width: 150px;">
+                    ${data.catatan || '-'}
+                </h6>
+                <input type="hidden" name="items[${id}][catatan]" value="${data.catatan || ''}" class="val-catatan">
             </td>
-            <td class="text-center">
-                <button type="button" class="btn btn-link text-warning px-2 mb-0" onclick="editItem(${id})">
+
+            {{-- 5. AKSI --}}
+            <td class="text-center align-middle">
+                <button type="button" class="btn btn-link text-warning px-2 mb-0" onclick="editItem(${id})" data-toggle="tooltip" title="Edit Item">
                     <i class="material-icons text-sm">edit</i>
                 </button>
-                <button type="button" class="btn btn-link text-danger px-2 mb-0" onclick="hapusItem(${id})">
+                <button type="button" class="btn btn-link text-danger px-2 mb-0" onclick="hapusItem(${id})" data-toggle="tooltip" title="Hapus Item">
                     <i class="material-icons text-sm">delete</i>
                 </button>
             </td>
         `;
-        return innerOnly ? content : `<tr id="item-${id}">${content}</tr>`;
+
+        return innerOnly ? content : `<tr id="item-${id}" style="border-bottom: 1px solid #f0f2f5;">${content}</tr>`;
     }
 
-    // --- 3. TAMBAH BARIS BARU KE TABEL ---
     function addItemToTable(data) {
         let html = generateRowHtml(itemIndex, data);
         document.getElementById('tabelItemBody').insertAdjacentHTML('beforeend', html);
         itemIndex++;
     }
 
-    // --- 4. UPDATE BARIS LAMA DI TABEL ---
     function updateItemInTable(id, data) {
         let row = document.getElementById('item-' + id);
-        row.innerHTML = generateRowHtml(id, data, true); // True = update inner HTML-nya saja
+        row.innerHTML = generateRowHtml(id, data, true);
     }
 
-    // --- 5. LOGIKA SIMPAN (BARU / UPDATE) ---
     function simpanItem() {
         let jenis = document.querySelector('input[name="modal_jenis"]:checked').value;
         let operatorSelect = document.getElementById('modal_operator');
@@ -328,30 +393,26 @@
         let qty = document.getElementById('modal_qty').value;
         let finishing = document.getElementById('modal_finishing').value;
         let catatan = document.getElementById('modal_catatan').value;
+        let harga = document.getElementById('modal_harga').value || 0;
 
-        // --- VALIDASI CONDITIONAL ---
         if (jenis === 'charge') {
-            // Jika Charge, yang wajib cuma File & Qty
-            if (!file || !qty) {
-                Swal.fire("Data Belum Lengkap", "Mohon lengkapi Nama File dan Qty untuk Charge Desain.", "warning");
+            if (!file || !qty || !harga) {
+                Swal.fire("Data Belum Lengkap", "Mohon isi Nama File, Qty, dan Nominal Harga!", "warning");
                 return;
             }
         } else {
-            // Jika selain Charge, wajib semua (kecuali catatan & finishing bisa '-')
-            if (!file || !p || !l || !bahanSelect.value || !operatorSelect.value) {
-                Swal.fire("Data Belum Lengkap", "Mohon lengkapi Nama File, Ukuran, Bahan, dan Operator.", "warning");
+            if (!file || !p || !l || !bahanSelect.value || !operatorSelect.value || !qty) {
+                Swal.fire("Data Belum Lengkap", "Mohon lengkapi Nama File, Ukuran, Bahan, Qty, dan Operator.", "warning");
                 return;
             }
         }
 
-        // Ambil nama dari dropdown (Handle kemungkinan null/tidak dipilih)
         let opNama = operatorSelect.value ? operatorSelect.options[operatorSelect.selectedIndex].text : 'Tidak Ada (Charge)';
         let bhnNama = bahanSelect.value ? bahanSelect.options[bahanSelect.selectedIndex].text : '-';
 
         let data = {
             jenis: jenis,
             file: file,
-            // Paksa set 0/kosong jika jenisnya charge agar bersih
             p: (jenis === 'charge') ? 0 : p,
             l: (jenis === 'charge') ? 0 : l,
             bahanId: (jenis === 'charge') ? '' : bahanSelect.value,
@@ -360,28 +421,21 @@
             finishing: (jenis === 'charge') ? '-' : finishing,
             catatan: catatan,
             operatorId: (jenis === 'charge') ? '' : operatorSelect.value,
-            operatorNama: opNama
+            operatorNama: opNama,
+            harga: (jenis === 'charge') ? harga : 0
         };
 
         let editIdx = document.getElementById('edit_index').value;
 
-        if (editIdx !== "") {
-            // Jika ada isinya, berarti UPDATE data
-            updateItemInTable(editIdx, data);
-        } else {
-            // Jika kosong, berarti TAMBAH BARU
-            addItemToTable(data);
-        }
+        if (editIdx !== "") updateItemInTable(editIdx, data);
+        else addItemToTable(data);
 
-        // Tutup Modal
         bootstrap.Modal.getInstance(document.getElementById('modalTambahItem')).hide();
     }
 
-    // --- 6. TARIK DATA DARI TABEL KE MODAL (EDIT) ---
     function editItem(id) {
         let row = document.getElementById('item-' + id);
 
-        // Ambil data dari hidden input yang ada di dalam row tersebut
         let file = row.querySelector('.val-file').value;
         let catatan = row.querySelector('.val-catatan').value;
         let jenis = row.querySelector('.val-jenis').value;
@@ -391,45 +445,48 @@
         let bahanId = row.querySelector('.val-bahan-id').value;
         let qty = row.querySelector('.val-qty').value;
         let finishing = row.querySelector('.val-finishing').value;
+        let harga = row.querySelector('.val-harga') ? row.querySelector('.val-harga').value : 0;
 
-        // Isi form modal dengan data yang ditarik
         document.getElementById('modal_nama_file').value = file;
         document.getElementById('modal_catatan').value = catatan;
-        document.querySelector(`input[name="modal_jenis"][value="${jenis}"]`).checked = true;
-
-        // Handle select jika kosong (karena sebelumnya charge)
-        document.getElementById('modal_operator').value = opId || "";
-        document.getElementById('modal_p').value = p || "";
-        document.getElementById('modal_l').value = l || "";
-        document.getElementById('modal_bahan').value = bahanId || "";
+        document.getElementById('modal_p').value = p || "0";
+        document.getElementById('modal_l').value = l || "0";
         document.getElementById('modal_qty').value = qty;
-        document.getElementById('modal_finishing').value = finishing || "";
+        document.getElementById('modal_harga').value = harga;
 
-        // Tandai bahwa ini adalah proses Edit (Simpan ID ke hidden input modal)
+        let radioJenis = document.querySelector(`input[name="modal_jenis"][value="${jenis}"]`);
+        radioJenis.checked = true;
+        toggleModalFields(jenis); // Trigger form styling
+
+        $('#modal_operator').val(opId).trigger('change');
+        $('#modal_bahan').val(bahanId).trigger('change');
+        $('#modal_finishing').val(finishing).trigger('change');
+
         document.getElementById('edit_index').value = id;
         document.getElementById('modalLabel').innerText = 'Edit Detail Item';
 
-        // Tampilkan Modal
         new bootstrap.Modal(document.getElementById('modalTambahItem')).show();
     }
 
-    // --- 7. HAPUS BARIS ---
     function hapusItem(id) {
         document.getElementById('item-' + id).remove();
     }
 
-    // --- 8. RESET MODAL FORM ---
     function resetModal() {
-        document.getElementById('edit_index').value = ""; // Kosongkan state edit
+        document.getElementById('edit_index').value = "";
         document.getElementById('modal_nama_file').value = "";
         document.getElementById('modal_catatan').value = "";
-        document.getElementById('modal_p').value = "";
-        document.getElementById('modal_l').value = "";
+        document.getElementById('modal_p').value = "0";
+        document.getElementById('modal_l').value = "0";
         document.getElementById('modal_qty').value = "1";
-        document.getElementById('modal_operator').selectedIndex = 0;
-        document.getElementById('modal_bahan').selectedIndex = 0;
-        document.getElementById('modal_finishing').selectedIndex = 0;
+        document.getElementById('modal_harga').value = "";
+
+        $('#modal_operator').val('').trigger('change');
+        $('#modal_bahan').val('').trigger('change');
+        $('#modal_finishing').val('').trigger('change');
+
         document.getElementById('m_outdoor').checked = true;
+        toggleModalFields('outdoor'); // Set styling form ke default
     }
 </script>
 @endpush

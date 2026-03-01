@@ -341,7 +341,8 @@
                 <input type="hidden" name="items[${idx}][bahan_id]" value="${bahanId}">
             </td>
             <td class="text-center text-sm">
-                ${qty}
+                ${qty}<br>
+                ${finishing}
                 <input type="hidden" name="items[${idx}][qty]" value="${qty}">
                 <input type="hidden" name="items[${idx}][finishing]" value="${finishing}">
             </td>

@@ -28,13 +28,35 @@
                     </div>
 
                     {{-- SEARCH BAR --}}
+                    {{-- AREA FILTER & PENCARIAN --}}
                     <div>
-                        <form action="{{ route('spk.produksi') }}" method="GET">
-                            <div class="bg-white rounded d-flex align-items-center px-2" style="height: 40px; min-width: 250px;">
+                        <form action="{{ url()->current() }}" method="GET" class="d-flex align-items-center m-0" style="gap: 10px;">
+
+                            {{-- Dropdown Filter Status --}}
+                            <div class="bg-white rounded px-2" style="height: 40px; border: 1px solid #e9ecef;">
+                                <select name="status_filter" class="form-control border-0 bg-transparent h-100 px-1 text-sm text-secondary" style="appearance: auto; box-shadow: none; min-width: 140px;" onchange="this.form.submit()">
+                                    <option value="">Semua Status Aktif</option>
+                                    <option value="pending" {{ request('status_filter') == 'pending' ? 'selected' : '' }}>Pending</option>
+                                    <option value="ripping" {{ request('status_filter') == 'ripping' ? 'selected' : '' }}>Ripping</option>
+                                    <option value="ongoing" {{ request('status_filter') == 'ongoing' ? 'selected' : '' }}>Ongoing</option>
+                                    <option value="finishing" {{ request('status_filter') == 'finishing' ? 'selected' : '' }}>Finishing</option>
+                                </select>
+                            </div>
+
+                            {{-- Search Bar --}}
+                            <div class="bg-white rounded d-flex align-items-center px-2" style="height: 40px; min-width: 250px; border: 1px solid #e9ecef;">
                                 <i class="material-icons text-secondary text-sm">search</i>
+
                                 <input type="text" name="search" class="form-control border-0 ps-2"
-                                    placeholder="Cari File / No SPK..." value="{{ request('search') }}"
+                                    placeholder="Cari File / SPK..." value="{{ request('search') }}"
                                     style="box-shadow: none !important; height: 100%; background: transparent;">
+
+                                @if(request('search') || request('status_filter'))
+                                {{-- Tombol reset --}}
+                                <a href="{{ url()->current() }}" class="text-danger d-flex align-items-center cursor-pointer" title="Reset">
+                                    <i class="material-icons text-sm">close</i>
+                                </a>
+                                @endif
                             </div>
                         </form>
                     </div>
@@ -42,10 +64,12 @@
             </div>
 
             {{-- TABEL DATA --}}
+            {{-- TABEL DATA --}}
             <div class="card-body px-0 pb-2">
                 <div class="table-responsive p-0">
-                    <table class="table align-items-center mb-0">
-                        <thead>
+                    {{-- 1. Tambahkan table-hover agar baris menyala saat di-hover --}}
+                    <table class="table align-items-center mb-0 table-hover">
+                        <thead class="bg-light"> {{-- Tambahkan background abu-abu terang di header --}}
                             <tr>
                                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-3">Info SPK (Parent)</th>
                                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Detail Item (File)</th>
@@ -59,12 +83,14 @@
                         </thead>
                         <tbody>
                             @forelse($items as $item)
-                            <tr>
+                            {{-- 2. Tambahkan border tebal sebagai pembatas antar tugas --}}
+                            <tr style="border-bottom: 2px solid #adb5bd;">
+
                                 {{-- KOLOM 1: INFO SPK PARENT --}}
-                                <td class="ps-3">
+                                <td class="ps-3 py-4"> {{-- Tambahkan padding vertikal (py-4) agar lega --}}
                                     <div class="d-flex flex-column justify-content-center">
-                                        <h4 class="text-primary mb-1">{{ $item->spk->nama_pelanggan }}</p>
-                                        <p class="mb-0 text-sm text-secondary font-weight-bold">{{ $item->spk->no_spk }}</h6>
+                                        <h4 class="text-primary mb-1 text-wrap" style="max-width: 180px;">{{ $item->spk->nama_pelanggan }}</h4>
+                                        <p class="mb-0 text-sm text-secondary font-weight-bold">{{ $item->spk->no_spk }}</p>
                                         <span class="text-xxs text-muted">
                                             {{ \Carbon\Carbon::parse($item->spk->tanggal_spk)->format('d M Y') }}
                                         </span>
@@ -74,15 +100,28 @@
                                 {{-- KOLOM 2: NAMA FILE & JENIS --}}
                                 <td>
                                     <div class="d-flex flex-column">
-                                        <h6 class="mb-0 text-sm text-truncate" style="max-width: 200px;">
-                                            {{ $item->nama_file }}
+                                        <h6 class="mb-0 text-sm text-wrap" style="max-width: 200px; line-height: 1.4;">
+                                            Designer : {{ $item->spk->designer->nama }}
                                         </h6>
+
+                                        {{-- 3. Gunakan HR tipis / dashed untuk pemisah info dalam kolom --}}
+                                        <hr class="my-2" style="border-top: 1px dashed #d2d6da; opacity: 1;">
+
+                                        <h6 class="mb-0 text-sm text-wrap" style="max-width: 200px; line-height: 1.4;">
+                                            File : {{ $item->nama_file }}
+                                        </h6>
+
+                                        <hr class="my-2" style="border-top: 1px dashed #d2d6da; opacity: 1;">
+
                                         <div>
-                                            {{-- Badge Jenis Order --}}
                                             @if($item->jenis_order == 'outdoor')
-                                            <span class="badge badge-sm bg-gradient-warning text-xxs me-1">OUT</span>
-                                            @else
-                                            <span class="badge badge-sm bg-gradient-success text-xxs me-1">IN</span>
+                                            <span class="badge badge-sm bg-gradient-warning text-xxs me-1">Tipe : OUTDOOR</span>
+                                            @elseif($item->jenis_order == 'indoor')
+                                            <span class="badge badge-sm bg-gradient-success text-xxs me-1">Tipe : INDOOR</span>
+                                            @elseif($item->jenis_order == 'multi')
+                                            <span class="badge badge-sm bg-gradient-success text-xxs me-1">Tipe : MULTI</span>
+                                            @elseif($item->jenis_order == 'dtf')
+                                            <span class="badge badge-sm bg-gradient-success text-xxs me-1">Tipe : DTF</span>
                                             @endif
                                         </div>
                                     </div>
@@ -90,31 +129,39 @@
 
                                 {{-- KOLOM 3: SPESIFIKASI --}}
                                 <td>
-                                    <p class="text-xs font-weight-bold mb-0">Bahan: {{ $item->bahan->nama_bahan ?? '-' }}</p>
-                                    <p class="text-xs text-secondary mb-0">{{ $item->p }} x {{ $item->l }} cm</p>
-                                    <p class="text-xs text-secondary mb-0">Fin: {{ $item->finishing ?? '-' }}</p>
+                                    <h6 class="mb-0 text-sm text-wrap" style="max-width: 200px; line-height: 1.4;">Bahan: {{ $item->bahan->nama_bahan ?? '-' }}</h6>
+
+                                    <hr class="my-2" style="border-top: 1px dashed #d2d6da; opacity: 1;">
+
+                                    <h6 class="mb-0 text-sm text-wrap" style="max-width: 200px; line-height: 1.4;">
+                                        {{ rtrim(rtrim($item->p, '0'), '.') }} x {{ rtrim(rtrim($item->l, '0'), '.') }} cm
+                                    </h6>
+
+                                    <hr class="my-2" style="border-top: 1px dashed #d2d6da; opacity: 1;">
+
+                                    <h6 class="mb-0 text-sm text-wrap" style="max-width: 200px; line-height: 1.4;">Fin: {{ $item->finishing ?? '-' }}</h6>
                                 </td>
 
-                                {{-- KOLOM 4: CATATAN PRODUKSI --}}
-                                <td>
-                                    <p class="text-xs text-secondary mb-0">
-                                        {{ $item->catatan ?? '-' }}
-                                    </p>
-                                </td>
-
-                                {{-- KOLOM 5: CATATAN OPERATOR --}}
-                                <td>
-                                    <p class="text-xs text-secondary mb-0">
-                                        {{ $item->catatan_operator ?? '-' }}
-                                    </p>
-                                </td>
-
-                                {{-- KOLOM 4: QTY --}}
+                                {{-- KOLOM 6: QTY --}}
                                 <td class="align-middle text-center">
                                     <h6 class="mb-0 text-sm">{{ $item->qty }}</h6>
                                 </td>
 
-                                {{-- KOLOM 5: STATUS ITEM --}}
+                                {{-- KOLOM 4: CATATAN PRODUKSI --}}
+                                <td>
+                                    <h6 class="text-xs text-black mb-0 text-wrap" style="max-width: 200px;">
+                                        {{ $item->catatan ?? '-' }}
+                                    </h6>
+                                </td>
+
+                                {{-- KOLOM 5: CATATAN OPERATOR --}}
+                                <td>
+                                    <h6 class="text-xs text-black mb-0 text-wrap" style="max-width: 200px;">
+                                        {{ $item->catatan_operator ?? '-' }}
+                                    </h6>
+                                </td>
+
+                                {{-- KOLOM 7: STATUS ITEM --}}
                                 <td class="align-middle text-center text-sm">
                                     @php
                                     $statusClass = 'secondary';
@@ -129,10 +176,10 @@
                                     </span>
                                 </td>
 
-                                {{-- KOLOM 6: AKSI --}}
+                                {{-- KOLOM 8: AKSI --}}
                                 <td class="align-middle text-end pe-4">
                                     <button type="button"
-                                        class="btn btn-sm btn-info btn-update-status mb-0"
+                                        class="btn btn-sm btn-info btn-update-status mb-0 shadow-info"
                                         data-id="{{ $item->id }}"
                                         data-file="{{ $item->nama_file }}"
                                         data-status="{{ $item->status_produksi }}"
@@ -143,7 +190,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="6" class="text-center py-5">
+                                <td colspan="8" class="text-center py-5">
                                     <div class="d-flex flex-column align-items-center justify-content-center">
                                         <i class="material-icons text-secondary text-4xl mb-2">check_circle</i>
                                         <h6 class="text-secondary font-weight-normal">Tidak ada antrian pekerjaan untuk Anda.</h6>
@@ -178,9 +225,9 @@
 
                 <div class="modal-body">
                     {{-- Status Dropdown --}}
-                    <div class="input-group input-group-outline mb-4 is-filled" >
+                    <div class="input-group input-group-outline mb-4 is-filled">
                         <label class="form-label">Status Produksi</label>
-                        <select name="status_produksi" id="selectStatusProduksi" class="form-control" >
+                        <select name="status_produksi" id="selectStatusProduksi" class="form-control">
                             <option value="pending">Pending (Menunggu)</option>
                             <option value="ripping">Ripping (Persiapan)</option>
                             <option value="ongoing">Ongoing (Sedang Cetak)</option>

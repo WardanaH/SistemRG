@@ -12,7 +12,8 @@
         <div class="card-body">
             <form action="{{ route('laporan.charge') }}" method="GET" id="filterForm">
                 <div class="row align-items-end">
-                    <div class="col-md-4 mb-3">
+                    {{-- Filter Tipe --}}
+                    <div class="col-md-3 mb-3">
                         <label class="form-label">Pilih Rentang Waktu</label>
                         <div class="input-group input-group-outline is-filled">
                             <select name="filter_type" id="filterType" class="form-control" onchange="toggleCustomDate()">
@@ -25,32 +26,48 @@
                         </div>
                     </div>
 
-                    {{-- INPUT TANGGAL CUSTOM (Hidden by default) --}}
-                    <div class="col-md-3 mb-3 custom-date" style="display: {{ $filterType == 'custom' ? 'block' : 'none' }};">
+                    {{-- INPUT TANGGAL CUSTOM --}}
+                    <div class="col-md-2 mb-3 custom-date" style="display: {{ $filterType == 'custom' ? 'block' : 'none' }};">
                         <label class="form-label">Dari Tanggal</label>
                         <div class="input-group input-group-outline is-filled">
                             <input type="date" name="start_date" class="form-control" value="{{ $startDate->format('Y-m-d') }}">
                         </div>
                     </div>
-                    <div class="col-md-3 mb-3 custom-date" style="display: {{ $filterType == 'custom' ? 'block' : 'none' }};">
+                    <div class="col-md-2 mb-3 custom-date" style="display: {{ $filterType == 'custom' ? 'block' : 'none' }};">
                         <label class="form-label">Sampai Tanggal</label>
                         <div class="input-group input-group-outline is-filled">
                             <input type="date" name="end_date" class="form-control" value="{{ $endDate->format('Y-m-d') }}">
                         </div>
                     </div>
 
+                    {{-- FILTER DESIGNER (Khusus Admin & Manajemen) --}}
+                    @hasrole('manajemen|admin')
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Filter Designer</label>
+                        <div class="input-group input-group-outline is-filled">
+                            <select name="designer_filter" class="form-control" style="appearance: auto;">
+                                <option value="">Semua Designer</option>
+                                @foreach($listDesigners as $des)
+                                    <option value="{{ $des->id }}" {{ request('designer_filter') == $des->id ? 'selected' : '' }}>
+                                        {{ $des->nama }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    @endhasrole
+
                     {{-- TOMBOL FILTER & EXPORT --}}
-                    <div class="col-md-5 mb-3 d-flex gap-2">
+                    <div class="col-md-4 mb-3 d-flex gap-2">
                         <button type="submit" class="btn bg-gradient-primary mb-0 flex-fill">
                             <i class="material-icons text-sm me-1">search</i> Tampil
                         </button>
 
-                        {{-- request()->all() berfungsi membawa parameter tanggal saat tombol export ditekan --}}
-                        <a href="{{ route('laporan.charge.pdf', request()->all()) }}" target="_blank" class="btn btn-outline-danger mb-0 flex-fill">
+                        <a href="{{ route('laporan.charge.pdf', request()->all()) }}" target="_blank" class="btn btn-outline-danger mb-0 flex-fill px-2">
                             <i class="material-icons text-sm me-1">picture_as_pdf</i> PDF
                         </a>
 
-                        <a href="{{ route('laporan.charge.excel', request()->all()) }}" target="_blank" class="btn btn-outline-success mb-0 flex-fill">
+                        <a href="{{ route('laporan.charge.excel', request()->all()) }}" target="_blank" class="btn btn-outline-success mb-0 flex-fill px-2">
                             <i class="material-icons text-sm me-1">table_view</i> Excel
                         </a>
                     </div>

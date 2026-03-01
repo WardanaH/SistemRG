@@ -41,6 +41,7 @@
             <div class="card-body px-3 pb-2">
 
                 {{-- AREA FILTER & PENCARIAN --}}
+                {{-- AREA FILTER & PENCARIAN --}}
                 <form action="{{ route('spk-bantuan.index') }}" method="GET" class="mb-4 bg-gray-100 p-3 border-radius-lg">
                     <div class="row align-items-end">
                         {{-- Filter Tanggal Awal --}}
@@ -66,20 +67,33 @@
                             </select>
                         </div>
 
+                        {{-- Filter Designer (BARU) --}}
+                        <div class="col-md-2 col-sm-6 mb-2">
+                            <label class="text-xs font-weight-bold mb-0">Designer</label>
+                            <select name="designer_filter" class="form-control border px-2 text-sm bg-white" style="appearance: auto;">
+                                <option value="">Semua Designer</option>
+                                @foreach($listDesigners as $des)
+                                    <option value="{{ $des->id }}" {{ request('designer_filter') == $des->id ? 'selected' : '' }}>
+                                        {{ $des->nama }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
                         {{-- Kolom Pencarian --}}
-                        <div class="col-md-4 col-sm-6 mb-2">
+                        <div class="col-md-2 col-sm-6 mb-2">
                             <label class="text-xs font-weight-bold mb-0">Pencarian</label>
-                            <input type="text" name="search" class="form-control border px-2 text-sm bg-white" placeholder="No SPK / Pelanggan..." value="{{ request('search') }}">
+                            <input type="text" name="search" class="form-control border px-2 text-sm bg-white" placeholder="No SPK / Nama..." value="{{ request('search') }}">
                         </div>
 
                         {{-- Tombol Submit / Reset --}}
                         <div class="col-md-2 col-sm-12 mb-2 d-flex gap-2">
                             <button type="submit" class="btn btn-sm btn-info w-100 mb-0" title="Terapkan Filter">
-                                <i class="material-icons text-sm">search</i> Filter
+                                <i class="material-icons text-sm">search</i>
                             </button>
-                            @if(request('search') || request('start_date') || request('status_filter'))
+                            @if(request('search') || request('start_date') || request('status_filter') || request('designer_filter'))
                             <a href="{{ route('spk-bantuan.index') }}" class="btn btn-sm btn-outline-danger w-100 mb-0" title="Reset Filter">
-                                <i class="material-icons text-sm">close</i> Reset
+                                <i class="material-icons text-sm">close</i>
                             </a>
                             @endif
                         </div>

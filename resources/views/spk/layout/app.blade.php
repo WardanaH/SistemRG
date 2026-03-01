@@ -333,6 +333,37 @@
         }
     </script>
 
+    <script>
+        // --- SCRIPT JAM REALTIME WITA UNTUK SIDEBAR ---
+        function updateSidebarClock() {
+            const now = new Date();
+
+            // Memaksa waktu menyesuaikan zona Asia/Makassar (WITA)
+            const options = {
+                timeZone: 'Asia/Makassar',
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            };
+
+            // Format menjadi string HH:MM:SS
+            const timeString = now.toLocaleTimeString('id-ID', options);
+
+            // Cari elemen dengan id 'sidebar-clock'
+            const clockElement = document.getElementById('sidebar-clock');
+            if (clockElement) {
+                clockElement.innerText = timeString + ' WITA';
+            }
+        }
+
+        // Jalankan jika elemen jam ditemukan di halaman
+        if(document.getElementById('sidebar-clock')) {
+            setInterval(updateSidebarClock, 1000);
+            updateSidebarClock(); // Panggil sekali saat dimuat
+        }
+    </script>
+
     @stack('scripts')
 
 </body>

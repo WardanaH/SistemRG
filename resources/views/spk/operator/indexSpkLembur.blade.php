@@ -61,8 +61,8 @@
                                 {{-- KOLOM 1: INFO SPK PARENT --}}
                                 <td class="ps-3">
                                     <div class="d-flex flex-column justify-content-center">
-                                        <h6 class="mb-0 text-sm text-primary font-weight-bold">{{ $item->spk->no_spk }}</h6>
-                                        <p class="text-xs text-secondary mb-0">{{ $item->spk->nama_pelanggan }}</p>
+                                        <h4 class="text-primary mb-1">{{ $item->spk->nama_pelanggan }}</h6>
+                                        <p class="mb-0 text-sm text-secondary font-weight-bold">{{ $item->spk->no_spk }}</p>
                                         <span class="text-xxs text-muted">
                                             {{ \Carbon\Carbon::parse($item->spk->tanggal_spk)->format('d M Y') }}
                                         </span>
@@ -72,17 +72,23 @@
                                 {{-- KOLOM 2: NAMA FILE & JENIS --}}
                                 <td>
                                     <div class="d-flex flex-column">
-                                        <h6 class="mb-0 text-sm text-truncate" style="max-width: 200px;">
-                                            {{ $item->nama_file }}
+                                        <h6 class="mb-0 text-sm text-wrap" style="max-width: 250px; line-height: 1.4;">
+                                            Designer : {{ $item->spk->designer->nama }}
                                         </h6>
                                         <div>
                                             {{-- Badge Jenis Order --}}
                                             @if($item->jenis_order == 'outdoor')
-                                            <span class="badge badge-sm bg-gradient-warning text-xxs me-1">OUT</span>
+                                            <span class="badge badge-sm bg-gradient-warning text-xxs me-1">Tipe : OUTDOOR</span>
+                                            @elseif($item->jenis_order == 'indoor')
+                                            <span class="badge badge-sm bg-gradient-success text-xxs me-1">Tipe : INDOOR</span>
                                             @else
-                                            <span class="badge badge-sm bg-gradient-success text-xxs me-1">IN</span>
+                                            <span class="badge badge-sm bg-gradient-success text-xxs me-1">Tipe : MULTI</span>
                                             @endif
                                         </div>
+                                        <hr>
+                                        <h6 class="mb-0 text-sm text-wrap" style="max-width: 250px; line-height: 1.4;">
+                                            File : {{ $item->nama_file }}
+                                        </h6>
                                     </div>
                                 </td>
 
