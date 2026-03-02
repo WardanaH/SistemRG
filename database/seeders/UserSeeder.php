@@ -554,5 +554,20 @@ class UserSeeder extends Seeder
             'cabang_id' => $cabangMtp->id,
         ]);
         $invMtp->assignRole('inventory cabang');
+
+
+
+
+
+        // profil rg
+        $invMtp = User::create([
+            'nama' => 'admin profil RG',
+            'username' => 'profilrg',
+            'email' => 'profilrg@example.com',
+            'password' => Hash::make('password'),
+            'cabang_id' => $cabangUtama->id,
+        ]);
+        $invMtp->assignRole('profil');
+
     }
 }

@@ -18,6 +18,7 @@ Route::get('/table', function () {
 
 
 
+
 // require route
 require __DIR__.'/auth.php';
 require __DIR__.'/manajemen.php';
@@ -26,6 +27,7 @@ require __DIR__.'/operator.php';
 require __DIR__.'/designer.php';
 require __DIR__.'/gudang_pusat.php';
 require __DIR__.'/gudang_cabang.php';
+require __DIR__.'/profil.php';
 
 Route::get('/', function () {
     $user = auth()->user();
@@ -40,7 +42,7 @@ Route::get('/', function () {
         return redirect()->route('admin.dashboard');
     }
 
-    return redirect()->route('auth.index');
+    return redirect()->route('profil.beranda');
 })->middleware('auth')->name('home');
 
 
@@ -58,3 +60,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/laporan-kinerja/set-target-role', [LaporanController::class, 'storeTargetByRole'])
         ->name('laporan.storeTargetByRole');
 });
+
+
+
+

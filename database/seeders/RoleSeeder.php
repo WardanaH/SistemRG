@@ -18,5 +18,6 @@ class RoleSeeder extends Seeder
         Role::create(['name' => 'operator multi']);
         Role::create(['name' => 'inventory utama']);
         Role::create(['name' => 'inventory cabang']);
+        Role::create(['name' => 'profil']);
     }
 }
