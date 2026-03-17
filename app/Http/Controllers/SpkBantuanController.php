@@ -180,6 +180,7 @@ class SpkBantuanController extends Controller
                         'finishing'    => $item['finishing'] ?? '-',
                         'catatan'      => $item['catatan'] ?? '-',
                         'operator_id'  => $item['operator_id'], // Operator per item
+                        'harga'        => $item['harga'] ?? 0,
                         'status_produksi' => 'pending'
                     ]);
                 }

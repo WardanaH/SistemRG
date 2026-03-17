@@ -172,30 +172,19 @@ class UserController extends Controller
         return redirect()->route('manajemen.user')->with('success', 'User dihapus.');
     }
 
-    public function getOperatorsByCabang()
-    {
-        $operators = User::role(['operator indoor', 'operator outdoor', 'operator multi', 'operator dtf'])
-            ->get()
-            ->map(function ($user) {
-                return [
-                    'id' => $user->id,
-                    'nama' => $user->nama,
-                    'roles' => $user->getRoleNames()->implode(', ')
-                ];
-            });
-
-        return response()->json($operators);
-    }
-
     public function getOperatorsByCabang(Request $request, $cabangId)
     {
-        $jenisOrder = $request->query('jenis'); // Menangkap 'outdoor', 'indoor', dll
+        $jenisOrder = $request->query('jenis');
 
-        // Awali query untuk mencari user di cabang yang dipilih
-        $query = User::where('cabang_id', $cabangId);
+        $query = User::query(); // Mulai query kosong
 
-        // Filter berdasarkan jenis order
-        // Asumsi: Anda menggunakan Spatie Permission atau pengecekan Role manual
+        // Cek: Jika $cabangId BUKAN 'all', filter berdasarkan cabang.
+        // Jika 'all', abaikan filter cabang ini agar semua tampil.
+        if ($cabangId !== 'all') {
+            $query->where('cabang_id', $cabangId);
+        }
+
+        // Filter berdasarkan jenis order tetap jalan, baik lembur maupun tidak
         if ($jenisOrder === 'outdoor') {
             $query->whereHas('roles', function ($q) {
                 $q->where('name', 'Operator Outdoor');
@@ -204,13 +193,13 @@ class UserController extends Controller
             $query->whereHas('roles', function ($q) {
                 $q->where('name', 'Operator Indoor');
             });
+        } elseif ($jenisOrder === 'multi') {
+            $query->whereHas('roles', function ($q) {
+                $q->where('name', 'Operator Multi');
+            });
         } elseif ($jenisOrder === 'dtf') {
             $query->whereHas('roles', function ($q) {
                 $q->where('name', 'Operator DTF');
-            });
-        } elseif ($jenisOrder === 'multi') {
-            $query->whereHas('roles', function ($q) {
-                $q->whereIn('name', ['Operator Multi', 'Operator Print & Cut']);
             });
         }
 

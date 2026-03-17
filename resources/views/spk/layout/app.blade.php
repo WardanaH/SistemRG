@@ -101,16 +101,34 @@
 
     <script>
         $(function() {
+            // 1. Inisialisasi Global Select2
             $('.select2').each(function() {
                 $(this).select2({
                     width: '100%',
-                    // Mengambil placeholder dari atribut data-placeholder atau default ke 'Pilih data'
                     placeholder: $(this).data('placeholder') || 'Pilih data',
                     allowClear: true,
-                    // Jika select2 berada di dalam Modal, tambahkan ini agar tidak error fokus
                     dropdownParent: $(this).closest('.modal').length ? $(this).closest('.modal') : null
                 });
             });
+
+            // 2. Fix UX: Buka otomatis Select2 saat di-Tab (Mendapat Fokus)
+            $(document).on('focus', '.select2-selection.select2-selection--single, .select2-selection.select2-selection--multiple', function (e) {
+                $(this).closest('.select2-container').siblings('select:enabled').select2('open');
+            });
+
+            // ==========================================
+            // 3. KODE BARU: Langsung fokus ke kotak pencarian saat dropdown terbuka
+            // ==========================================
+            $(document).on('select2:open', function(e) {
+                // Gunakan setTimeout kecil (50ms) untuk memberi waktu modal & dropdown selesai dirender
+                setTimeout(function() {
+                    let searchField = document.querySelector('.select2-container--open .select2-search__field');
+                    if (searchField) {
+                        searchField.focus();
+                    }
+                }, 50);
+            });
+
         });
     </script>
 

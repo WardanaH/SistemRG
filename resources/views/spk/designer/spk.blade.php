@@ -301,14 +301,87 @@
     let itemIndex = 0;
     let editId = null;
 
+    const userCabangId = "{{ Auth::user()->cabang_id }}";
+    // const cabangMtpId = document.getElementById('cabang_lembur_id').value; // Tidak dipakai lagi untuk filter operator
+
+    // --- FUNGSI HELPER ---
+    // Mengambil Cabang aktif: Jika lembur kirim 'all' (semua cabang), jika normal kirim Cabang User
+    function getActiveCabang() {
+        return document.getElementById('toggleLembur').checked ? 'all' : userCabangId;
+    }
+
+    // Mengambil Jenis Order yang sedang dipilih
+    function getActiveJenis() {
+        let radio = document.querySelector('input[name="modal_jenis"]:checked');
+        return radio ? radio.value : 'outdoor';
+    }
+
+    // --- EVENT LISTENERS ---
+    // 1. Saat Switch Lembur ditekan
+    document.getElementById('toggleLembur').addEventListener('change', function() {
+        const jenis = getActiveJenis();
+        if (jenis !== 'charge') {
+            fetchOperators(getActiveCabang(), jenis); // Sekarang akan memanggil /api/get-operators/all?jenis=...
+        }
+    });
+
+    // 2. Saat Radio Jenis Order diubah
+    document.querySelectorAll('input[name="modal_jenis"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const jenis = this.value;
+            const isCharge = jenis === 'charge';
+
+            const operatorSection = document.getElementById('modal_operator').closest('.col-md-6');
+            const specSection = document.getElementById('modal_p').closest('.row');
+            const finishingSection = document.getElementById('modal_finishing').closest('.col-md-6');
+            const hargaSection = document.getElementById('sec_harga');
+
+            if (isCharge) {
+                operatorSection.style.display = 'none';
+                specSection.querySelectorAll('.col-md-3, .col-md-4').forEach(el => el.style.display = 'none');
+                finishingSection.style.display = 'none';
+                hargaSection.style.display = 'block';
+            } else {
+                operatorSection.style.display = 'block';
+                specSection.querySelectorAll('.col-md-3, .col-md-4, .col-md-2').forEach(el => el.style.display = 'block');
+                finishingSection.style.display = 'block';
+                hargaSection.style.display = 'none';
+
+                fetchOperators(getActiveCabang(), jenis);
+            }
+        });
+    });
+
+    // --- AJAX FETCH OPERATOR ---
+    function fetchOperators(cabangId, jenisOrder) {
+        if (jenisOrder === 'charge') return;
+
+        const opSelect = document.getElementById('modal_operator');
+        opSelect.innerHTML = '<option disabled selected>Loading...</option>';
+
+        fetch(`/api/get-operators/${cabangId}?jenis=${jenisOrder}`)
+            .then(response => response.json())
+            .then(data => {
+                let html = '<option value="" disabled selected>Pilih Operator...</option>';
+                data.forEach(op => {
+                    html += `<option value="${op.id}" data-nama="${op.nama}">${op.nama} - ${op.roles}</option>`;
+                });
+                opSelect.innerHTML = html;
+            })
+            .catch(err => {
+                console.error('Error fetching operators:', err);
+                opSelect.innerHTML = '<option disabled>Gagal memuat operator</option>';
+            });
+    }
+
+    // --- FUNGSI CRUD ITEM ---
     function prepareTambah() {
-        resetModal(); // Membersihkan form dan me-set editId = null
+        resetModal();
     }
 
     function tambahItem() {
-        let jenis = document.querySelector('input[name="modal_jenis"]:checked').value;
+        let jenis = getActiveJenis();
 
-        // Ambil value
         let operatorSelect = document.getElementById('modal_operator');
         let operatorId = operatorSelect.value || null;
         let operatorNama = operatorSelect.options[operatorSelect.selectedIndex]?.text || '-';
@@ -324,25 +397,20 @@
         let qty = document.getElementById('modal_qty').value;
         let finishing = document.getElementById('modal_finishing').value || '-';
         let catatan = document.getElementById('modal_catatan').value;
-
-        // AMBIL VALUE HARGA
         let harga = document.getElementById('modal_harga').value || 0;
 
-        // VALIDASI KHUSUS CHARGE DESAIN
         if (jenis === 'charge') {
             if (!file || !qty || !harga) {
                 Swal.fire("Data Belum Lengkap", "Mohon isi Nama File, Qty, dan Nominal Harga!", "warning");
                 return;
             }
         } else {
-            // Validasi Normal
             if (!file || !p || !l || !bahanId || !operatorId || !qty) {
                 Swal.fire("Data Belum Lengkap", "Mohon lengkapi data item.", "warning");
                 return;
             }
         }
 
-        // Tentukan Warna Badge
         let colors = { 'outdoor': 'warning', 'indoor': 'success', 'multi': 'info', 'dtf': 'primary', 'charge': 'dark' };
         let badgeColor = colors[jenis] || 'secondary';
 
@@ -362,18 +430,12 @@
         bootstrap.Modal.getInstance(document.getElementById('modalTambahItem')).hide();
     }
 
-    // Fungsi Helper buat isi Row (agar bisa dipakai Tambah & Edit)
-    // Fungsi Helper buat isi Row (agar bisa dipakai Tambah & Edit)
-    // Tambahkan parameter harga di fungsi ini
     function buatHtmlRow(idx, jenis, badgeColor, operatorId, operatorNama, file, catatan, p, l, bahanId, bahanNama, qty, finishing, harga) {
         const displayUkuran = (jenis === 'charge') ? '-' : `${p} x ${l}`;
         const displayBahan = (jenis === 'charge') ? '-' : bahanNama;
         const displayOperator = (jenis === 'charge') ? '<i class="fa fa-paint-brush me-1"></i> Biaya Desain' : `<i class="fa fa-user me-1"></i> ${operatorNama}`;
-
-        // --- TAMPILKAN FINISHING JIKA ADA ---
         const displayFinishing = (jenis === 'charge') ? '' : `<br><span class="text-xs font-weight-bold">Fin: ${finishing || '-'}</span>`;
 
-        // Format angka jadi Rupiah
         let formatRupiah = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(harga);
         const displayHarga = (jenis === 'charge') ? `<br><span class="text-success font-weight-bold text-xs">${formatRupiah}</span>` : '';
 
@@ -422,7 +484,7 @@
         document.getElementById('modal_p').value = "0";
         document.getElementById('modal_l').value = "0";
         document.getElementById('modal_qty').value = "1";
-        document.getElementById('modal_harga').value = ""; // Reset harga
+        document.getElementById('modal_harga').value = "";
 
         $('#modal_operator').val('').trigger('change');
         $('#modal_bahan').val('').trigger('change');
@@ -431,15 +493,17 @@
         const operatorSection = document.getElementById('modal_operator').closest('.col-md-6');
         const specSection = document.getElementById('modal_p').closest('.row');
         const finishingSection = document.getElementById('modal_finishing').closest('.col-md-6');
-        const hargaSection = document.getElementById('sec_harga'); // Bagian Harga
+        const hargaSection = document.getElementById('sec_harga');
 
         operatorSection.style.display = 'block';
         specSection.querySelectorAll('.col-md-3, .col-md-4, .col-md-2').forEach(el => el.style.display = 'block');
         finishingSection.style.display = 'block';
-        hargaSection.style.display = 'none'; // Sembunyikan harga default
+        hargaSection.style.display = 'none';
+
+        document.getElementById('modalLabel').innerText = "Tambah Detail Item";
 
         document.getElementById('m_outdoor').checked = true;
-        document.getElementById('modalLabel').innerText = "Tambah Detail Item";
+        document.getElementById('m_outdoor').dispatchEvent(new Event('change'));
     }
 
     function editItem(id) {
@@ -457,10 +521,9 @@
         let finishing = row.querySelector(`input[name="items[${id}][finishing]"]`).value;
         let harga = row.querySelector(`input[name="items[${id}][harga]"]`) ? row.querySelector(`input[name="items[${id}][harga]"]`).value : '';
 
-        // T-rigger event change pada radio untuk mengubah tampilan form
         let radioJenis = document.querySelector(`input[name="modal_jenis"][value="${jenis}"]`);
         radioJenis.checked = true;
-        radioJenis.dispatchEvent(new Event('change')); // Memicu script show/hide di bawah
+        radioJenis.dispatchEvent(new Event('change'));
 
         document.getElementById('modal_nama_file').value = file;
         document.getElementById('modal_p').value = p;
@@ -469,12 +532,23 @@
         document.getElementById('modal_catatan').value = catatan;
         document.getElementById('modal_harga').value = harga;
 
-        // Fix Material Dashboard floating label
         if(harga) document.getElementById('modal_harga').parentElement.classList.add('is-filled');
 
-        $('#modal_operator').val(opId).trigger('change');
         $('#modal_bahan').val(bahanId).trigger('change');
         $('#modal_finishing').val(finishing).trigger('change');
+
+        if (jenis !== 'charge') {
+            fetch(`/api/get-operators/${getActiveCabang()}?jenis=${jenis}`)
+                .then(res => res.json())
+                .then(data => {
+                    let html = '<option value="" disabled selected>Pilih Operator...</option>';
+                    data.forEach(op => {
+                        html += `<option value="${op.id}">${op.nama} - ${op.roles}</option>`;
+                    });
+                    document.getElementById('modal_operator').innerHTML = html;
+                    $('#modal_operator').val(opId).trigger('change');
+                });
+        }
 
         document.getElementById('modalLabel').innerText = "Edit Detail Item";
         new bootstrap.Modal(document.getElementById('modalTambahItem')).show();
@@ -482,8 +556,6 @@
 
     function hapusItem(id) {
         document.getElementById('item-' + id).remove();
-
-        // Jika tabel kosong, kembalikan baris default
         if (document.getElementById('tabelItemBody').children.length === 0) {
             document.getElementById('tabelItemBody').innerHTML = `
                 <tr id="row-kosong">
@@ -496,12 +568,9 @@
         }
     }
 
-    // Validasi saat Tombol Simpan ditekan
     document.getElementById('formSpk').addEventListener('submit', function(e) {
         let items = document.querySelectorAll('#tabelItemBody tr');
         let hasData = false;
-
-        // Cek apakah ada row selain row-kosong
         items.forEach(tr => {
             if (tr.id !== 'row-kosong') hasData = true;
         });
@@ -512,78 +581,5 @@
         }
     });
 
-    document.querySelectorAll('input[name="modal_jenis"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            const isCharge = this.value === 'charge';
-            const operatorSection = document.getElementById('modal_operator').closest('.col-md-6');
-            const specSection = document.getElementById('modal_p').closest('.row'); // Baris P, L, Bahan, Qty
-            const finishingSection = document.getElementById('modal_finishing').closest('.col-md-6');
-
-            if (isCharge) {
-                operatorSection.style.display = 'none';
-                specSection.querySelectorAll('.col-md-3, .col-md-4').forEach(el => el.style.display = 'none'); // Sembunyikan P, L, Bahan
-                finishingSection.style.display = 'none';
-            } else {
-                operatorSection.style.display = 'block';
-                specSection.querySelectorAll('.col-md-3, .col-md-4, .col-md-2').forEach(el => el.style.display = 'block');
-                finishingSection.style.display = 'block';
-            }
-        });
-    });
-
-    // EVENT LISTENER RADIO BUTTON (Tampilkan/Sembunyikan Field)
-    document.querySelectorAll('input[name="modal_jenis"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            const isCharge = this.value === 'charge';
-            const operatorSection = document.getElementById('modal_operator').closest('.col-md-6');
-            const specSection = document.getElementById('modal_p').closest('.row');
-            const finishingSection = document.getElementById('modal_finishing').closest('.col-md-6');
-            const hargaSection = document.getElementById('sec_harga'); // Bagian Harga
-
-            if (isCharge) {
-                operatorSection.style.display = 'none';
-                specSection.querySelectorAll('.col-md-3, .col-md-4').forEach(el => el.style.display = 'none');
-                finishingSection.style.display = 'none';
-                hargaSection.style.display = 'block'; // Tampilkan Harga
-            } else {
-                operatorSection.style.display = 'block';
-                specSection.querySelectorAll('.col-md-3, .col-md-4, .col-md-2').forEach(el => el.style.display = 'block');
-                finishingSection.style.display = 'block';
-                hargaSection.style.display = 'none'; // Sembunyikan Harga
-            }
-        });
-    });
-</script>
-
-<script>
-    const userCabangId = "{{ Auth::user()->cabang_id }}";
-    const cabangMtpId = document.getElementById('cabang_lembur_id').value;
-
-    document.getElementById('toggleLembur').addEventListener('change', function() {
-        if (this.checked) {
-            fetchOperators(cabangMtpId);
-        } else {
-            fetchOperators(userCabangId);
-        }
-    });
-
-    function fetchOperators(cabangId) {
-        const opSelect = document.getElementById('modal_operator');
-        opSelect.innerHTML = '<option disabled selected>Loading...</option>';
-
-        fetch(`/api/get-operators/getall`)
-            .then(response => response.json())
-            .then(data => {
-                let html = '<option value="" disabled selected>Pilih Operator...</option>';
-                data.forEach(op => {
-                    html += `<option value="${op.id}" data-nama="${op.nama}">${op.nama} - ${op.roles}</option>`;
-                });
-                opSelect.innerHTML = html;
-            })
-            .catch(err => {
-                console.error('Error fetching operators:', err);
-                opSelect.innerHTML = '<option disabled>Gagal memuat operator</option>';
-            });
-    }
 </script>
 @endpush
