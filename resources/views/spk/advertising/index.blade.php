@@ -83,7 +83,7 @@
 
                     <div class="d-flex gap-2">
                         {{-- Search --}}
-                        <form action="{{ route('advertising.index') }}" method="GET" class="me-2">
+                        <form action="{{ route('advertising.dashboard') }}" method="GET" class="me-2">
                             <div class="input-group input-group-sm bg-white rounded px-2">
                                 <span class="input-group-text border-0"><i class="material-icons text-body">search</i></span>
                                 <input type="text" name="search" class="form-control border-0" placeholder="Cari SPK..." value="{{ request('search') }}">

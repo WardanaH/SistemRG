@@ -52,27 +52,17 @@
                             <div class="form-check form-switch ps-0">
                                 <input class="form-check-input ms-auto" type="checkbox" id="toggleLembur" name="is_lembur" value="1">
                                 <label class="form-check-label text-body ms-3 text-truncate w-80 mb-0" for="toggleLembur">
-                                    <span class="font-weight-bold text-warning">Mode Lembur (Pindah Cabang)</span>
-                                    <small class="d-block text-xs text-muted">Centang jika Anda sedang bekerja di cabang lain hari ini.</small>
+                                    <span class="font-weight-bold text-warning">Mode Lembur (Pusat MTP)</span>
+                                    <small class="d-block text-xs text-muted">Centang jika Anda sedang lembur. SPK akan otomatis masuk ke pusat MTP.</small>
                                 </label>
                             </div>
                         </div>
                     </div>
 
-                    {{-- Pilihan Cabang Lembur (Hidden by Default) --}}
-                    <div class="row mb-4" id="divCabangLembur" style="display: none;">
-                        <div class="col-md-12">
-                            <div class="input-group input-group-outline">
-                                <select name="cabang_lembur_id" id="cabang_lembur_id" class="form-control" style="appearance: auto;">
-                                    <option value="" disabled selected>Pilih Cabang Lokasi Lembur...</option>
-                                    @foreach(\App\Models\MCabang::where('id', '!=', Auth::user()->cabang_id)->get() as $c)
-                                    <option value="{{ $c->id }}">{{ $c->nama }} ({{ $c->kode }})</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <small class="text-xs text-info">* SPK akan masuk ke Admin cabang yang dipilih di atas.</small>
-                        </div>
-                    </div>
+                    @php
+                        $cabangMtpId = \App\Models\MCabang::where('kode', 'CBG-MTP')->value('id') ?? 1;
+                    @endphp
+                    <input type="hidden" name="cabang_lembur_id" id="cabang_lembur_id" value="{{ $cabangMtpId }}">
 
                     {{-- I. HEADER & DATA PELANGGAN --}}
                     <p class="text-sm text-uppercase font-weight-bold mb-2">I. Data Umum & Pelanggan</p>
@@ -566,41 +556,21 @@
 </script>
 
 <script>
-    const userCabangId = "{{ Auth::user()->cabang_id }}"; // Cabang Asal
+    const userCabangId = "{{ Auth::user()->cabang_id }}";
+    const cabangMtpId = document.getElementById('cabang_lembur_id').value;
 
-    // Toggle Tampilan Dropdown Cabang
     document.getElementById('toggleLembur').addEventListener('change', function() {
-        const divLembur = document.getElementById('divCabangLembur');
-        const selectLembur = document.getElementById('cabang_lembur_id');
-
         if (this.checked) {
-            divLembur.style.display = 'block';
-            selectLembur.setAttribute('required', 'required');
+            fetchOperators(cabangMtpId);
         } else {
-            divLembur.style.display = 'none';
-            selectLembur.removeAttribute('required');
-            selectLembur.value = ""; // Reset pilihan
-
-            // Kembalikan list operator ke cabang asal
             fetchOperators(userCabangId);
         }
     });
 
-    // Event Listener saat Cabang Lembur dipilih
-    document.getElementById('cabang_lembur_id').addEventListener('change', function() {
-        const selectedCabangId = this.value;
-        if (selectedCabangId) {
-            fetchOperators(selectedCabangId); // Load operator cabang tersebut
-        }
-    });
-
-    // Fungsi AJAX untuk ambil data operator berdasarkan cabang
     function fetchOperators(cabangId) {
-        // Tampilkan loading di dropdown
         const opSelect = document.getElementById('modal_operator');
         opSelect.innerHTML = '<option disabled selected>Loading...</option>';
 
-        // Panggil API (Buat route baru di web.php nanti)
         fetch(`/api/get-operators/getall`)
             .then(response => response.json())
             .then(data => {

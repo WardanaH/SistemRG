@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use App\Models\MCabang;
 use App\Imports\UsersImport;
+use App\Models\MCabang;
+use App\Models\User;
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Role;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
+use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
@@ -184,5 +185,77 @@ class UserController extends Controller
             });
 
         return response()->json($operators);
+    }
+
+    public function getOperatorsByCabang(Request $request, $cabangId)
+    {
+        $jenisOrder = $request->query('jenis'); // Menangkap 'outdoor', 'indoor', dll
+
+        // Awali query untuk mencari user di cabang yang dipilih
+        $query = User::where('cabang_id', $cabangId);
+
+        // Filter berdasarkan jenis order
+        // Asumsi: Anda menggunakan Spatie Permission atau pengecekan Role manual
+        if ($jenisOrder === 'outdoor') {
+            $query->whereHas('roles', function ($q) {
+                $q->where('name', 'Operator Outdoor');
+            });
+        } elseif ($jenisOrder === 'indoor') {
+            $query->whereHas('roles', function ($q) {
+                $q->where('name', 'Operator Indoor');
+            });
+        } elseif ($jenisOrder === 'dtf') {
+            $query->whereHas('roles', function ($q) {
+                $q->where('name', 'Operator DTF');
+            });
+        } elseif ($jenisOrder === 'multi') {
+            $query->whereHas('roles', function ($q) {
+                $q->whereIn('name', ['Operator Multi', 'Operator Print & Cut']);
+            });
+        }
+
+        $operators = $query->get()->map(function ($op) {
+            return [
+                'id' => $op->id,
+                'nama' => $op->nama,
+                'roles' => $op->roles->pluck('name')->implode(', ')
+            ];
+        });
+
+        return response()->json($operators);
+    }
+
+    public function updateUser(Request $request)
+    {
+        // 1. Ambil data user yang sedang login
+        $user = Auth::user();
+
+        // 2. Validasi Input dari Form
+        // Aturan 'confirmed' otomatis akan mencocokkan field 'password' dengan 'password_confirmation'
+        $request->validate([
+            'current_password' => 'required',
+            'password'         => 'required|min:6|confirmed',
+        ], [
+            // Kustomisasi pesan error (opsional) agar lebih mudah dipahami user
+            'current_password.required' => 'Password lama wajib diisi.',
+            'password.required'         => 'Password baru wajib diisi.',
+            'password.min'              => 'Password baru minimal harus 6 karakter.',
+            'password.confirmed'        => 'Konfirmasi password baru tidak cocok.',
+        ]);
+
+        // 3. Cek apakah password lama yang diinput SESUAI dengan password di Database
+        if (!Hash::check($request->current_password, $user->password)) {
+            // Jika salah, kembalikan ke halaman sebelumnya dengan pesan error
+            return back()->with('error', 'Password lama yang Anda masukkan salah!');
+        }
+
+        // 4. Jika password lama benar, Update ke password baru
+        // Kita gunakan Hash::make() agar password dienkripsi dengan aman
+        $user->update([
+            'password' => Hash::make($request->password)
+        ]);
+
+        // 5. Kembalikan dengan notifikasi sukses (SweetAlert di View akan menangkap ini)
+        return back()->with('success', 'Password Anda berhasil diperbarui!');
     }
 }

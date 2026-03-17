@@ -147,6 +147,7 @@ class AdvertisingController extends Controller
                         'operator_id'     => $item['operator_id'],
                         'finishing'       => $item['finishing'] ?? '-',
                         'catatan'         => $item['catatan'] ?? '-',
+                        'harga'           => $item['harga'] ?? 0,
                         'status_produksi' => 'pending'
                     ]);
 

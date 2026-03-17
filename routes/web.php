@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\GudangCabangController;
+use App\Http\Controllers\UserController;
 
 Route::get('/dashboard', function () {
     return view('dashboard.index');
@@ -69,3 +70,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/laporan-charge/excel', [LaporanController::class, 'exportChargeExcel'])
         ->name('laporan.charge.excel');
 });
+
+Route::middleware('auth')->group(function (){
+    Route::get('/user-setting', [UserController::class, 'indexSetting'])
+    ->name('user.setting');
+    Route::put('/user-setting', [UserController::class, 'updateUser'])
+    ->name('user.update');
+});
+

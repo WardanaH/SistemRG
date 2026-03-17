@@ -21,8 +21,18 @@
             </div>
         </div>
 
-        {{-- 3. BAGIAN KANAN: ICON USER & TOGGLER (Pindahkan kesini agar selalu muncul) --}}
+        {{-- 3. BAGIAN KANAN: ICON USER, NOTIF, LOGOUT, & TOGGLER --}}
         <ul class="navbar-nav justify-content-end d-flex flex-row align-items-center gap-3">
+
+            {{-- D. LOGO USER (PROFIL) - BARU DITAMBAHKAN --}}
+            <li class="nav-item d-flex align-items-center">
+                {{-- Ganti route('user.setting') dengan route profil/setting kamu --}}
+                <a href="{{ route('user.setting') }}" class="nav-link text-body p-0" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Profil Saya">
+                    <i class="material-icons-round opacity-10" style="font-size: 1.2rem;">account_circle</i>
+                    {{-- Opsional: Tampilkan Nama User di sebelahnya --}}
+                    {{-- <span class="d-sm-inline d-none font-weight-bold ms-2">{{ Auth::user()->nama }}</span> --}}
+                </a>
+            </li>
 
             {{-- A. NOTIFIKASI --}}
             @hasrole('admin|operator indoor|operator outdoor|operator mutli|operator dtf')
@@ -43,8 +53,8 @@
 
             {{-- B. LOGOUT --}}
             <li class="nav-item d-flex align-items-center">
-                <a href="javascript:;" onclick="confirmLogout(event)" class="nav-link text-body font-weight-bold px-0">
-                    <i class="material-icons-round opacity-10">logout</i>
+                <a href="javascript:;" onclick="confirmLogout(event)" class="nav-link text-body font-weight-bold px-0" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Keluar">
+                    <i class="material-icons-round opacity-10" style="font-size: 1.2rem;">logout</i>
                 </a>
                 <form id="logout-form" action="{{ route('auth.logout') }}" method="POST" class="d-none">
                     @csrf
