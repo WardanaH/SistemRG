@@ -173,6 +173,7 @@ class SpkBantuanController extends Controller
                         'spk_id'       => $spk->id, // Link ke Parent ID
                         'nama_file'    => $item['file'],
                         'jenis_order'  => $item['jenis'],
+                        'jenis_file'   => $item['jenis_file'],
                         'p'            => $item['p'],
                         'l'            => $item['l'],
                         'bahan_id'     => $item['bahan_id'],

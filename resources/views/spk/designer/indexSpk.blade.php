@@ -182,6 +182,9 @@
                                                     data-status="{{ $spk->status_spk }}">
                                                 <i class="material-icons text-xs position-relative" style="top: 1px;">verified_user</i>
                                             </button>
+                                            @endhasrole
+
+                                            @hasrole('manajemen|admin|designer')
 
                                             {{-- TOMBOL EDIT DATA --}}
                                             <a href="{{ route('spk.edit', $spk->id) }}" class="badge bg-gradient-warning text-white text-xs" data-toggle="tooltip" title="Edit Data">

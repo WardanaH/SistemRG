@@ -243,6 +243,7 @@ class MSpkController extends Controller
                 $items[$key]['operator_id'] = null;
                 $items[$key]['p'] = 0; // Atau null jika di DB sudah nullable
                 $items[$key]['l'] = 0; // Atau null jika di DB sudah nullable
+                $items[$key]['jenis_file'] = null;
             }
         }
 
@@ -263,6 +264,7 @@ class MSpkController extends Controller
             'items.*.jenis'      => 'required|in:outdoor,indoor,multi,dtf,charge',
             'items.*.file'       => 'required|string',
             'items.*.qty'        => 'required|integer|min:1',
+            'items.*.jenis_file'  => 'required|in:online,offline',
 
             // Validasi Kondisional: Wajib diisi KECUALI jenisnya 'charge'
             'items.*.harga'       => 'required_if:items.*.jenis,charge|nullable|numeric|min:0',
@@ -380,6 +382,7 @@ class MSpkController extends Controller
                         'spk_id'          => $spk->id,
                         'nama_file'       => $item['file'],
                         'jenis_order'     => $item['jenis'],
+                        'jenis_file'      => $item['jenis_file'],
                         'p'               => $isCharge ? null : $item['p'],
                         'l'               => $isCharge ? null : $item['l'],
                         'bahan_id'        => $isCharge ? null : $item['bahan_id'],
@@ -488,6 +491,7 @@ class MSpkController extends Controller
             'items.*.jenis'       => 'required|in:outdoor,indoor,multi,dtf,charge', // dtf & charge ditambahkan
             'items.*.file'        => 'required|string',
             'items.*.qty'         => 'required|integer|min:1',
+            'items.*.jenis_file'  => 'required|in:online,offline',
 
             'items.*.harga'       => 'required_if:items.*.jenis,charge|nullable|numeric|min:0',
             'items.*.p'           => 'required_unless:items.*.jenis,charge|numeric|min:0',
@@ -518,6 +522,7 @@ class MSpkController extends Controller
                         'spk_id'          => $spk->id,
                         'nama_file'       => $item['file'],
                         'jenis_order'     => $item['jenis'],
+                        'jenis_file'      => $item['jenis_file'],
                         'harga'           => $isCharge ? ($item['harga'] ?? 0) : 0,
                         'p'               => $isCharge ? null : $item['p'],
                         'l'               => $isCharge ? null : $item['l'],

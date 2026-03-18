@@ -83,7 +83,8 @@
                                 {{-- Kolom File --}}
                                 <td>
                                     <div class="d-flex flex-column justify-content-center">
-                                        <h6 class="mb-0 text-sm">{{ $item->nama_file }}</h6>
+                                        <h6 class="mb-0 text-sm">Nama File : {{ $item->nama_file }}</h6>
+                                        <h6 class="mb-0 text-sm">Jenis File : <span class="badge badge-sm bg-gradient-info">{{ $item->jenis_file }}</span></h6>
                                         <p class="text-xs text-secondary mb-0">
                                             {{ $item->catatan ?? '-' }}
                                         </p>
