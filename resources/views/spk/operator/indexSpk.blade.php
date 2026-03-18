@@ -123,6 +123,7 @@
                                             @elseif($item->jenis_order == 'dtf')
                                             <span class="badge badge-sm bg-gradient-success text-xxs me-1">Tipe : DTF</span>
                                             @endif
+                                            - <span class="badge badge-sm bg-gradient-info text-xxs me-1">Jenis File : {{ $item->jenis_file }}</span>
                                         </div>
                                     </div>
                                 </td>

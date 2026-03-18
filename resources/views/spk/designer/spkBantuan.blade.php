@@ -75,7 +75,7 @@
                         <div class="col-md-6 mb-3">
                             <div class="input-group input-group-outline">
                                 <label class="form-label">No. Telepon (WA)</label>
-                                <input type="number" name="no_telepon" class="form-control" required>
+                                <input type="number" name="no_telepon" class="form-control" value="0">
                             </div>
                         </div>
                     </div>
@@ -174,10 +174,19 @@
 
                 {{-- 2. Nama File & Harga --}}
                 <div class="row mb-3">
-                    <div class="col-md-12">
+                    <div class="col-md-8">
                         <div class="input-group input-group-outline">
                             <label class="form-label">Nama File / Keterangan Desain</label>
                             <input type="text" id="modal_nama_file" class="form-control">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="input-group input-group-outline is-filled">
+                            <select id="modal_jenis_file" class="form-control select2" data-placeholder="Pilih Jenis File..." style="appearance: auto;">
+                                <option value="" disabled selected>Pilih Jenis File...</option>
+                                <option value="offline">Offline</option>
+                                <option value="online">Online</option>
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -195,13 +204,13 @@
                 {{-- 3. Spesifikasi --}}
                 <div class="row mb-3" id="sec_spesifikasi">
                     <div class="col-md-3">
-                        <div class="input-group input-group-outline">
+                        <div class="input-group input-group-outline is-filled">
                             <label class="form-label">P (cm)</label>
                             <input type="number" step="0.01" id="modal_p" class="form-control">
                         </div>
                     </div>
                     <div class="col-md-3">
-                        <div class="input-group input-group-outline">
+                        <div class="input-group input-group-outline is-filled">
                             <label class="form-label">L (cm)</label>
                             <input type="number" step="0.01" id="modal_l" class="form-control">
                         </div>
@@ -289,16 +298,23 @@
             const finishingSection = document.getElementById('sec_finishing');
             const hargaSection = document.getElementById('sec_harga');
 
+            // Tambahkan deklarasi untuk jenisFileSection agar bisa dimanipulasi
+            const jenisFileSection = document.getElementById('modal_jenis_file').closest('.col-md-4');
+
             if (isCharge) {
                 operatorSection.style.display = 'none';
                 specSection.style.display = 'none';
                 finishingSection.style.display = 'none';
-                hargaSection.style.display = 'flex';
+                hargaSection.style.display = 'block';
+                // Sembunyikan Jenis File
+                if (jenisFileSection) jenisFileSection.style.display = 'none';
             } else {
                 operatorSection.style.display = 'block';
                 specSection.style.display = 'flex';
                 finishingSection.style.display = 'flex';
                 hargaSection.style.display = 'none';
+                // Tampilkan Kembali Jenis File
+                if (jenisFileSection) jenisFileSection.style.display = 'block';
 
                 fetchOperators(getActiveCabang(), jenis);
             }
@@ -312,7 +328,7 @@
         const opSelect = $('#modal_operator');
         opSelect.html('<option disabled selected>Loading...</option>').trigger('change');
 
-        fetch(`/api/get-operators/${cabangId}?jenis=${jenisOrder}`)
+        fetch(`{{ url('api/get-operators') }}/${cabangId}?jenis=${jenisOrder}`)
             .then(response => {
                 if (!response.ok) throw new Error('Network response was not ok');
                 return response.json();
@@ -349,6 +365,9 @@
         let p = parseFloat(document.getElementById('modal_p').value) || 0;
         let l = parseFloat(document.getElementById('modal_l').value) || 0;
 
+        // Ambil nilai jenis file
+        let jenisFile = document.getElementById('modal_jenis_file').value;
+
         let bahanSelect = document.getElementById('modal_bahan');
         let bahanId = bahanSelect.value || null;
         let bahanNama = bahanSelect.options[bahanSelect.selectedIndex]?.text || '-';
@@ -360,15 +379,16 @@
         let hargaElem = document.getElementById('modal_harga');
         let harga = hargaElem ? (parseFloat(hargaElem.value) || 0) : 0;
 
-        // Validasi
+        // Validasi Baru
         if (jenis === 'charge') {
             if (!file || !qty || !harga) {
                 Swal.fire("Data Belum Lengkap", "Mohon isi Nama File, Qty, dan Nominal Harga!", "warning");
                 return;
             }
         } else {
-            if (!file || !bahanId || !operatorId) {
-                Swal.fire("Data Belum Lengkap", "Pastikan Operator, Nama File, dan Bahan sudah diisi.", "warning");
+            // jenisFile wajib diisi
+            if (!file || !jenisFile || !bahanId || !operatorId) {
+                Swal.fire("Data Belum Lengkap", "Pastikan Operator, Nama File, Jenis File, dan Bahan sudah diisi.", "warning");
                 return;
             }
         }
@@ -379,14 +399,15 @@
         if (editId !== null) {
             let row = document.getElementById(`item-${editId}`);
             if(row) {
-                row.innerHTML = buatHtmlRow(editId, jenis, badgeColor, operatorId, operatorNama, file, catatan, p, l, bahanId, bahanNama, qty, finishing, harga);
+                // Pastikan jenisFile ikut dikirim ke fungsi buatHtmlRow
+                row.innerHTML = buatHtmlRow(editId, jenis, badgeColor, operatorId, operatorNama, file, jenisFile, catatan, p, l, bahanId, bahanNama, qty, finishing, harga);
             }
             editId = null;
         } else {
             let rowKosong = document.getElementById('row-kosong');
             if (rowKosong) rowKosong.remove();
 
-            let html = `<tr id="item-${itemIndex}">${buatHtmlRow(itemIndex, jenis, badgeColor, operatorId, operatorNama, file, catatan, p, l, bahanId, bahanNama, qty, finishing, harga)}</tr>`;
+            let html = `<tr id="item-${itemIndex}">${buatHtmlRow(itemIndex, jenis, badgeColor, operatorId, operatorNama, file, jenisFile, catatan, p, l, bahanId, bahanNama, qty, finishing, harga)}</tr>`;
             document.getElementById('tabelItemBody').insertAdjacentHTML('beforeend', html);
             itemIndex++;
         }
@@ -402,14 +423,18 @@
         Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Item ditambahkan.', timer: 1000, showConfirmButton: false });
     }
 
-    function buatHtmlRow(idx, jenis, badgeColor, operatorId, operatorNama, file, catatan, p, l, bahanId, bahanNama, qty, finishing, harga) {
+    // Tambahkan jenisFile sebagai parameter ke 7
+    function buatHtmlRow(idx, jenis, badgeColor, operatorId, operatorNama, file, jenisFile, catatan, p, l, bahanId, bahanNama, qty, finishing, harga) {
         const displayUkuran = (jenis === 'charge') ? '-' : `${p} x ${l}`;
         const displayBahan = (jenis === 'charge') ? '-' : bahanNama;
         const displayOperator = (jenis === 'charge') ? '<i class="fa fa-paint-brush me-1"></i> Biaya Desain' : `<i class="fa fa-user me-1"></i> ${operatorNama}`;
         const displayFinishing = (jenis === 'charge') ? '' : `<br><span class="text-xs font-weight-bold">Fin: ${finishing !== '-' ? finishing : ''}</span>`;
 
+        // Tampilan badge Jenis File
+        const displayJenisFile = (jenisFile && jenis !== 'charge') ? `<span class="badge bg-light text-dark border border-secondary p-1 ms-2" style="font-size:0.6rem;">${jenisFile.toUpperCase()}</span>` : '';
+
         let formatRupiah = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(harga);
-        const displayHarga = (jenis === 'charge') ? `<br><span class="text-success font-weight-bold text-xs">${formatRupiah}</span>` : '';
+        const displayHarga = (jenis === 'charge' && harga > 0) ? `<br><span class="text-success font-weight-bold text-xs">${formatRupiah}</span>` : '';
 
         return `
             <td>
@@ -419,10 +444,14 @@
                 <input type="hidden" name="items[${idx}][operator_id]" value="${operatorId}">
             </td>
             <td>
-                <h6 class="mb-0 text-sm text-truncate" style="max-width: 150px;">${file}</h6>
+                <div class="d-flex align-items-center">
+                    <h6 class="mb-0 text-sm text-truncate" style="max-width: 150px;">${file}</h6>
+                    ${displayJenisFile}
+                </div>
                 <small class="text-xxs text-secondary">${catatan}</small>
                 ${displayHarga}
                 <input type="hidden" name="items[${idx}][file]" value="${file}">
+                <input type="hidden" name="items[${idx}][jenis_file]" value="${jenisFile || ''}">
                 <input type="hidden" name="items[${idx}][catatan]" value="${catatan}">
                 <input type="hidden" name="items[${idx}][harga]" value="${harga}">
             </td>
@@ -456,6 +485,11 @@
         let jenis = row.querySelector(`input[name="items[${id}][jenis]"]`).value;
         let opId = row.querySelector(`input[name="items[${id}][operator_id]"]`).value;
         let file = row.querySelector(`input[name="items[${id}][file]"]`).value;
+
+        // Ambil nilai jenis_file dari hidden input
+        let jenisFileInput = row.querySelector(`input[name="items[${id}][jenis_file]"]`);
+        let jenisFile = jenisFileInput ? jenisFileInput.value : '';
+
         let p = row.querySelector(`input[name="items[${id}][p]"]`).value;
         let l = row.querySelector(`input[name="items[${id}][l]"]`).value;
         let bahanId = row.querySelector(`input[name="items[${id}][bahan_id]"]`).value;
@@ -484,11 +518,13 @@
             if(harga) modalHarga.parentElement.classList.add('is-filled');
         }
 
+        // Setel dropdown jenis_file ke nilai yang disimpan
+        $('#modal_jenis_file').val(jenisFile).trigger('change');
         $('#modal_bahan').val(bahanId).trigger('change');
         $('#modal_finishing').val(finishing !== '-' ? finishing : '').trigger('change');
 
         if (jenis !== 'charge') {
-            fetch(`/api/get-operators/${getActiveCabang()}?jenis=${jenis}`)
+            fetch(`{{ url('api/get-operators') }}/${getActiveCabang()}?jenis=${jenis}`)
                 .then(res => res.json())
                 .then(data => {
                     let html = '<option value="" disabled>Pilih Operator...</option>';
@@ -514,23 +550,16 @@
         let modalHarga = document.getElementById('modal_harga');
         if(modalHarga) modalHarga.value = "";
 
+        $('#modal_jenis_file').val('').trigger('change'); // Kembalikan dropdown ke kosong
         $('#modal_operator').val('').trigger('change');
         $('#modal_bahan').val('').trigger('change');
         $('#modal_finishing').val('').trigger('change');
 
         let radioOutdoor = document.getElementById('m_outdoor');
-        if(radioOutdoor) radioOutdoor.checked = true;
-
-        // Reset tampilan sections
-        const operatorSection = document.getElementById('modal_operator')?.closest('.col-md-6');
-        const specSection = document.getElementById('sec_spesifikasi');
-        const finishingSection = document.getElementById('sec_finishing');
-        const hargaSection = document.getElementById('sec_harga');
-
-        if(operatorSection) operatorSection.style.display = 'block';
-        if(specSection) specSection.style.display = 'flex';
-        if(finishingSection) finishingSection.style.display = 'flex';
-        if(hargaSection) hargaSection.style.display = 'none';
+        if(radioOutdoor) {
+            radioOutdoor.checked = true;
+            radioOutdoor.dispatchEvent(new Event('change')); // Pastikan tampilan kereset sepenuhnya
+        }
     }
 
     function hapusItem(id) {
@@ -551,10 +580,17 @@
     }
 
     document.getElementById('formSpk').addEventListener('submit', function(e) {
-        if (!document.querySelector('#tabelItemBody tr:not(#row-kosong)')) {
+        let items = document.querySelectorAll('#tabelItemBody tr');
+        let hasData = false;
+        items.forEach(tr => {
+            if (tr.id !== 'row-kosong') hasData = true;
+        });
+
+        if (!hasData) {
             e.preventDefault();
             Swal.fire("Tabel Kosong", "Anda belum menambahkan item pesanan apapun.", "error");
         }
     });
+
 </script>
 @endpush
