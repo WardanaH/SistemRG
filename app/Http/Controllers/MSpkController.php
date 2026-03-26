@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class MSpkController extends Controller
 {
@@ -274,6 +275,7 @@ class MSpkController extends Controller
             'items.*.operator_id' => 'required_unless:items.*.jenis,charge|nullable|exists:users,id',
 
             'items.*.finishing'   => 'nullable|string',
+            'items.*.finishing_2'   => 'nullable|string',
             'items.*.catatan'     => 'nullable|string',
         ]);
         // dd($request->all());
@@ -388,6 +390,7 @@ class MSpkController extends Controller
                         'bahan_id'        => $isCharge ? null : $item['bahan_id'],
                         'operator_id'     => $isCharge ? null : $item['operator_id'],
                         'finishing'       => $isCharge ? null : $item['finishing'],
+                        'finishing_2'       => $isCharge ? null : $item['finishing_2'],
                         'qty'             => $item['qty'],
                         'catatan'         => $item['catatan'] ?? '-',
                         'harga'           => $isCharge ? ($item['harga'] ?? 0) : 0,
@@ -481,27 +484,34 @@ class MSpkController extends Controller
         $request->merge(['items' => $items]);
 
         // 2. Validasi Header & Items (SAMA SEPERTI STORE)
-        $request->validate([
-            // Header
-            'nama_pelanggan' => 'required|string|max:255',
-            'no_telepon'     => 'nullable|string',
-            'items'          => 'required|array|min:1',
+        try {
+            $request->validate([
+                // Header
+                'nama_pelanggan' => 'required|string|max:255',
+                'no_telepon'     => 'nullable|string',
+                'items'          => 'required|array|min:1',
 
-            // Detail Items (Validasi Kondisional)
-            'items.*.jenis'       => 'required|in:outdoor,indoor,multi,dtf,charge', // dtf & charge ditambahkan
-            'items.*.file'        => 'required|string',
-            'items.*.qty'         => 'required|integer|min:1',
-            'items.*.jenis_file'  => 'required|in:online,offline',
+                // Detail Items (Validasi Kondisional)
+                'items.*.jenis'       => 'required|in:outdoor,indoor,multi,dtf,charge', // dtf & charge ditambahkan
+                'items.*.file'        => 'required|string',
+                'items.*.qty'         => 'required|integer|min:1',
+                'items.*.jenis_file'  => 'required|in:online,offline',
 
-            'items.*.harga'       => 'required_if:items.*.jenis,charge|nullable|numeric|min:0',
-            'items.*.p'           => 'required_unless:items.*.jenis,charge|numeric|min:0',
-            'items.*.l'           => 'required_unless:items.*.jenis,charge|numeric|min:0',
-            'items.*.bahan_id'    => 'required_unless:items.*.jenis,charge|nullable|exists:m_bahan_bakus,id',
-            'items.*.operator_id' => 'required_unless:items.*.jenis,charge|nullable|exists:users,id',
+                'items.*.harga'       => 'required_if:items.*.jenis,charge|nullable|numeric|min:0',
+                'items.*.p'           => 'required_unless:items.*.jenis,charge|numeric|min:0',
+                'items.*.l'           => 'required_unless:items.*.jenis,charge|numeric|min:0',
+                'items.*.bahan_id'    => 'required_unless:items.*.jenis,charge|nullable|exists:m_bahan_bakus,id',
+                'items.*.operator_id' => 'required_unless:items.*.jenis,charge|nullable|exists:users,id',
 
-            'items.*.finishing'   => 'nullable|string',
-            'items.*.catatan'     => 'nullable|string',
-        ]);
+                'items.*.finishing'   => 'nullable|string',
+                'items.*.finishing_2'   => 'nullable|string',
+                'items.*.catatan'     => 'nullable|string',
+            ]);
+        } catch (ValidationException $e) {
+            Log::error($e->getMessage());
+            return back()->withErrors($e->errors())->withInput();
+        }
+
 
         try {
             DB::transaction(function () use ($request, $spk) {
@@ -530,6 +540,7 @@ class MSpkController extends Controller
                         'operator_id'     => $isCharge ? null : $item['operator_id'],
                         'qty'             => $item['qty'],
                         'finishing'       => $isCharge ? null : ($item['finishing'] ?? '-'),
+                        'finishing_2'       => $isCharge ? null : ($item['finishing_2'] ?? '-'),
                         'catatan'         => $item['catatan'] ?? '-',
                         'status_produksi' => 'pending', // Reset status jika diedit total
                     ]);

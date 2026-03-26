@@ -73,7 +73,7 @@
                             </div>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <div class="input-group input-group-outline">
+                            <div class="input-group input-group-outline is-filled">
                                 <label class="form-label">No. Telepon (WA)</label>
                                 <input type="number" name="no_telepon" class="form-control" value="0">
                             </div>
@@ -238,13 +238,26 @@
 
                 {{-- 4. Finishing & Catatan --}}
                 <div class="row" id="sec_finishing">
-                    <div class="col-md-6">
+                    <div class="col-md-3">
                         <div class="input-group input-group-outline">
                             <select id="modal_finishing"
                                 class="form-control select2"
                                 data-placeholder="Cari & Pilih Finishing..."
                                 style="appearance: auto;">
                                 <option value="" disabled selected>Pilih Finishing...</option>
+                                @foreach($finishings as $f)
+                                <option value="{{ $f->nama_finishing }}">{{ $f->nama_finishing }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="input-group input-group-outline">
+                            <select id="modal_finishing_2"
+                                class="form-control select2"
+                                data-placeholder="Cari & Pilih Finishing..."
+                                style="appearance: auto;">
+                                <option value="" disabled selected>Pilih Finishing 2...</option>
                                 @foreach($finishings as $f)
                                 <option value="{{ $f->nama_finishing }}">{{ $f->nama_finishing }}</option>
                                 @endforeach
@@ -374,6 +387,7 @@
 
         let qty = parseInt(document.getElementById('modal_qty').value) || 1;
         let finishing = document.getElementById('modal_finishing').value || '-';
+        let finishing_2 = document.getElementById('modal_finishing_2').value || '-';
         let catatan = document.getElementById('modal_catatan').value || '-';
 
         let hargaElem = document.getElementById('modal_harga');
@@ -400,14 +414,14 @@
             let row = document.getElementById(`item-${editId}`);
             if(row) {
                 // Pastikan jenisFile ikut dikirim ke fungsi buatHtmlRow
-                row.innerHTML = buatHtmlRow(editId, jenis, badgeColor, operatorId, operatorNama, file, jenisFile, catatan, p, l, bahanId, bahanNama, qty, finishing, harga);
+                row.innerHTML = buatHtmlRow(editId, jenis, badgeColor, operatorId, operatorNama, file, jenisFile, catatan, p, l, bahanId, bahanNama, qty, finishing, finishing_2, harga);
             }
             editId = null;
         } else {
             let rowKosong = document.getElementById('row-kosong');
             if (rowKosong) rowKosong.remove();
 
-            let html = `<tr id="item-${itemIndex}">${buatHtmlRow(itemIndex, jenis, badgeColor, operatorId, operatorNama, file, jenisFile, catatan, p, l, bahanId, bahanNama, qty, finishing, harga)}</tr>`;
+            let html = `<tr id="item-${itemIndex}">${buatHtmlRow(itemIndex, jenis, badgeColor, operatorId, operatorNama, file, jenisFile, catatan, p, l, bahanId, bahanNama, qty, finishing, finishing_2, harga)}</tr>`;
             document.getElementById('tabelItemBody').insertAdjacentHTML('beforeend', html);
             itemIndex++;
         }
@@ -424,11 +438,12 @@
     }
 
     // Tambahkan jenisFile sebagai parameter ke 7
-    function buatHtmlRow(idx, jenis, badgeColor, operatorId, operatorNama, file, jenisFile, catatan, p, l, bahanId, bahanNama, qty, finishing, harga) {
+    function buatHtmlRow(idx, jenis, badgeColor, operatorId, operatorNama, file, jenisFile, catatan, p, l, bahanId, bahanNama, qty, finishing, finishing_2, harga) {
         const displayUkuran = (jenis === 'charge') ? '-' : `${p} x ${l}`;
         const displayBahan = (jenis === 'charge') ? '-' : bahanNama;
         const displayOperator = (jenis === 'charge') ? '<i class="fa fa-paint-brush me-1"></i> Biaya Desain' : `<i class="fa fa-user me-1"></i> ${operatorNama}`;
         const displayFinishing = (jenis === 'charge') ? '' : `<br><span class="text-xs font-weight-bold">Fin: ${finishing !== '-' ? finishing : ''}</span>`;
+        const displayFinishing2 = (jenis === 'charge') ? '' : `<br><span class="text-xs font-weight-bold">Fin: ${finishing_2 !== '-' ? finishing_2 : ''}</span>`;
 
         // Tampilan badge Jenis File
         const displayJenisFile = (jenisFile && jenis !== 'charge') ? `<span class="badge bg-light text-dark border border-secondary p-1 ms-2" style="font-size:0.6rem;">${jenisFile.toUpperCase()}</span>` : '';
@@ -438,18 +453,28 @@
 
         return `
             <td>
-                <span class="badge bg-gradient-${badgeColor} mb-1">${jenis.toUpperCase()}</span><br>
+                <span class="text-xs font-weight-bold text-dark">
+                    Jenis Order : <span class="badge bg-gradient-${badgeColor} mb-1">${jenis.toUpperCase()}</span>
+                </span>
+                <br>
                 <span class="text-xs font-weight-bold text-dark">${displayOperator}</span>
+
                 <input type="hidden" name="items[${idx}][jenis]" value="${jenis}">
                 <input type="hidden" name="items[${idx}][operator_id]" value="${operatorId}">
             </td>
             <td>
                 <div class="d-flex align-items-center">
-                    <h6 class="mb-0 text-sm text-truncate" style="max-width: 150px;">${file}</h6>
-                    ${displayJenisFile}
+                    <span class="text-xs font-weight-bold text-dark">Nama File : ${file}</span>
                 </div>
-                <small class="text-xxs text-secondary">${catatan}</small>
+                <div class="d-flex align-items-center">
+                    <span class="text-xs font-weight-bold text-dark">Jenis File : ${displayJenisFile}</span>
+                </div>
+                <span class="text-xs font-weight-bold text-dark">
+                    Catatan : ${catatan}
+                </span>
                 ${displayHarga}
+
+
                 <input type="hidden" name="items[${idx}][file]" value="${file}">
                 <input type="hidden" name="items[${idx}][jenis_file]" value="${jenisFile || ''}">
                 <input type="hidden" name="items[${idx}][catatan]" value="${catatan}">
@@ -463,12 +488,14 @@
             <td class="text-xs font-weight-bold">
                 ${displayBahan}
                 ${displayFinishing}
+                ${displayFinishing2}
                 <input type="hidden" name="items[${idx}][bahan_id]" value="${bahanId}">
             </td>
             <td class="text-center text-sm">
                 ${qty}
                 <input type="hidden" name="items[${idx}][qty]" value="${qty}">
                 <input type="hidden" name="items[${idx}][finishing]" value="${finishing}">
+                <input type="hidden" name="items[${idx}][finishing_2]" value="${finishing_2}">
             </td>
             <td class="text-center">
                 <button type="button" class="btn btn-link text-info px-2 mb-0" onclick="editItem(${idx})"><i class="material-icons text-sm">edit</i></button>
@@ -496,6 +523,7 @@
         let qty = row.querySelector(`input[name="items[${id}][qty]"]`).value;
         let catatan = row.querySelector(`input[name="items[${id}][catatan]"]`).value;
         let finishing = row.querySelector(`input[name="items[${id}][finishing]"]`).value;
+        let finishing_2 = row.querySelector(`input[name="items[${id}][finishing_2]"]`).value;
 
         let hargaInput = row.querySelector(`input[name="items[${id}][harga]"]`);
         let harga = hargaInput ? hargaInput.value : '';
@@ -522,6 +550,7 @@
         $('#modal_jenis_file').val(jenisFile).trigger('change');
         $('#modal_bahan').val(bahanId).trigger('change');
         $('#modal_finishing').val(finishing !== '-' ? finishing : '').trigger('change');
+        $('#modal_finishing_2').val(finishing_2 !== '-' ? finishing_2 : '').trigger('change');
 
         if (jenis !== 'charge') {
             fetch(`{{ url('api/get-operators') }}/${getActiveCabang()}?jenis=${jenis}`)
@@ -554,6 +583,7 @@
         $('#modal_operator').val('').trigger('change');
         $('#modal_bahan').val('').trigger('change');
         $('#modal_finishing').val('').trigger('change');
+        $('#modal_finishing_2').val('').trigger('change');
 
         let radioOutdoor = document.getElementById('m_outdoor');
         if(radioOutdoor) {
