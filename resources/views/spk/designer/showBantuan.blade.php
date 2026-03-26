@@ -113,7 +113,8 @@
                                 <td>
                                     <p class="text-xs font-weight-bold mb-0">Bahan: {{ $item->bahan->nama_bahan ?? '-' }}</p>
                                     <p class="text-xs text-secondary mb-0">Ukuran: {{ $item->p }} x {{ $item->l }} cm</p>
-                                    <p class="text-xs text-secondary mb-0">Finishing: {{ $item->finishing ?? '-' }}</p>
+                                    <p class="text-xs text-secondary mb-0">Finishing 1: {{ $item->finishing ?? '-' }}</p>
+                                    <p class="text-xs text-secondary mb-0">Finishing 2: {{ $item->finishing_2 ?? '-' }}</p>
                                 </td>
 
                                 {{-- Qty --}}

@@ -214,6 +214,14 @@ class UserController extends Controller
         return response()->json($operators);
     }
 
+    public function indexSetting()
+    {
+        return view('spk.layout.userSetting', [
+            'title' => 'User Setting',
+            'user' => auth()->user(),
+        ]);
+    }
+    
     public function updateUser(Request $request)
     {
         // 1. Ambil data user yang sedang login

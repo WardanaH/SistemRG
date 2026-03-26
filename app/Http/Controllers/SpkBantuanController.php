@@ -179,6 +179,7 @@ class SpkBantuanController extends Controller
                         'bahan_id'     => $item['bahan_id'],
                         'qty'          => $item['qty'],
                         'finishing'    => $item['finishing'] ?? '-',
+                        'finishing_2'    => $item['finishing_2'] ?? '-',
                         'catatan'      => $item['catatan'] ?? '-',
                         'operator_id'  => $item['operator_id'], // Operator per item
                         'harga'        => $item['harga'] ?? 0,

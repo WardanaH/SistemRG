@@ -187,10 +187,10 @@
                                 <input class="form-check-input" type="radio" name="modal_jenis" id="m_dtf" value="dtf">
                                 <label class="custom-control-label" for="m_dtf">DTF UV</label>
                             </div>
-                            <div class="form-check">
+                            <!-- <div class="form-check">
                                 <input class="form-check-input" type="radio" name="modal_jenis" id="m_charge" value="charge">
                                 <label class="custom-control-label" for="m_charge">Charge Desain</label>
-                            </div>
+                            </div> -->
                         </div>
                     </div>
                     {{-- Operator Dipilih Disini (Per Item) --}}
@@ -275,13 +275,26 @@
 
                 {{-- 4. Finishing & Catatan --}}
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-3">
                         <div class="input-group input-group-outline">
                             <select id="modal_finishing"
                                 class="form-control select2"
                                 data-placeholder="Cari & Pilih Finishing..."
                                 style="appearance: auto;">
-                                <option value="" disabled selected>Pilih Finishing...</option>
+                                <option value="" disabled selected>Pilih Finishing 1...</option>
+                                @foreach($finishings as $f)
+                                <option value="{{ $f->nama_finishing }}">{{ $f->nama_finishing }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="input-group input-group-outline">
+                            <select id="modal_finishing_2"
+                                class="form-control select2"
+                                data-placeholder="Cari & Pilih Finishing..."
+                                style="appearance: auto;">
+                                <option value="" disabled selected>Pilih Finishing 2...</option>
                                 @foreach($finishings as $f)
                                 <option value="{{ $f->nama_finishing }}">{{ $f->nama_finishing }}</option>
                                 @endforeach
@@ -339,7 +352,8 @@
 
             const operatorSection = document.getElementById('modal_operator').closest('.col-md-6');
             const specSection = document.getElementById('modal_p').closest('.row');
-            const finishingSection = document.getElementById('modal_finishing').closest('.col-md-6');
+            const finishingSection = document.getElementById('modal_finishing').closest('.col-md-3');
+            const finishingSection2 = document.getElementById('modal_finishing_2').closest('.col-md-3');
             const hargaSection = document.getElementById('sec_harga');
             const jenisFileSection = document.getElementById('modal_jenis_file').closest('.col-md-4');
 
@@ -347,12 +361,14 @@
                 operatorSection.style.display = 'none';
                 specSection.querySelectorAll('.col-md-3, .col-md-4').forEach(el => el.style.display = 'none');
                 finishingSection.style.display = 'none';
+                finishingSection2.style.display = 'none';
                 jenisFileSection.style.display = 'none';
                 hargaSection.style.display = 'block';
             } else {
                 operatorSection.style.display = 'block';
                 specSection.querySelectorAll('.col-md-3, .col-md-4, .col-md-2').forEach(el => el.style.display = 'block');
                 finishingSection.style.display = 'block';
+                finishingSection2.style.display = 'block';
                 jenisFileSection.style.display = 'block';
                 hargaSection.style.display = 'none';
 
@@ -404,6 +420,7 @@
         let bahanNama = bahanSelect.options[bahanSelect.selectedIndex]?.text || '-';
         let qty = parseInt(document.getElementById('modal_qty').value) || 1;
         let finishing = document.getElementById('modal_finishing').value || '-';
+        let finishing2 = document.getElementById('modal_finishing_2').value || '-';
         let catatan = document.getElementById('modal_catatan').value || '-';
         let hargaElem = document.getElementById('modal_harga');
         let harga = hargaElem ? (parseFloat(hargaElem.value) || 0) : 0;
@@ -434,13 +451,13 @@
         if (editId !== null) {
             let row = document.getElementById(`item-${editId}`);
             if (row) {
-                row.innerHTML = buatHtmlRow(editId, jenis, badgeColor, operatorId, operatorNama, file, jenisFile, catatan, p, l, bahanId, bahanNama, qty, finishing, harga);
+                row.innerHTML = buatHtmlRow(editId, jenis, badgeColor, operatorId, operatorNama, file, jenisFile, catatan, p, l, bahanId, bahanNama, qty, finishing, finishing2, harga);
             }
             editId = null;
         } else {
             let rowKosong = document.getElementById('row-kosong');
             if (rowKosong) rowKosong.remove();
-            let html = `<tr id="item-${itemIndex}">${buatHtmlRow(itemIndex, jenis, badgeColor, operatorId, operatorNama, file, jenisFile, catatan, p, l, bahanId, bahanNama, qty, finishing, harga)}</tr>`;
+            let html = `<tr id="item-${itemIndex}">${buatHtmlRow(itemIndex, jenis, badgeColor, operatorId, operatorNama, file, jenisFile, catatan, p, l, bahanId, bahanNama, qty, finishing, finishing2, harga)}</tr>`;
             document.getElementById('tabelItemBody').insertAdjacentHTML('beforeend', html);
             itemIndex++;
         }
@@ -464,13 +481,12 @@
     }
 
     // UPDATE: Menambahkan parameter jenisFile
-    function buatHtmlRow(idx, jenis, badgeColor, operatorId, operatorNama, file, jenisFile, catatan, p, l, bahanId, bahanNama, qty, finishing, harga) {
+    function buatHtmlRow(idx, jenis, badgeColor, operatorId, operatorNama, file, jenisFile, catatan, p, l, bahanId, bahanNama, qty, finishing, finishing2, harga) {
         const displayUkuran = (jenis === 'charge') ? '-' : `${p} x ${l}`;
-        const displayBahan = (jenis === 'charge') ? '-' : bahanNama;
+        const displayBahan = (jenis === 'charge') ? '-' : `Bhn: ${bahanNama}`;
         const displayOperator = (jenis === 'charge') ? '<i class="fa fa-paint-brush me-1"></i> Biaya Desain' : `<i class="fa fa-user me-1"></i> ${operatorNama}`;
-        const displayFinishing = (jenis === 'charge') ? '' : `<br><span class="text-xs font-weight-bold">Fin: ${finishing !== '-' ? finishing : ''}</span>`;
-
-        // Tampilan Jenis File di Tabel (Gunakan badge kecil agar rapi)
+        const displayFinishing = (jenis === 'charge') ? '' : `<br><span class="text-xs font-weight-bold">Fin1: ${finishing !== '-' ? finishing : ''}</span>`;
+        const displayFinishing2 = (jenis === 'charge') ? '' : `<br><span class="text-xs font-weight-bold">Fin2: ${finishing2 !== '-' ? finishing2 : ''}</span>`;
         const displayJenisFile = jenisFile ? `<span class="badge bg-light text-dark border border-secondary p-1 ms-2" style="font-size:0.6rem;">${jenisFile.toUpperCase()}</span>` : '';
 
         let formatRupiah = new Intl.NumberFormat('id-ID', {
@@ -478,22 +494,31 @@
             currency: 'IDR',
             minimumFractionDigits: 0
         }).format(harga);
-        const displayHarga = (jenis === 'charge' && harga > 0) ? `<br><span class="text-success font-weight-bold text-xs">${formatRupiah}</span>` : '';
+        const displayHarga = (jenis === 'charge' && harga > 0) ? `<br><span class="text-success font-weight-bold text-xs">Harga Design : ${formatRupiah}</span>` : '';
 
         return `
             <td>
-                <span class="badge bg-gradient-${badgeColor} mb-1">${jenis.toUpperCase()}</span><br>
+                <span class="text-xs font-weight-bold text-dark">
+                    Jenis Order : <span class="badge bg-gradient-${badgeColor} mb-1">${jenis.toUpperCase()}</span>
+                </span>
+                <br>
                 <span class="text-xs font-weight-bold text-dark">${displayOperator}</span>
+
                 <input type="hidden" name="items[${idx}][jenis]" value="${jenis}">
                 <input type="hidden" name="items[${idx}][operator_id]" value="${operatorId}">
             </td>
             <td>
                 <div class="d-flex align-items-center">
-                    <h6 class="mb-0 text-sm text-truncate" style="max-width: 150px;">${file}</h6>
-                    ${displayJenisFile}
+                    <span class="text-xs font-weight-bold text-dark">Nama File : ${file}</span>
                 </div>
-                <small class="text-xxs text-secondary">${catatan}</small>
+                <div class="d-flex align-items-center">
+                    <span class="text-xs font-weight-bold text-dark">Jenis File : ${displayJenisFile}</span>
+                </div>
+                <span class="text-xs font-weight-bold text-dark">
+                    Catatan : ${catatan}
+                </span>
                 ${displayHarga}
+
                 <input type="hidden" name="items[${idx}][file]" value="${file}">
                 <input type="hidden" name="items[${idx}][jenis_file]" value="${jenisFile}">
                 <input type="hidden" name="items[${idx}][catatan]" value="${catatan}">
@@ -507,12 +532,14 @@
             <td class="text-xs font-weight-bold">
                 ${displayBahan}
                 ${displayFinishing}
+                ${displayFinishing2}
                 <input type="hidden" name="items[${idx}][bahan_id]" value="${bahanId}">
             </td>
             <td class="text-center text-sm">
                 ${qty}
                 <input type="hidden" name="items[${idx}][qty]" value="${qty}">
                 <input type="hidden" name="items[${idx}][finishing]" value="${finishing}">
+                <input type="hidden" name="items[${idx}][finishing_2]" value="${finishing2}">
             </td>
             <td class="text-center">
                 <button type="button" class="btn btn-link text-info px-2 mb-0" onclick="editItem(${idx})"><i class="material-icons text-sm">edit</i></button>
@@ -540,6 +567,7 @@
         let qty = row.querySelector(`input[name="items[${id}][qty]"]`).value;
         let catatan = row.querySelector(`input[name="items[${id}][catatan]"]`).value;
         let finishing = row.querySelector(`input[name="items[${id}][finishing]"]`).value;
+        let finishing2 = row.querySelector(`input[name="items[${id}][finishing_2]"]`).value;
         let hargaInput = row.querySelector(`input[name="items[${id}][harga]"]`);
         let harga = hargaInput ? hargaInput.value : '';
 
@@ -564,6 +592,7 @@
         $('#modal_jenis_file').val(jenisFile).trigger('change');
         $('#modal_bahan').val(bahanId).trigger('change');
         $('#modal_finishing').val(finishing !== '-' ? finishing : '').trigger('change');
+        $('#modal_finishing_2').val(finishing2 !== '-' ? finishing2 : '').trigger('change');
 
         if (jenis !== 'charge') {
             fetch(`/api/get-operators/${getActiveCabang()}?jenis=${jenis}`)
@@ -596,15 +625,18 @@
         $('#modal_operator').val('').trigger('change');
         $('#modal_bahan').val('').trigger('change');
         $('#modal_finishing').val('').trigger('change');
+        $('#modal_finishing_2').val('').trigger('change');
 
         const operatorSection = document.getElementById('modal_operator')?.closest('.col-md-6');
         const specSection = document.getElementById('modal_p')?.closest('.row');
         const finishingSection = document.getElementById('modal_finishing')?.closest('.col-md-6');
+        const finishingSection2 = document.getElementById('modal_finishing_2')?.closest('.col-md-6');
         const hargaSection = document.getElementById('sec_harga');
 
         if (operatorSection) operatorSection.style.display = 'block';
         if (specSection) specSection.querySelectorAll('.col-md-3, .col-md-4, .col-md-2').forEach(el => el.style.display = 'block');
         if (finishingSection) finishingSection.style.display = 'block';
+        if (finishingSection2) finishingSection2.style.display = 'block';
         if (hargaSection) hargaSection.style.display = 'none';
 
         let outdoorRadio = document.getElementById('m_outdoor');

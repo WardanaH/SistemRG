@@ -104,7 +104,8 @@
                                         <p class="text-xs text-secondary mb-0">
                                             Ukuran: {{ $item->p }} x {{ $item->l }} cm
                                         </p>
-                                        <p class="text-xs text-secondary mb-0">Fin: {{ $item->finishing ?? '-' }}</p>
+                                        <p class="text-xs text-secondary mb-0">Fin 1: {{ $item->finishing ?? '-' }}</p>
+                                        <p class="text-xs text-secondary mb-0">Fin 2: {{ $item->finishing_2 ?? '-' }}</p>
                                     @endif
                                 </td>
 
