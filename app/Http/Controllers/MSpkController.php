@@ -255,6 +255,7 @@ class MSpkController extends Controller
         // 1. VALIDASI DATA
         $request->validate([
             'nama_pelanggan' => 'required|string|max:255',
+            'harga_design'   => 'nullable|numeric|min:0',
             'no_telepon'     => 'nullable|string',
             'tanggal'        => 'required',
             'is_lembur'      => 'nullable|boolean',
@@ -265,7 +266,6 @@ class MSpkController extends Controller
             'items.*.jenis'      => 'required|in:outdoor,indoor,multi,dtf,charge',
             'items.*.file'       => 'required|string',
             'items.*.qty'        => 'required|integer|min:1',
-            'items.*.jenis_file'  => 'required|in:online,offline',
 
             // Validasi Kondisional: Wajib diisi KECUALI jenisnya 'charge'
             'items.*.harga'       => 'required_if:items.*.jenis,charge|nullable|numeric|min:0',
@@ -344,6 +344,7 @@ class MSpkController extends Controller
                     'no_spk'           => $newNoSpk,
                     'tanggal_spk'      => $tgl,
                     'nama_pelanggan'   => $request->nama_pelanggan,
+                    'harga'            => $request->harga_design ?? 0,
                     'no_telepon'       => $request->no_telepon,
                     'cabang_id'        => $targetCabangId,
                     'designer_id'      => $user->id,
@@ -384,7 +385,7 @@ class MSpkController extends Controller
                         'spk_id'          => $spk->id,
                         'nama_file'       => $item['file'],
                         'jenis_order'     => $item['jenis'],
-                        'jenis_file'      => $item['jenis_file'],
+                        'jenis_file'      => $isCharge ? 'online' : $item['jenis_file'],
                         'p'               => $isCharge ? null : $item['p'],
                         'l'               => $isCharge ? null : $item['l'],
                         'bahan_id'        => $isCharge ? null : $item['bahan_id'],
@@ -488,6 +489,7 @@ class MSpkController extends Controller
             $request->validate([
                 // Header
                 'nama_pelanggan' => 'required|string|max:255',
+                'harga_design'   => 'nullable|numeric|min:0',
                 'no_telepon'     => 'nullable|string',
                 'items'          => 'required|array|min:1',
 
@@ -518,6 +520,7 @@ class MSpkController extends Controller
                 // 3. Update Header
                 $spk->update([
                     'nama_pelanggan' => $request->nama_pelanggan,
+                    'harga'          => $request->harga_design ?? 0,
                     'no_telepon'     => $request->no_telepon,
                 ]);
 

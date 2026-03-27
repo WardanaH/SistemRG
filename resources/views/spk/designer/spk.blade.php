@@ -68,7 +68,7 @@
                     <p class="text-sm text-uppercase font-weight-bold mb-2">I. Data Umum & Pelanggan</p>
                     <div class="row mb-4">
                         {{-- Tanggal --}}
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-3 mb-3">
                             <div class="input-group input-group-outline is-filled">
                                 <label class="form-label">Tanggal</label>
                                 <input type="text" name="tanggal" class="form-control" value="{{ date('d-m-Y') }}" readonly>
@@ -76,7 +76,7 @@
                         </div>
 
                         {{-- Nama Pelanggan --}}
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-3 mb-3">
                             <div class="input-group input-group-outline @error('nama_pelanggan') is-invalid @enderror">
                                 <label class="form-label">Nama Pelanggan</label>
                                 <input type="text" name="nama_pelanggan" class="form-control" value="{{ old('nama_pelanggan') }}" required>
@@ -85,10 +85,21 @@
                         </div>
 
                         {{-- No Telepon (Opsional untuk Reguler) --}}
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-3 mb-3">
                             <div class="input-group input-group-outline">
                                 <label class="form-label">No. Telepon (Opsional)</label>
                                 <input type="text" name="no_telepon" class="form-control" value="{{ old('no_telepon') }}">
+                            </div>
+                        </div>
+
+                        {{-- Charge design (Opsional untuk Reguler) --}}
+                        <div class="col-md-3 mb-3">
+                            <div class="input-group input-group-outline">
+                                <label class="form-label">Harga Desain (Opsional)</label>
+                                {{-- Input tampilan untuk User --}}
+                                <input type="text" class="form-control" id="harga_design_tampil" value="{{ old('harga_design') }}">
+                                {{-- Input tersembunyi yang akan dikirim ke Backend --}}
+                                <input type="hidden" name="harga_design" id="harga_design_asli" value="{{ old('harga_design') }}">
                             </div>
                         </div>
                     </div>
@@ -229,11 +240,14 @@
                 </div>
 
                 {{-- Input Harga (Disembunyikan default, hanya muncul jika Charge) --}}
-                <div class="row mb-3">
-                    <div class="col-md-12" id="sec_harga" style="display: none;">
+                <div class="row mb-3" id="sec_harga" style="display: none;">
+                    <div class="col-md-12">
                         <div class="input-group input-group-outline">
                             <label class="form-label">Nominal Harga (Rp)</label>
-                            <input type="number" id="modal_harga" class="form-control" min="0">
+                            {{-- Input untuk tampilan format Rupiah --}}
+                            <input type="text" class="form-control" id="modal_harga_tampil">
+                            {{-- Input tersembunyi untuk menyimpan angka murni --}}
+                            <input type="hidden" id="modal_harga_asli">
                         </div>
                     </div>
                 </div>
@@ -337,6 +351,55 @@
         return radio ? radio.value : 'outdoor';
     }
 
+    // --- FORMAT RUPIAH ---
+    function formatRupiah(angka, prefix) {
+        let number_string = angka.toString().replace(/[^,\d]/g, ''),
+            split    = number_string.split(','),
+            sisa     = split[0].length % 3,
+            rupiah   = split[0].substr(0, sisa),
+            ribuan   = split[0].substr(sisa).match(/\d{3}/gi);
+
+        if (ribuan) {
+            let separator = sisa ? '.' : '';
+            rupiah += separator + ribuan.join('.');
+        }
+
+        rupiah = split[1] !== undefined ? rupiah + ',' + split[1] : rupiah;
+        return prefix === undefined ? rupiah : (rupiah ? 'Rp. ' + rupiah : '');
+    }
+
+    // 1. Event Listener untuk Harga di Modal (Sudah ada)
+    const modalHargaTampil = document.getElementById('modal_harga_tampil');
+    const modalHargaAsli = document.getElementById('modal_harga_asli');
+
+    if (modalHargaTampil) {
+        modalHargaTampil.addEventListener('keyup', function(e) {
+            this.value = formatRupiah(this.value, 'Rp. ');
+            let cleanNumber = this.value.replace(/[^0-9]/g, '');
+            if(modalHargaAsli) modalHargaAsli.value = cleanNumber;
+        });
+    }
+
+    // 2. TAMBAHAN: Event Listener untuk Harga Desain Global (Di Data Pelanggan)
+    const globalHargaTampil = document.getElementById('harga_design_tampil');
+    const globalHargaAsli = document.getElementById('harga_design_asli');
+
+    if (globalHargaTampil) {
+        // Cek jika ada old value saat halaman dimuat (misal setelah error validasi)
+        if (globalHargaAsli && globalHargaAsli.value) {
+            globalHargaTampil.value = formatRupiah(globalHargaAsli.value, 'Rp. ');
+            globalHargaTampil.parentElement.classList.add('is-filled');
+        }
+
+        globalHargaTampil.addEventListener('keyup', function(e) {
+            // Format tampilan
+            this.value = formatRupiah(this.value, 'Rp. ');
+            // Simpan angka murni ke hidden input
+            let cleanNumber = this.value.replace(/[^0-9]/g, '');
+            if(globalHargaAsli) globalHargaAsli.value = cleanNumber;
+        });
+    }
+
     // --- EVENT LISTENERS ---
     document.getElementById('toggleLembur').addEventListener('change', function() {
         const jenis = getActiveJenis();
@@ -392,7 +455,7 @@
                     html += `<option value="${op.id}" data-nama="${op.nama}">${op.nama} - ${op.roles}</option>`;
                 });
                 opSelect.innerHTML = html;
-                $('#modal_operator').trigger('change'); // Trigger perubahan visual
+                $('#modal_operator').trigger('change');
             })
             .catch(err => {
                 console.error('Error fetching operators:', err);
@@ -411,41 +474,39 @@
         let operatorSelect = document.getElementById('modal_operator');
         let operatorId = operatorSelect.value || null;
         let operatorNama = operatorSelect.options[operatorSelect.selectedIndex]?.text || '-';
+
         let file = document.getElementById('modal_nama_file').value;
         let jenisFile = document.getElementById('modal_jenis_file').value;
         let p = parseFloat(document.getElementById('modal_p').value) || 0;
         let l = parseFloat(document.getElementById('modal_l').value) || 0;
+
         let bahanSelect = document.getElementById('modal_bahan');
         let bahanId = bahanSelect.value || null;
         let bahanNama = bahanSelect.options[bahanSelect.selectedIndex]?.text || '-';
+
         let qty = parseInt(document.getElementById('modal_qty').value) || 1;
         let finishing = document.getElementById('modal_finishing').value || '-';
         let finishing2 = document.getElementById('modal_finishing_2').value || '-';
         let catatan = document.getElementById('modal_catatan').value || '-';
-        let hargaElem = document.getElementById('modal_harga');
+
+        // PERBAIKAN: Baca dari input tersembunyi (harga_asli)
+        let hargaElem = document.getElementById('modal_harga_asli');
         let harga = hargaElem ? (parseFloat(hargaElem.value) || 0) : 0;
 
-        // Validasi yang sudah disesuaikan
+        // Validasi
         if (jenis === 'charge') {
-            if (!file || !qty || !harga || !jenisFile) {
-                Swal.fire("Data Belum Lengkap", "Mohon isi Nama File, Jenis File, Qty, dan Nominal Harga!", "warning");
+            if (!file || !qty || harga <= 0) {
+                Swal.fire("Data Belum Lengkap", "Mohon isi Nama File, Qty, dan Nominal Harga!", "warning");
                 return;
             }
         } else {
-            // Kita longgarkan validasi 'p' dan 'l' karena bisa saja ukurannya 0 saat input awal
             if (!file || !jenisFile || !bahanId || !operatorId) {
                 Swal.fire("Data Belum Lengkap", "Pastikan Operator, Nama File, Jenis File, dan Bahan sudah dipilih.", "warning");
                 return;
             }
         }
 
-        let colors = {
-            'outdoor': 'danger',
-            'indoor': 'success',
-            'multi': 'info',
-            'dtf': 'primary',
-            'charge': 'dark'
-        };
+        let colors = { 'outdoor': 'danger', 'indoor': 'success', 'multi': 'info', 'dtf': 'primary', 'charge': 'dark' };
         let badgeColor = colors[jenis] || 'secondary';
 
         if (editId !== null) {
@@ -464,36 +525,25 @@
 
         resetModal();
 
-        // Cek instance modal sebelum sembunyikan untuk cegah error Bootstrap
         let modalEl = document.getElementById('modalTambahItem');
         let modalInst = bootstrap.Modal.getInstance(modalEl);
         if (modalInst) {
             modalInst.hide();
         }
 
-        Swal.fire({
-            icon: 'success',
-            title: 'Berhasil',
-            text: 'Item ditambahkan.',
-            timer: 1000,
-            showConfirmButton: false
-        });
+        Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Item ditambahkan.', timer: 1000, showConfirmButton: false });
     }
 
-    // UPDATE: Menambahkan parameter jenisFile
     function buatHtmlRow(idx, jenis, badgeColor, operatorId, operatorNama, file, jenisFile, catatan, p, l, bahanId, bahanNama, qty, finishing, finishing2, harga) {
         const displayUkuran = (jenis === 'charge') ? '-' : `${p} x ${l}`;
         const displayBahan = (jenis === 'charge') ? '-' : `Bhn: ${bahanNama}`;
         const displayOperator = (jenis === 'charge') ? '<i class="fa fa-paint-brush me-1"></i> Biaya Desain' : `<i class="fa fa-user me-1"></i> ${operatorNama}`;
         const displayFinishing = (jenis === 'charge') ? '' : `<br><span class="text-xs font-weight-bold">Fin1: ${finishing !== '-' ? finishing : ''}</span>`;
         const displayFinishing2 = (jenis === 'charge') ? '' : `<br><span class="text-xs font-weight-bold">Fin2: ${finishing2 !== '-' ? finishing2 : ''}</span>`;
-        const displayJenisFile = jenisFile ? `<span class="badge bg-light text-dark border border-secondary p-1 ms-2" style="font-size:0.6rem;">${jenisFile.toUpperCase()}</span>` : '';
 
-        let formatRupiah = new Intl.NumberFormat('id-ID', {
-            style: 'currency',
-            currency: 'IDR',
-            minimumFractionDigits: 0
-        }).format(harga);
+        const displayJenisFile = (jenisFile && jenis !== 'charge') ? `<span class="badge bg-light text-dark border border-secondary p-1 ms-2" style="font-size:0.6rem;">${jenisFile.toUpperCase()}</span>` : '';
+
+        let formatRupiah = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(harga);
         const displayHarga = (jenis === 'charge' && harga > 0) ? `<br><span class="text-success font-weight-bold text-xs">Harga Design : ${formatRupiah}</span>` : '';
 
         return `
@@ -503,7 +553,6 @@
                 </span>
                 <br>
                 <span class="text-xs font-weight-bold text-dark">${displayOperator}</span>
-
                 <input type="hidden" name="items[${idx}][jenis]" value="${jenis}">
                 <input type="hidden" name="items[${idx}][operator_id]" value="${operatorId}">
             </td>
@@ -557,7 +606,6 @@
         let opId = row.querySelector(`input[name="items[${id}][operator_id]"]`).value;
         let file = row.querySelector(`input[name="items[${id}][file]"]`).value;
 
-        // Ambil Jenis File dengan aman
         let jenisFileInput = row.querySelector(`input[name="items[${id}][jenis_file]"]`);
         let jenisFile = jenisFileInput ? jenisFileInput.value : '';
 
@@ -574,7 +622,7 @@
         let radioJenis = document.querySelector(`input[name="modal_jenis"][value="${jenis}"]`);
         if (radioJenis) {
             radioJenis.checked = true;
-            // Hindari penggunaan dispatchEvent('change') disini jika fetchOperators dijalankan terpisah
+            radioJenis.dispatchEvent(new Event('change'));
         }
 
         document.getElementById('modal_nama_file').value = file;
@@ -583,10 +631,13 @@
         document.getElementById('modal_qty').value = qty;
         document.getElementById('modal_catatan').value = catatan !== '-' ? catatan : '';
 
-        let mHarga = document.getElementById('modal_harga');
-        if (mHarga) {
-            mHarga.value = harga;
-            if (harga) mHarga.parentElement.classList.add('is-filled');
+        // PERBAIKAN: Set tampilan harga saat edit
+        let mHargaTampil = document.getElementById('modal_harga_tampil');
+        let mHargaAsli = document.getElementById('modal_harga_asli');
+        if (mHargaTampil && mHargaAsli) {
+            mHargaAsli.value = harga;
+            mHargaTampil.value = formatRupiah(harga, 'Rp. ');
+            if (harga) mHargaTampil.parentElement.classList.add('is-filled');
         }
 
         $('#modal_jenis_file').val(jenisFile).trigger('change');
@@ -618,8 +669,10 @@
         document.getElementById('modal_l').value = "0";
         document.getElementById('modal_qty').value = "1";
 
-        let mHarga = document.getElementById('modal_harga');
-        if (mHarga) mHarga.value = "";
+        let mHargaTampil = document.getElementById('modal_harga_tampil');
+        let mHargaAsli = document.getElementById('modal_harga_asli');
+        if (mHargaTampil) mHargaTampil.value = "";
+        if (mHargaAsli) mHargaAsli.value = "";
 
         $('#modal_jenis_file').val('').trigger('change');
         $('#modal_operator').val('').trigger('change');
@@ -629,14 +682,16 @@
 
         const operatorSection = document.getElementById('modal_operator')?.closest('.col-md-6');
         const specSection = document.getElementById('modal_p')?.closest('.row');
-        const finishingSection = document.getElementById('modal_finishing')?.closest('.col-md-6');
-        const finishingSection2 = document.getElementById('modal_finishing_2')?.closest('.col-md-6');
+        const finishingSection = document.getElementById('modal_finishing')?.closest('.col-md-3');
+        const finishingSection2 = document.getElementById('modal_finishing_2')?.closest('.col-md-3');
         const hargaSection = document.getElementById('sec_harga');
+        const jenisFileSection = document.getElementById('modal_jenis_file')?.closest('.col-md-4');
 
         if (operatorSection) operatorSection.style.display = 'block';
         if (specSection) specSection.querySelectorAll('.col-md-3, .col-md-4, .col-md-2').forEach(el => el.style.display = 'block');
         if (finishingSection) finishingSection.style.display = 'block';
         if (finishingSection2) finishingSection2.style.display = 'block';
+        if (jenisFileSection) jenisFileSection.style.display = 'block';
         if (hargaSection) hargaSection.style.display = 'none';
 
         let outdoorRadio = document.getElementById('m_outdoor');
@@ -656,7 +711,7 @@
                 <tr id="row-kosong">
                     <td colspan="6" class="text-center text-secondary text-sm py-4">
                         <i class="material-icons opacity-10" style="font-size: 3rem;">add_shopping_cart</i><br>
-                        Belum ada item. Klik tombol <b>+ Tambah Item</b> di atas kanan.
+                        Belum ada item pesanan.
                     </td>
                 </tr>
             `;
@@ -669,5 +724,6 @@
             Swal.fire("Tabel Kosong", "Anda belum menambahkan item pesanan apapun.", "error");
         }
     });
+
 </script>
 @endpush

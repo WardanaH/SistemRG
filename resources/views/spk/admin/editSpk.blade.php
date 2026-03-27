@@ -7,6 +7,15 @@
 
 <div class="row">
     <div class="col-12">
+
+        {{-- TOMBOL KEMBALI & HEADER --}}
+        <div class="d-flex align-items-center mb-3">
+            <a href="{{ route('spk.index') }}" class="btn btn-outline-secondary btn-sm mb-0 me-3">
+                <i class="material-icons text-sm">arrow_back</i> Kembali
+            </a>
+            <h5 class="mb-0 text-capitalize">Detail SPK: {{ $spk->no_spk }}</h5>
+        </div>
+
         <div class="card my-4">
             <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
                 <div class="bg-gradient-info shadow-info border-radius-lg pt-4 pb-3">
@@ -22,22 +31,33 @@
                     {{-- I. HEADER --}}
                     <p class="text-sm text-uppercase font-weight-bold mb-2">I. Data Umum</p>
                     <div class="row mb-4">
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-3 mb-3">
                             <div class="input-group input-group-outline is-filled">
                                 <label class="form-label">No. SPK</label>
                                 <input type="text" class="form-control" value="{{ $spk->no_spk }}" readonly>
                             </div>
                         </div>
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-3 mb-3">
                             <div class="input-group input-group-outline is-filled">
                                 <label class="form-label">Nama Pelanggan</label>
                                 <input type="text" name="nama_pelanggan" class="form-control" value="{{ old('nama_pelanggan', $spk->nama_pelanggan) }}" required>
                             </div>
                         </div>
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-3 mb-3">
                             <div class="input-group input-group-outline is-filled">
                                 <label class="form-label">No. Telepon</label>
                                 <input type="text" name="no_telepon" class="form-control" value="{{ old('no_telepon', $spk->no_telepon) }}">
+                            </div>
+                        </div>
+
+                        {{-- Harga Design Global --}}
+                        <div class="col-md-3 mb-3">
+                            <div class="input-group input-group-outline is-filled">
+                                <label class="form-label">Harga Desain (Opsional)</label>
+                                {{-- Tampilan User --}}
+                                <input type="text" class="form-control" id="harga_design_tampil" value="{{ old('harga_design', $spk->harga) }}">
+                                {{-- Hidden input untuk DB --}}
+                                <input type="hidden" name="harga_design" id="harga_design_asli" value="{{ old('harga_design', $spk->harga) }}">
                             </div>
                         </div>
                     </div>
@@ -133,7 +153,6 @@
                                     <option value="{{ $op->id }}" data-nama="{{ $op->nama }}">
                                         {{ $op->nama }}
                                         ({{ $op->roles()->pluck('name')->implode(', ') }})
-                                        {{-- Info tambahan jika lembur --}}
                                         @if($spk->is_lembur && $op->cabang)
                                             - {{ $op->cabang->nama }}
                                         @endif
@@ -144,7 +163,7 @@
                     </div>
                 </div>
 
-                {{-- 2. Nama File & Harga --}}
+                {{-- 2. Nama File & Jenis File --}}
                 <div class="row mb-3">
                     <div class="col-md-8 mb-3">
                         <div class="input-group input-group-outline is-filled">
@@ -152,7 +171,6 @@
                             <input type="text" id="modal_nama_file" class="form-control">
                         </div>
                     </div>
-
                     <div class="col-md-4">
                         <div class="input-group input-group-outline is-filled">
                             <select id="modal_jenis_file" class="form-control select2" data-placeholder="Pilih Jenis File..." style="appearance: auto;">
@@ -162,12 +180,15 @@
                             </select>
                         </div>
                     </div>
+                </div>
 
-                    {{-- Input Harga (Disembunyikan default, hanya muncul jika Charge) --}}
-                    <div class="col-md-12" id="sec_harga" style="display: none;">
-                        <div class="input-group input-group-outline is-filled">
+                {{-- Input Harga (Disembunyikan default, hanya muncul jika Charge) --}}
+                <div class="row mb-3" id="sec_harga" style="display: none;">
+                    <div class="col-md-12">
+                        <div class="input-group input-group-outline">
                             <label class="form-label">Nominal Harga (Rp)</label>
-                            <input type="number" id="modal_harga" class="form-control" min="0">
+                            <input type="text" class="form-control" id="modal_harga_tampil">
+                            <input type="hidden" id="modal_harga_asli">
                         </div>
                     </div>
                 </div>
@@ -249,11 +270,26 @@
 <script>
     let itemIndex = 0;
 
-    // Data existing dari database (dikirim controller)
-    const existingItems = @json($spk->items);
+    // --- FORMAT RUPIAH ---
+    function formatRupiah(angka, prefix) {
+        let number_string = angka.toString().replace(/[^,\d]/g, ''),
+            split    = number_string.split(','),
+            sisa     = split[0].length % 3,
+            rupiah   = split[0].substr(0, sisa),
+            ribuan   = split[0].substr(sisa).match(/\d{3}/gi);
+
+        if (ribuan) {
+            let separator = sisa ? '.' : '';
+            rupiah += separator + ribuan.join('.');
+        }
+        rupiah = split[1] !== undefined ? rupiah + ',' + split[1] : rupiah;
+        return prefix === undefined ? rupiah : (rupiah ? 'Rp. ' + rupiah : '');
+    }
 
     document.addEventListener("DOMContentLoaded", function() {
-        // Load data lama ke tabel saat halaman dimuat
+        // --- 1. LOAD EXISTING DATA DARI DB KE TABEL ---
+        const existingItems = @json($spk->items);
+
         existingItems.forEach(item => {
             let opNama = item.operator ? item.operator.nama : 'Tidak Ada (Charge)';
             let bhnNama = item.bahan ? item.bahan.nama_bahan : '-';
@@ -261,7 +297,7 @@
             addItemToTable({
                 jenis: item.jenis_order,
                 file: item.nama_file,
-                jenis_file: item.jenis_file,
+                jenis_file: item.jenis_file || '',
                 p: item.p || 0,
                 l: item.l || 0,
                 bahanId: item.bahan_id || '',
@@ -276,7 +312,35 @@
             });
         });
 
-        // Event listener saat modal radio jenis berubah
+        // --- 2. FORMAT RUPIAH GLOBAL (DATA PELANGGAN) ---
+        const globalHargaTampil = document.getElementById('harga_design_tampil');
+        const globalHargaAsli = document.getElementById('harga_design_asli');
+
+        if (globalHargaTampil) {
+            if (globalHargaAsli && globalHargaAsli.value && parseFloat(globalHargaAsli.value) > 0) {
+                globalHargaTampil.value = formatRupiah(globalHargaAsli.value, 'Rp. ');
+                globalHargaTampil.parentElement.classList.add('is-filled');
+            }
+            globalHargaTampil.addEventListener('keyup', function(e) {
+                this.value = formatRupiah(this.value, 'Rp. ');
+                let cleanNumber = this.value.replace(/[^0-9]/g, '');
+                if(globalHargaAsli) globalHargaAsli.value = cleanNumber;
+            });
+        }
+
+        // --- 3. FORMAT RUPIAH ITEM (DALAM MODAL) ---
+        const modalHargaTampil = document.getElementById('modal_harga_tampil');
+        const modalHargaAsli = document.getElementById('modal_harga_asli');
+
+        if (modalHargaTampil) {
+            modalHargaTampil.addEventListener('keyup', function(e) {
+                this.value = formatRupiah(this.value, 'Rp. ');
+                let cleanNumber = this.value.replace(/[^0-9]/g, '');
+                if(modalHargaAsli) modalHargaAsli.value = cleanNumber;
+            });
+        }
+
+        // --- 4. LISTENER RADIO BUTTON JENIS ORDER ---
         document.querySelectorAll('input[name="modal_jenis"]').forEach(radio => {
             radio.addEventListener('change', function() {
                 toggleModalFields(this.value);
@@ -299,14 +363,14 @@
             specSection.querySelectorAll('.col-md-3, .col-md-4').forEach(el => el.style.display = 'none');
             finishingSection.style.display = 'none';
             finishingSection2.style.display = 'none';
-            jenisFileSection.style.display = 'none';
+            if(jenisFileSection) jenisFileSection.style.display = 'none';
             hargaSection.style.display = 'block';
         } else {
             operatorSection.style.display = 'block';
             specSection.querySelectorAll('.col-md-3, .col-md-4, .col-md-2').forEach(el => el.style.display = 'block');
             finishingSection.style.display = 'block';
             finishingSection2.style.display = 'block';
-            jenisFileSection.style.display = 'block';
+            if(jenisFileSection) jenisFileSection.style.display = 'block';
             hargaSection.style.display = 'none';
         }
     }
@@ -318,7 +382,6 @@
     }
 
     function generateRowHtml(id, data, innerOnly = false) {
-        // Penentuan Warna Badge
         let badgeColor = 'secondary';
         if(data.jenis === 'outdoor') badgeColor = 'warning';
         else if(data.jenis === 'indoor') badgeColor = 'success';
@@ -326,16 +389,14 @@
         else if(data.jenis === 'dtf') badgeColor = 'primary';
         else if(data.jenis === 'charge') badgeColor = 'dark';
 
-        // Logika Teks Operator
         let infoOperator = (data.jenis === 'charge')
             ? '<span class="text-danger"><i class="fa fa-paint-brush me-1"></i> Biaya Desain</span>'
             : `<i class="fa fa-user me-1 text-secondary"></i> ${data.operatorNama}`;
 
-        // Logika Teks Spesifikasi / Harga
         let spesifikasiHtml = '';
         if (data.jenis === 'charge') {
-            let formatRupiah = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(data.harga);
-            spesifikasiHtml = `<span class="text-success font-weight-bold text-sm">${formatRupiah}</span>`;
+            let formatVal = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(data.harga);
+            spesifikasiHtml = `<span class="text-success font-weight-bold text-sm">${formatVal}</span>`;
         } else {
             spesifikasiHtml = `
                 <p class="text-xs font-weight-bold mb-0">Bahan: ${data.bahanNama}</p>
@@ -345,34 +406,28 @@
             `;
         }
 
-        // Tepat 5 Kolom Sesuai Header Tabel HTML Anda
         let content = `
-            {{-- 1. INFO ITEM (Jenis, File, Operator) --}}
             <td class="align-middle">
                 <h6 class="mb-1 text-sm text-wrap" style="max-width: 200px;">Nama File : ${data.file}</h6>
+                ${data.jenis !== 'charge' ? `
                 <span class="text-xs font-weight-bold text-dark">
-                    Jenis File : <span class="badge bg-gradient-info mb-2">${data.jenis_file}</span>
+                    Jenis File : <span class="badge bg-gradient-info mb-2">${data.jenis_file || '-'}</span>
                 </span><br>
+                ` : ''}
                 <span class="text-xs font-weight-bold text-dark">Operator : ${infoOperator}</span><br>
                 <span class="text-xs font-weight-bold text-dark">
                     Jenis Order : <span class="badge bg-gradient-${badgeColor} mb-2">${data.jenis.toUpperCase()}</span>
                 </span><br>
 
-
-                {{-- Hidden Inputs (Wajib untuk dikirim ke Controller) --}}
                 <input type="hidden" name="items[${id}][jenis]" value="${data.jenis}" class="val-jenis">
-                <input type="hidden" name="items[${id}][jenis_file]" value="${data.jenis_file}" class="val-jenis_file">
+                <input type="hidden" name="items[${id}][jenis_file]" value="${data.jenis_file || ''}" class="val-jenis_file">
                 <input type="hidden" name="items[${id}][operator_id]" value="${data.operatorId}" class="val-op-id">
                 <input type="hidden" class="val-op-nama" value="${data.operatorNama}">
                 <input type="hidden" name="items[${id}][file]" value="${data.file}" class="val-file">
                 <input type="hidden" name="items[${id}][harga]" value="${data.harga || 0}" class="val-harga">
             </td>
-
-            {{-- 2. SPESIFIKASI --}}
             <td class="align-middle">
                 ${spesifikasiHtml}
-
-                {{-- Hidden Inputs --}}
                 <input type="hidden" name="items[${id}][p]" value="${data.p}" class="val-p">
                 <input type="hidden" name="items[${id}][l]" value="${data.l}" class="val-l">
                 <input type="hidden" name="items[${id}][bahan_id]" value="${data.bahanId}" class="val-bahan-id">
@@ -380,22 +435,16 @@
                 <input type="hidden" name="items[${id}][finishing_2]" value="${data.finishing_2 || ''}" class="val-finishing_2">
                 <input type="hidden" class="val-bahan-nama" value="${data.bahanNama}">
             </td>
-
-            {{-- 3. QTY --}}
             <td class="text-center align-middle text-sm font-weight-bold">
                 ${data.qty}
                 <input type="hidden" name="items[${id}][qty]" value="${data.qty}" class="val-qty">
             </td>
-
-            {{-- 4. CATATAN --}}
             <td class="text-center align-middle">
                 <h6 class="text-xs text-secondary font-weight-normal mb-0 text-wrap" style="max-width: 150px;">
                     ${data.catatan || '-'}
                 </h6>
                 <input type="hidden" name="items[${id}][catatan]" value="${data.catatan || ''}" class="val-catatan">
             </td>
-
-            {{-- 5. AKSI --}}
             <td class="text-center align-middle">
                 <button type="button" class="btn btn-link text-warning px-2 mb-0" onclick="editItem(${id})" data-toggle="tooltip" title="Edit Item">
                     <i class="material-icons text-sm">edit</i>
@@ -432,10 +481,12 @@
         let finishing = document.getElementById('modal_finishing').value;
         let finishing_2 = document.getElementById('modal_finishing_2').value;
         let catatan = document.getElementById('modal_catatan').value;
-        let harga = document.getElementById('modal_harga').value || 0;
+
+        let hargaElem = document.getElementById('modal_harga_asli');
+        let harga = hargaElem ? (parseFloat(hargaElem.value) || 0) : 0;
 
         if (jenis === 'charge') {
-            if (!file || !qty || !harga) {
+            if (!file || !qty || harga <= 0) {
                 Swal.fire("Data Belum Lengkap", "Mohon isi Nama File, Qty, dan Nominal Harga!", "warning");
                 return;
             }
@@ -452,7 +503,7 @@
         let data = {
             jenis: jenis,
             file: file,
-            jenis_file: jenis_file,
+            jenis_file: (jenis === 'charge') ? '' : jenis_file,
             p: (jenis === 'charge') ? 0 : p,
             l: (jenis === 'charge') ? 0 : l,
             bahanId: (jenis === 'charge') ? '' : bahanSelect.value,
@@ -496,11 +547,18 @@
         document.getElementById('modal_p').value = p || "0";
         document.getElementById('modal_l').value = l || "0";
         document.getElementById('modal_qty').value = qty;
-        document.getElementById('modal_harga').value = harga;
+
+        let mHargaTampil = document.getElementById('modal_harga_tampil');
+        let mHargaAsli = document.getElementById('modal_harga_asli');
+        if(mHargaAsli && mHargaTampil) {
+            mHargaAsli.value = harga;
+            mHargaTampil.value = harga > 0 ? formatRupiah(harga, 'Rp. ') : '';
+            if(harga > 0) mHargaTampil.parentElement.classList.add('is-filled');
+        }
 
         let radioJenis = document.querySelector(`input[name="modal_jenis"][value="${jenis}"]`);
         radioJenis.checked = true;
-        toggleModalFields(jenis); // Trigger form styling
+        toggleModalFields(jenis);
 
         $('#modal_operator').val(opId).trigger('change');
         $('#modal_bahan').val(bahanId).trigger('change');
@@ -525,7 +583,9 @@
         document.getElementById('modal_p').value = "0";
         document.getElementById('modal_l').value = "0";
         document.getElementById('modal_qty').value = "1";
-        document.getElementById('modal_harga').value = "";
+
+        if(document.getElementById('modal_harga_tampil')) document.getElementById('modal_harga_tampil').value = "";
+        if(document.getElementById('modal_harga_asli')) document.getElementById('modal_harga_asli').value = "";
 
         $('#modal_operator').val('').trigger('change');
         $('#modal_bahan').val('').trigger('change');
@@ -533,7 +593,14 @@
         $('#modal_finishing_2').val('').trigger('change');
 
         document.getElementById('m_outdoor').checked = true;
-        toggleModalFields('outdoor'); // Set styling form ke default
+        toggleModalFields('outdoor');
     }
+
+    document.getElementById('formSpk').addEventListener('submit', function(e) {
+        if (!document.querySelector('#tabelItemBody tr:not(#row-kosong)')) {
+            e.preventDefault();
+            Swal.fire("Tabel Kosong", "Anda belum menambahkan item pesanan apapun.", "error");
+        }
+    });
 </script>
 @endpush

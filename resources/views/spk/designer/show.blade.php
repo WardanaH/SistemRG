@@ -46,6 +46,16 @@
                         <p class="text-xs mb-0 text-secondary font-weight-bold">Designer (Admin)</p>
                         <h6 class="text-sm font-weight-normal">{{ $spk->designer->nama ?? 'User Terhapus' }}</h6>
                     </div>
+                    <div class="col-md-3">
+                        <p class="text-xs mb-0 text-secondary font-weight-bold">Harga Desain</p>
+                        <h6 class="text-sm font-weight-normal">
+                            @if($spk->harga && $spk->harga > 0)
+                                Rp. {{ number_format($spk->harga, 0, ',', '.') }}
+                            @else
+                                Tanpa Jasa Desain
+                            @endif
+                        </h6>
+                    </div>
                 </div>
             </div>
         </div>

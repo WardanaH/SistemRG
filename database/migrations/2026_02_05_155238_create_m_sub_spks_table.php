@@ -26,6 +26,7 @@ return new class extends Migration
             $table->double('l')->nullable();
             $table->integer('qty');
             $table->string('finishing')->nullable();
+            $table->string('finishing_2')->nullable();
             $table->enum('status_produksi', ['pending', 'ripping', 'ongoing', 'finishing', 'done'])->default('pending');
             $table->text('catatan')->nullable();
             $table->text('catatan_operator')->nullable();
