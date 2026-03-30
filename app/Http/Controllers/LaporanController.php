@@ -5,38 +5,55 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\MSpk;
 use App\Models\MSubSpk;
-use App\Models\MTarget; // Pastikan model ini sudah dibuat
+use App\Models\MTarget;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class LaporanController extends Controller
 {
+    // Helper function KECIL HANYA untuk memudahkan penentuan siklus 27-26
+    private function getSiklus($date)
+    {
+        if ($date->day >= 27) {
+            $start = $date->copy()->startOfDay()->day(27);
+            $end   = $date->copy()->addMonth()->endOfDay()->day(26);
+        } else {
+            $start = $date->copy()->subMonth()->startOfDay()->day(27);
+            $end   = $date->copy()->endOfDay()->day(26);
+        }
+        return ['start' => $start, 'end' => $end];
+    }
+
     public function index(Request $request)
     {
         $user = Auth::user();
 
-        // --- 1. SETUP FILTER TANGGAL ---
+        // --- 1. SETUP FILTER TANGGAL (SIKLUS 27-26) ---
         $filterType = $request->input('filter_type', 'bulan_ini');
-        $startDate = Carbon::now()->startOfMonth();
-        $endDate   = Carbon::now()->endOfMonth();
+        $now = Carbon::now();
+
+        // Default: Siklus bulan berjalan
+        $siklusSekarang = $this->getSiklus($now);
+        $startDate = $siklusSekarang['start'];
+        $endDate   = $siklusSekarang['end'];
 
         switch ($filterType) {
             case 'bulan_ini':
-                $startDate = Carbon::now()->startOfMonth();
-                $endDate   = Carbon::now()->endOfMonth();
+                // Sudah diset di default atas
                 break;
             case 'tri_wulan':
-                $startDate = Carbon::now()->subMonths(3)->startOfDay();
-                $endDate   = Carbon::now()->endOfDay();
+                // Tarik start date mundur 2 siklus (total 3 siklus)
+                $startDate = $this->getSiklus($now->copy()->subMonths(2))['start'];
                 break;
             case 'semester':
-                $startDate = Carbon::now()->subMonths(6)->startOfDay();
-                $endDate   = Carbon::now()->endOfDay();
+                // Tarik start date mundur 5 siklus (total 6 siklus)
+                $startDate = $this->getSiklus($now->copy()->subMonths(5))['start'];
                 break;
             case 'tahun_ini':
-                $startDate = Carbon::now()->startOfYear();
-                $endDate   = Carbon::now()->endOfYear();
+                // Dari 27 Des tahun lalu s/d 26 Des tahun ini
+                $startDate = Carbon::create($now->year - 1, 12, 27)->startOfDay();
+                $endDate   = Carbon::create($now->year, 12, 26)->endOfDay();
                 break;
             case 'custom':
                 if ($request->has('start_date') && $request->has('end_date')) {
@@ -143,8 +160,9 @@ class LaporanController extends Controller
             'jenis'   => 'required|in:input,acc,produksi'
         ]);
 
-        // Ubah format YYYY-MM menjadi Tanggal 1 bulan tersebut
-        $date = Carbon::createFromFormat('Y-m', $request->bulan)->startOfMonth();
+        // Ubah format YYYY-MM menjadi Tanggal 27 di bulan tersebut
+        // Ini agar cocok dengan pencarian whereBetween('bulan', [$startDate, $endDate]) di atas
+        $date = Carbon::createFromFormat('Y-m', $request->bulan)->startOfDay()->day(27);
 
         MTarget::updateOrCreate(
             [
@@ -168,7 +186,7 @@ class LaporanController extends Controller
             'jumlah'      => 'required|integer|min:1',
         ]);
 
-        $date = Carbon::createFromFormat('Y-m', $request->bulan)->startOfMonth();
+        $date = Carbon::createFromFormat('Y-m', $request->bulan)->startOfDay()->day(27);
         $targetAmount = $request->jumlah;
         $users = collect();
         $jenisTarget = '';
@@ -211,26 +229,27 @@ class LaporanController extends Controller
     }
 
     // 1. HELPER FUNGSI UNTUK MENGAMBIL QUERY CHARGE (Agar Web, PDF, & Excel filternya sama)
-    // 1. HELPER FUNGSI UNTUK MENGAMBIL QUERY CHARGE
     private function getChargeQueryData(Request $request)
     {
         $user = Auth::user();
         $filterType = $request->input('filter_type', 'bulan_ini');
-        $startDate = Carbon::now()->startOfMonth();
-        $endDate   = Carbon::now()->endOfMonth();
+        $now = Carbon::now();
+
+        // Terapkan Logika 27-26 di sini juga
+        $siklusSekarang = $this->getSiklus($now);
+        $startDate = $siklusSekarang['start'];
+        $endDate   = $siklusSekarang['end'];
 
         switch ($filterType) {
             case 'tri_wulan':
-                $startDate = Carbon::now()->subMonths(3)->startOfDay();
-                $endDate   = Carbon::now()->endOfDay();
+                $startDate = $this->getSiklus($now->copy()->subMonths(2))['start'];
                 break;
             case 'semester':
-                $startDate = Carbon::now()->subMonths(6)->startOfDay();
-                $endDate   = Carbon::now()->endOfDay();
+                $startDate = $this->getSiklus($now->copy()->subMonths(5))['start'];
                 break;
             case 'tahun_ini':
-                $startDate = Carbon::now()->startOfYear();
-                $endDate   = Carbon::now()->endOfYear();
+                $startDate = Carbon::create($now->year - 1, 12, 27)->startOfDay();
+                $endDate   = Carbon::create($now->year, 12, 26)->endOfDay();
                 break;
             case 'custom':
                 if ($request->has('start_date') && $request->has('end_date')) {

@@ -137,7 +137,7 @@
                                 {{-- KOLOM 2: ASAL CABANG (PENTING BUAT BANTUAN) --}}
                                 <td>
                                     <h6 class="mb-0 text-sm font-weight-bold text-info">
-                                        {{ $spk->cabangAsal->nama ?? 'Unknown' }}
+                                        {{ $spk->cabangAsal->nama ?? 'Kustom' }}
                                     </h6>
                                 </td>
 
