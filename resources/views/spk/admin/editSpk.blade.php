@@ -31,19 +31,19 @@
                     {{-- I. HEADER --}}
                     <p class="text-sm text-uppercase font-weight-bold mb-2">I. Data Umum</p>
                     <div class="row mb-4">
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-4 mb-3">
                             <div class="input-group input-group-outline is-filled">
                                 <label class="form-label">No. SPK</label>
                                 <input type="text" class="form-control" value="{{ $spk->no_spk }}" readonly>
                             </div>
                         </div>
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-4 mb-3">
                             <div class="input-group input-group-outline is-filled">
                                 <label class="form-label">Nama Pelanggan</label>
                                 <input type="text" name="nama_pelanggan" class="form-control" value="{{ old('nama_pelanggan', $spk->nama_pelanggan) }}" required>
                             </div>
                         </div>
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-4 mb-3">
                             <div class="input-group input-group-outline is-filled">
                                 <label class="form-label">No. Telepon</label>
                                 <input type="text" name="no_telepon" class="form-control" value="{{ old('no_telepon', $spk->no_telepon) }}">
@@ -51,7 +51,7 @@
                         </div>
 
                         {{-- Harga Design Global --}}
-                        <div class="col-md-3 mb-3">
+                        <!-- <div class="col-md-3 mb-3">
                             <div class="input-group input-group-outline is-filled">
                                 <label class="form-label">Harga Desain (Opsional)</label>
                                 {{-- Tampilan User --}}
@@ -59,7 +59,7 @@
                                 {{-- Hidden input untuk DB --}}
                                 <input type="hidden" name="harga_design" id="harga_design_asli" value="{{ old('harga_design', $spk->harga) }}">
                             </div>
-                        </div>
+                        </div> -->
                     </div>
 
                     <hr class="horizontal dark my-2">
@@ -138,10 +138,10 @@
                                 <input class="form-check-input" type="radio" name="modal_jenis" id="m_dtf" value="dtf">
                                 <label class="custom-control-label" for="m_dtf">DTF</label>
                             </div>
-                            <!-- <div class="form-check">
+                            <div class="form-check">
                                 <input class="form-check-input" type="radio" name="modal_jenis" id="m_charge" value="charge">
                                 <label class="custom-control-label text-danger" for="m_charge">Charge Desain</label>
-                            </div> -->
+                            </div>
                         </div>
                     </div>
                     {{-- Operator Dipilih Disini (Per Item) --}}

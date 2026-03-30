@@ -52,6 +52,7 @@
                                     @foreach($cabangLain as $cb)
                                     <option value="{{ $cb->id }}">{{ $cb->nama }}</option>
                                     @endforeach
+                                    <option value="null">Lainnya</option>
                                 </select>
                             </div>
                         </div>

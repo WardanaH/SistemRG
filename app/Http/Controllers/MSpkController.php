@@ -497,7 +497,6 @@ class MSpkController extends Controller
                 'items.*.jenis'       => 'required|in:outdoor,indoor,multi,dtf,charge', // dtf & charge ditambahkan
                 'items.*.file'        => 'required|string',
                 'items.*.qty'         => 'required|integer|min:1',
-                'items.*.jenis_file'  => 'required|in:online,offline',
 
                 'items.*.harga'       => 'required_if:items.*.jenis,charge|nullable|numeric|min:0',
                 'items.*.p'           => 'required_unless:items.*.jenis,charge|numeric|min:0',
@@ -535,7 +534,7 @@ class MSpkController extends Controller
                         'spk_id'          => $spk->id,
                         'nama_file'       => $item['file'],
                         'jenis_order'     => $item['jenis'],
-                        'jenis_file'      => $item['jenis_file'],
+                        'jenis_file'      => $isCharge ? 'online' : $item['jenis_file'],
                         'harga'           => $isCharge ? ($item['harga'] ?? 0) : 0,
                         'p'               => $isCharge ? null : $item['p'],
                         'l'               => $isCharge ? null : $item['l'],
@@ -545,7 +544,7 @@ class MSpkController extends Controller
                         'finishing'       => $isCharge ? null : ($item['finishing'] ?? '-'),
                         'finishing_2'       => $isCharge ? null : ($item['finishing_2'] ?? '-'),
                         'catatan'         => $item['catatan'] ?? '-',
-                        'status_produksi' => 'pending', // Reset status jika diedit total
+                        'status_produksi' => $isCharge ? 'done' : 'pending', // Reset status jika diedit total
                     ]);
                 }
             });
@@ -842,7 +841,8 @@ class MSpkController extends Controller
                 // Filter Cabang (Hanya riwayat pekerjaan di cabang sendiri)
 
                 $q->where('is_bantuan', false)
-                    ->where('is_lembur', true);
+                    ->where('is_lembur', true)
+                    ->where('jenis_order', '!=', 'charge');
             });
 
         // 2. Filter Utama: Milik Operator yg Login & Status DONE

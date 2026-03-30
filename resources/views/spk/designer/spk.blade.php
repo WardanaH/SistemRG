@@ -68,7 +68,7 @@
                     <p class="text-sm text-uppercase font-weight-bold mb-2">I. Data Umum & Pelanggan</p>
                     <div class="row mb-4">
                         {{-- Tanggal --}}
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-4 mb-3">
                             <div class="input-group input-group-outline is-filled">
                                 <label class="form-label">Tanggal</label>
                                 <input type="text" name="tanggal" class="form-control" value="{{ date('d-m-Y') }}" readonly>
@@ -76,7 +76,7 @@
                         </div>
 
                         {{-- Nama Pelanggan --}}
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-4 mb-3">
                             <div class="input-group input-group-outline @error('nama_pelanggan') is-invalid @enderror">
                                 <label class="form-label">Nama Pelanggan</label>
                                 <input type="text" name="nama_pelanggan" class="form-control" value="{{ old('nama_pelanggan') }}" required>
@@ -85,7 +85,7 @@
                         </div>
 
                         {{-- No Telepon (Opsional untuk Reguler) --}}
-                        <div class="col-md-3 mb-3">
+                        <div class="col-md-4 mb-3">
                             <div class="input-group input-group-outline">
                                 <label class="form-label">No. Telepon (Opsional)</label>
                                 <input type="text" name="no_telepon" class="form-control" value="{{ old('no_telepon') }}">
@@ -93,7 +93,7 @@
                         </div>
 
                         {{-- Charge design (Opsional untuk Reguler) --}}
-                        <div class="col-md-3 mb-3">
+                        <!-- <div class="col-md-3 mb-3">
                             <div class="input-group input-group-outline">
                                 <label class="form-label">Harga Desain (Opsional)</label>
                                 {{-- Input tampilan untuk User --}}
@@ -101,7 +101,7 @@
                                 {{-- Input tersembunyi yang akan dikirim ke Backend --}}
                                 <input type="hidden" name="harga_design" id="harga_design_asli" value="{{ old('harga_design') }}">
                             </div>
-                        </div>
+                        </div> -->
                     </div>
 
                     <hr class="horizontal dark my-2">
@@ -198,10 +198,10 @@
                                 <input class="form-check-input" type="radio" name="modal_jenis" id="m_dtf" value="dtf">
                                 <label class="custom-control-label" for="m_dtf">DTF UV</label>
                             </div>
-                            <!-- <div class="form-check">
+                            <div class="form-check">
                                 <input class="form-check-input" type="radio" name="modal_jenis" id="m_charge" value="charge">
                                 <label class="custom-control-label" for="m_charge">Charge Desain</label>
-                            </div> -->
+                            </div>
                         </div>
                     </div>
                     {{-- Operator Dipilih Disini (Per Item) --}}

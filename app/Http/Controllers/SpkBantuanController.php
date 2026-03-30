@@ -96,8 +96,7 @@ class SpkBantuanController extends Controller
         $user = Auth::user();
 
         // Ambil Cabang Lain (Pengirim)
-        $cabangLain = MCabang::where('id', '!=', $user->cabang_id)
-            ->where('jenis', '!=', 'pusat')
+        $cabangLain = MCabang::where('jenis', '!=', 'pusat')
             ->get();
         $bahans = MBahanBaku::all();
         $finishings = MFinishing::all();
@@ -121,16 +120,24 @@ class SpkBantuanController extends Controller
     {
         // 1. Validasi Header & Pastikan Item Ada
         $request->validate([
-            'asal_cabang_id' => 'required',
+            'asal_cabang_id' => 'nullable',
             'nama_pelanggan' => 'required',
             'no_telepon'     => 'required',
             'items'          => 'required|array|min:1', // Wajib ada minimal 1 item
         ]);
+        // dd($request->all());
 
         try {
             DB::transaction(function () use ($request) {
                 $user = Auth::user();
                 $cabangId = $user->cabang_id;
+                
+                $inputAsal = $request->asal_cabang_id;
+                if (empty($inputAsal) || $inputAsal === 'null' || $inputAsal === null) {
+                    $asalCabangId = null;
+                } else {
+                    $asalCabangId = $inputAsal;
+                }
 
                 // A. GENERATE NOMOR SPK (Logic Lama)
                 $cabangKode = $user->cabang->kode;
@@ -156,7 +163,7 @@ class SpkBantuanController extends Controller
                 $spk = MSpk::create([
                     'no_spk'         => $newNoSpk,
                     'is_bantuan'     => true,
-                    'asal_cabang_id' => $request->asal_cabang_id,
+                    'asal_cabang_id' => $asalCabangId,
                     'cabang_id'      => $user->cabang_id,
                     'tanggal_spk'    => $tgl,
                     'nama_pelanggan' => $request->nama_pelanggan,
