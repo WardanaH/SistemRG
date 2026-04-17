@@ -57,7 +57,7 @@
                 <div class="modal-footer border-0 pt-0">
                     <button type="button" class="btn btn-light border fw-bold" data-bs-dismiss="modal">Batal</button>
 
-                    <form method="POST" action="{{ route('profil.admin.logout') }}" class="m-0">
+                    <form method="POST" action="{{ route('auth.logout') }}" class="m-0">
                         @csrf
                         <button type="submit" class="btn btn-danger fw-bold">
                             <i class="bi bi-box-arrow-right me-1"></i> Logout

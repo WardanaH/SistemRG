@@ -70,6 +70,10 @@
                     </table>
                 </div>
             </div>
+            <div class="card-footer py-3">
+                    {{-- withQueryString() agar saat pindah halaman (pagination), filter tetap nempel --}}
+                    {{ $finishings->withQueryString()->links('pagination::bootstrap-5') }}
+                </div>
         </div>
     </div>
 </div>
@@ -111,7 +115,6 @@
         const form = document.getElementById('formFinishing');
         const modalTitle = document.getElementById('modalTitle');
         const inputNama = document.getElementById('inputNama');
-        const inputHarga = document.getElementById('inputHarga');
         const methodDiv = document.getElementById('methodUpdate');
 
         // Reset modal saat ditutup (supaya kembali ke mode Tambah)
@@ -119,10 +122,12 @@
             form.action = "{{ route('manajemen.finishing.store') }}";
             modalTitle.innerText = "Tambah Finishing";
             inputNama.value = "";
-            inputHarga.value = "";
             methodDiv.innerHTML = ""; // Hapus @method('PUT')
-            inputNama.parentElement.classList.remove('is-filled');
-            inputHarga.parentElement.classList.remove('is-filled');
+
+            // Hapus class 'is-filled' jika menggunakan Material Dashboard
+            if(inputNama.parentElement) {
+                inputNama.parentElement.classList.remove('is-filled');
+            }
         });
 
         // Klik Tombol Edit
@@ -130,7 +135,6 @@
             btn.addEventListener('click', function() {
                 let id = this.getAttribute('data-id');
                 let nama = this.getAttribute('data-nama');
-                let harga = this.getAttribute('data-harga');
 
                 // Ubah ke Mode Edit
                 let url = "{{ route('manajemen.finishing.update', ':id') }}";
@@ -138,14 +142,14 @@
                 modalTitle.innerText = "Edit Finishing";
 
                 inputNama.value = nama;
-                inputHarga.value = harga;
 
                 // Tambahkan Method PUT
                 methodDiv.innerHTML = '<input type="hidden" name="_method" value="PUT">';
 
                 // Fix tampilan label floating Material Dashboard
-                inputNama.parentElement.classList.add('is-filled');
-                inputHarga.parentElement.classList.add('is-filled');
+                if(inputNama.parentElement) {
+                    inputNama.parentElement.classList.add('is-filled');
+                }
 
                 modal.show();
             });

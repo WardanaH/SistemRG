@@ -31,51 +31,52 @@ class AuthController extends Controller
             if ($user->hasRole('operator indoor') || $user->hasRole('operator outdoor') || $user->hasRole('operator multi') || $user->hasRole('operator dtf')) {
                 $isi = Auth::user()
                     ->username . " telah login dicabang " . Auth::user()->cabang->nama . ".";
-                $this->log($isi, "Login");
+                // $this->log($isi, "Login");
                 return redirect()->route('operator.dashboard')
                     ->with('success', 'Selamat datang kembali!');
             } elseif ($user->hasRole('designer')) {
                 $isi = Auth::user()
                     ->username . " telah login dicabang " . Auth::user()->cabang->nama . ".";
-                $this->log($isi, "Login");
+                // $this->log($isi, "Login");
                 return redirect()->route('designer.dashboard')
                     ->with('success', 'Selamat datang kembali!');
             } elseif ($user->hasRole('adversting')) {
                 $isi = Auth::user()
                     ->username . " telah login dicabang " . Auth::user()->cabang->nama . ".";
-                $this->log($isi, "Login");
+                // $this->log($isi, "Login");
                 return redirect()->route('adversting.index')
                     ->with('success', 'Selamat datang kembali!');
             } elseif ($user->hasRole('inventory utama')) {
                 $isi = Auth::user()
                     ->username . " telah login dicabang " . Auth::user()->cabang->nama . ".";
-                $this->log($isi, "Login");
+                // $this->log($isi, "Login");
                 return redirect()->route('gudangpusat.dashboard')
                     ->with('success', 'Selamat datang kembali!');
             } elseif ($user->hasRole('inventory cabang')) {
                 $isi = Auth::user()
                     ->username . " telah login dicabang " . Auth::user()->cabang->nama . ".";
-                $this->log($isi, "Login");
+                // $this->log($isi, "Login");
                 return redirect()->route('gudangcabang.dashboard')
                     ->with('success', 'Selamat datang kembali!');
             } elseif ($user->hasRole('manajemen')){
                 $isi = Auth::user()
                     ->username . " telah login dicabang " . Auth::user()->cabang->nama . ".";
-                $this->log($isi, "Login");
+                // $this->log($isi, "Login");
                 return redirect()->route('manajemen.dashboard')
                     ->with('success', 'Selamat datang kembali!');
-            } elseif ($user->hasRole('profil')) {
-                
             } elseif ($user->hasRole('advertising')){
                 $isi = Auth::user()
                     ->username . " telah login dicabang " . Auth::user()->cabang->nama . ".";
-                $this->log($isi, "Login");
+                // $this->log($isi, "Login");
                 return redirect()->route('advertising.dashboard')
+                    ->with('success', 'Selamat datang kembali!');
+            } elseif ($user->hasRole('adminprofil')) {
+                return redirect()->route('profil.admin.dashboard')
                     ->with('success', 'Selamat datang kembali!');
             } elseif ($user->hasRole('admin')){
                 $isi = Auth::user()
                     ->username . " telah login dicabang " . Auth::user()->cabang->nama . ".";
-                $this->log($isi, "Login");
+                // $this->log($isi, "Login");
                 return redirect()->route('admin.dashboard')
                     ->with('success', 'Selamat datang kembali!');
             }

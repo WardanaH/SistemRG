@@ -130,6 +130,22 @@
                             </a>
                         </li>
                     @endforeach
+                    @guest
+
+                    <li class="nav-item">
+                        <a href="{{ route('auth.login') }}"
+                           class="rg-pill"
+                           @if($active)
+                               style="background: {{ $c['bg'] }}; border: 1px solid {{ $c['bd'] }}; color: {{ $c['tx'] }};"
+                           @else
+                               style="border: 1px solid transparent; color: var(--rg-text);"
+                           @endif
+                        >
+                            Login
+                        </a>
+                    </li>
+                    @endguest
+
                 </ul>
 
                 {{-- Mobile card --}}
