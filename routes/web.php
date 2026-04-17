@@ -19,6 +19,7 @@ Route::get('/table', function () {
 
 
 
+
 // require route
 require __DIR__.'/auth.php';
 require __DIR__.'/manajemen.php';
@@ -27,6 +28,7 @@ require __DIR__.'/operator.php';
 require __DIR__.'/designer.php';
 require __DIR__.'/gudang_pusat.php';
 require __DIR__.'/gudang_cabang.php';
+require __DIR__.'/profil.php';
 require __DIR__.'/advertising.php';
 
 Route::get('/', function () {
@@ -44,7 +46,7 @@ Route::get('/', function () {
         return redirect()->route('advertising.dashboard');
     }
 
-    return redirect()->route('auth.index');
+    return redirect()->route('profil.beranda');
 })->middleware('auth')->name('home');
 
 
@@ -77,4 +79,7 @@ Route::middleware('auth')->group(function (){
     Route::put('/user-setting', [UserController::class, 'updateUser'])
     ->name('user.update');
 });
+
+
+
 
