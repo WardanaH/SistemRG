@@ -11,12 +11,20 @@
 
     <hr class="horizontal light mt-0 mb-2">
 
+    {{-- WIDGET JAM REALTIME DI SIDEBAR --}}
+    <div class="mx-3 mb-3 mt-1 text-center">
+        <div class="bg-gradient-primary rounded p-2 d-flex justify-content-center align-items-center shadow-sm">
+            <i class="material-icons text-white text-sm me-2">schedule</i>
+            <span id="sidebar-clock" class="text-white font-weight-bold text-sm" style="letter-spacing: 1px;">00:00:00 WITA</span>
+        </div>
+    </div>
+
     <div class="collapse navbar-collapse w-auto" id="sidenav-collapse-main">
         <ul class="navbar-nav">
 
             {{-- 1. DASHBOARD (Semua User) --}}
             <li class="nav-item">
-                <a class="nav-link text-white {{ request()->routeIs(['manajemen.dashboard', 'operator.dashboard', 'admin.dashboard', 'designer.dashboard']) ? 'active bg-gradient-primary' : '' }}"
+                <a class="nav-link text-white {{ request()->routeIs(['manajemen.dashboard', 'operator.dashboard', 'admin.dashboard', 'designer.dashboard', 'advertising.dashboard']) ? 'active bg-gradient-primary' : '' }}"
                     href="{{ route('home') }}">
                     <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
                         <i class="material-icons opacity-10">dashboard</i>
@@ -70,10 +78,10 @@
             @endhasrole
 
             {{-- 3. INPUT ORDER (Designer & Manajemen) --}}
-            @hasrole('manajemen|designer')
             <li class="nav-item mt-3">
                 <h6 class="ps-4 ms-2 text-uppercase text-xs text-white font-weight-bolder opacity-8">Input Order</h6>
             </li>
+            @hasrole('manajemen|designer')
 
             <li class="nav-item">
                 <a class="nav-link text-white {{ request()->routeIs('spk') ? 'active bg-gradient-primary' : '' }}"
@@ -91,6 +99,17 @@
                         <i class="material-icons opacity-10">post_add</i>
                     </div>
                     <span class="nav-link-text ms-1">Buat SPK Bantuan</span>
+                </a>
+            </li>
+            @endhasrole
+            @hasrole('advertising')
+            <li class="nav-item">
+                <a class="nav-link text-white {{ request()->routeIs('advertising.create') ? 'active bg-gradient-primary' : '' }}"
+                    href="{{ route('advertising.create') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons opacity-10">post_add</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Buat SPK</span>
                 </a>
             </li>
             @endhasrole
@@ -119,7 +138,6 @@
                     <span class="nav-link-text ms-1">Data SPK Bantuan</span>
                 </a>
             </li>
-            @if (now())
             <li class="nav-item">
                 <a class="nav-link text-white {{ request()->routeIs('spk-lembur.index') ? 'active bg-gradient-primary' : '' }}"
                     href="{{ route('spk-lembur.index') }}">
@@ -129,11 +147,10 @@
                     <span class="nav-link-text ms-1">Data SPK Lembur</span>
                 </a>
             </li>
-            @endif
             @endhasrole
 
             {{-- 5. OPERASIONAL / PRODUKSI (Operator & Manajemen) --}}
-            @hasrole('manajemen|operator indoor|operator outdoor|operator multi')
+            @hasrole('manajemen|operator indoor|operator outdoor|operator multi|operator dtf')
             <li class="nav-item mt-3">
                 <h6 class="ps-4 ms-2 text-uppercase text-xs text-white font-weight-bolder opacity-8">Produksi</h6>
             </li>
@@ -156,7 +173,15 @@
                     <span class="nav-link-text ms-1">Produksi Bantuan</span>
                 </a>
             </li>
-            @if (now())
+            <li class="nav-item">
+                <a class="nav-link text-white {{ request()->routeIs('advertising.produksi-index') ? 'active bg-gradient-primary' : '' }}"
+                    href="{{ route('advertising.produksi-index') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons opacity-10">precision_manufacturing</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Produksi Advertising</span>
+                </a>
+            </li>
             <li class="nav-item">
                 <a class="nav-link text-white {{ request()->routeIs('spk-lembur.produksi') ? 'active bg-gradient-primary' : '' }}"
                     href="{{ route('spk-lembur.produksi') }}">
@@ -166,15 +191,14 @@
                     <span class="nav-link-text ms-1">Produksi Lembur</span>
                 </a>
             </li>
-            @endif
             @endhasrole
 
             {{-- 6. HISTORY & REPORT (Semua User) --}}
             <li class="nav-item mt-3">
                 <h6 class="ps-4 ms-2 text-uppercase text-xs text-white font-weight-bolder opacity-8">Laporan & Riwayat</h6>
             </li>
+            @hasrole('manajemen|admin|operator indoor|operator outdoor|operator multi|operator dtf')
 
-            @hasrole('manajemen|admin|operator indoor|operator outdoor|operator multi')
             <li class="nav-item">
                 <a class="nav-link text-white {{ request()->routeIs('spk.riwayat') ? 'active bg-gradient-primary' : '' }}"
                     href="{{ route('spk.riwayat') }}">
@@ -193,7 +217,6 @@
                     <span class="nav-link-text ms-1">Riwayat Bantuan</span>
                 </a>
             </li>
-            @if (now())
             <li class="nav-item">
                 <a class="nav-link text-white {{ request()->routeIs('spk-lembur.riwayat') ? 'active bg-gradient-primary' : '' }}"
                     href="{{ route('spk-lembur.riwayat') }}">
@@ -203,10 +226,31 @@
                     <span class="nav-link-text ms-1">Riwayat Lembur</span>
                 </a>
             </li>
-            @endif
+            @endhasrole
+            @hasrole('operator indoor|operator outdoor|operator multi|operator dtf')
+            <li class="nav-item">
+                <a class="nav-link text-white {{ request()->routeIs('advertising.produksi-riwayat') ? 'active bg-gradient-primary' : '' }}"
+                    href="{{ route('advertising.produksi-riwayat') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons opacity-10">history</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Riwayat Advertising</span>
+                </a>
+            </li>
+            @endhasrole
+            @hasrole('advertising')
+            <li class="nav-item">
+                <a class="nav-link text-white {{ request()->routeIs('advertising.riwayat') ? 'active bg-gradient-primary' : '' }}"
+                    href="{{ route('advertising.riwayat') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons opacity-10">history</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Riwayat Advertising</span>
+                </a>
+            </li>
             @endhasrole
 
-            @hasrole('manajemen|admin|operator indoor|operator outdoor|operator multi|designer')
+            @hasrole('manajemen|admin|operator indoor|operator outdoor|operator multi|operator dtf|designer')
             <li class="nav-item">
                 <a class="nav-link text-white {{ request()->routeIs('laporan.index') ? 'active bg-gradient-primary' : '' }}"
                     href="{{ route('laporan.index') }}">
@@ -214,6 +258,18 @@
                         <i class="material-icons opacity-10">analytics</i>
                     </div>
                     <span class="nav-link-text ms-1">Laporan Kinerja</span>
+                </a>
+            </li>
+            @endhasrole
+
+            @hasrole('manajemen|admin|designer')
+            <li class="nav-item">
+                <a class="nav-link text-white {{ request()->routeIs('laporan.charge') ? 'active bg-gradient-primary' : '' }}"
+                    href="{{ route('laporan.charge') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons opacity-10">attach_money</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Laporan Charge Design</span>
                 </a>
             </li>
             @endhasrole

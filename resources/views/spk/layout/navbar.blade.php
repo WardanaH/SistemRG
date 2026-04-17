@@ -21,29 +21,31 @@
             </div>
         </div>
 
-        {{-- 3. BAGIAN KANAN: ICON USER & TOGGLER (Pindahkan kesini agar selalu muncul) --}}
+        {{-- 3. BAGIAN KANAN: ICON USER, NOTIF, LOGOUT, & TOGGLER --}}
         <ul class="navbar-nav justify-content-end d-flex flex-row align-items-center gap-3">
 
-            {{-- A. NOTIFIKASI (Hanya Admin) --}}
-            @hasrole('admin')
-            <li class="nav-item dropdown pe-2 d-flex align-items-center position-relative">
-                <a href="javascript:;" class="nav-link text-body p-0" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="material-icons-round opacity-10" style="font-size: 1.2rem;">notifications</i>
-                    <span id="badge-notif" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none; font-size: 0.6rem;">
-                        0
-                    </span>
+            {{-- D. LOGO USER (PROFIL) - BARU DITAMBAHKAN --}}
+            <li class="nav-item d-flex align-items-center">
+                {{-- Ganti route('user.setting') dengan route profil/setting kamu --}}
+                <a href="{{ route('user.setting') }}" class="nav-link text-body p-0" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Profil Saya">
+                    <i class="material-icons-round opacity-10" style="font-size: 1.2rem;">account_circle</i>
+                    {{-- Opsional: Tampilkan Nama User di sebelahnya --}}
+                    {{-- <span class="d-sm-inline d-none font-weight-bold ms-2">{{ Auth::user()->nama }}</span> --}}
                 </a>
-                <ul class="dropdown-menu dropdown-menu-end px-2 py-3 me-sm-n4" aria-labelledby="dropdownMenuButton">
-                    <li class="mb-2">
-                        <a class="dropdown-item border-radius-md" href="{{ route('spk.index') }}">
-                            <div class="d-flex py-1">
-                                <div class="d-flex flex-column justify-content-center">
-                                    <h6 class="text-sm font-weight-normal mb-1">
-                                        <span class="font-weight-bold">Cek Halaman SPK</span>
-                                    </h6>
-                                </div>
-                            </div>
-                        </a>
+            </li>
+
+            {{-- A. NOTIFIKASI --}}
+            @hasrole('admin|operator indoor|operator outdoor|operator mutli|operator dtf')
+            <li class="nav-item dropdown pe-2 d-flex align-items-center">
+                <a href="javascript:;" class="nav-link text-body p-0 position-relative" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="material-icons-round opacity-10" style="font-size: 1.2rem;">notifications</i>
+                    <span id="badge-notif" class="position-absolute badge rounded-circle bg-danger border border-white" style="display: none; top: -5px; right: -10px; padding: 4px 6px; font-size: 0.65rem; min-width: 18px; height: 18px; line-height: 10px;">0</span>
+                </a>
+
+                <ul class="dropdown-menu dropdown-menu-end px-2 py-3 me-sm-n4" aria-labelledby="dropdownMenuButton" id="dropdown-notif-list">
+                    {{-- List Notifikasi Akan Muncul Di Sini via JS --}}
+                    <li id="no-notif-msg">
+                        <p class="text-xs text-secondary text-center mb-0">Tidak ada notifikasi baru</p>
                     </li>
                 </ul>
             </li>
@@ -51,8 +53,8 @@
 
             {{-- B. LOGOUT --}}
             <li class="nav-item d-flex align-items-center">
-                <a href="javascript:;" onclick="confirmLogout(event)" class="nav-link text-body font-weight-bold px-0">
-                    <i class="material-icons-round opacity-10">logout</i>
+                <a href="javascript:;" onclick="confirmLogout(event)" class="nav-link text-body font-weight-bold px-0" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Keluar">
+                    <i class="material-icons-round opacity-10" style="font-size: 1.2rem;">logout</i>
                 </a>
                 <form id="logout-form" action="{{ route('auth.logout') }}" method="POST" class="d-none">
                     @csrf

@@ -22,10 +22,10 @@ Route::middleware('auth')->group(function () {
         ->middleware('role:manajemen|designer')
         ->name('spk.store');
     Route::get('/spk/{spk}/edit', [MSpkController::class, 'edit'])
-        ->middleware('role:manajemen|admin')
+        ->middleware('role:manajemen|admin|designer')
         ->name('spk.edit');
     Route::put('/spk/{spk}', [MSpkController::class, 'update'])
-        ->middleware('role:manajemen|admin')
+        ->middleware('role:manajemen|admin|designer')
         ->name('spk.update');
     Route::delete('/spk/{spk}/delete', [MSpkController::class, 'destroy'])
         ->middleware('role:manajemen|designer|admin')
@@ -57,4 +57,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/spk-bantuan/cetak/{id}', [SpkBantuanController::class, 'cetakSpkBantuan'])
         ->middleware('role:manajemen|designer|admin')
         ->name('spk-bantuan.cetak-spk-bantuan');
+
+    Route::get('/spk-charge', [MSpkController::class, 'indexCharge'])
+        ->middleware('role:manajemen|designer|admin')
+        ->name('spk-charge.index');
+    Route::get('/spk-charge/cetak/{id}', [MSpkController::class, 'printCharge'])
+        ->middleware('role:manajemen|designer|admin')
+        ->name('spk-charge.cetak');
 });

@@ -34,8 +34,24 @@ class SpkBantuanController extends Controller
             $query->where('cabang_id', $user->cabang_id);
         }
 
+        // --- FILTER TANGGAL ---
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $query->whereDate('tanggal_spk', '>=', $request->start_date)
+                ->whereDate('tanggal_spk', '<=', $request->end_date);
+        }
+
+        // --- FILTER STATUS SPK ---
+        if ($request->filled('status_filter')) {
+            $query->where('status_spk', $request->status_filter);
+        }
+
+        // --- FILTER DESIGNER (BARU) ---
+        if ($request->filled('designer_filter')) {
+            $query->where('designer_id', $request->designer_filter);
+        }
+
         // 2. Logika Pencarian (No SPK atau Nama Pelanggan)
-        if ($request->has('search') && $request->search != '') {
+        if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('no_spk', 'like', "%$search%")
@@ -45,11 +61,16 @@ class SpkBantuanController extends Controller
 
         // 3. Ambil data (Paginate 10 per halaman) & urutkan terbaru
         $spks = $query->latest()->paginate(10);
-        // dd($spks->get());
+
+        // ========================================================
+        // AMBIL SEMUA DESIGNER UNTUK DROPDOWN FILTER BANTUAN
+        // ========================================================
+        $listDesigners = \App\Models\User::role('designer')->get();
 
         return view('spk.designer.indexSpkBantuan', [
-            'title' => 'Manajemen SPK',
-            'spks' => $spks
+            'title' => 'Manajemen SPK Bantuan',
+            'spks' => $spks,
+            'listDesigners' => $listDesigners // Kirim variabel ini ke view
         ]);
     }
 
@@ -75,14 +96,13 @@ class SpkBantuanController extends Controller
         $user = Auth::user();
 
         // Ambil Cabang Lain (Pengirim)
-        $cabangLain = MCabang::where('id', '!=', $user->cabang_id)
-            ->where('jenis', '!=', 'pusat')
+        $cabangLain = MCabang::where('jenis', '!=', 'pusat')
             ->get();
         $bahans = MBahanBaku::all();
         $finishings = MFinishing::all();
 
         // Operator Lokal
-        $operators = User::role(['operator indoor', 'operator outdoor', 'operator multi'])
+        $operators = User::role(['operator indoor', 'operator outdoor', 'operator multi', 'operator dtf'])
             ->where('cabang_id', $user->cabang_id)->get();
 
         return view('spk.designer.spkBantuan', [
@@ -100,16 +120,24 @@ class SpkBantuanController extends Controller
     {
         // 1. Validasi Header & Pastikan Item Ada
         $request->validate([
-            'asal_cabang_id' => 'required',
+            'asal_cabang_id' => 'nullable',
             'nama_pelanggan' => 'required',
             'no_telepon'     => 'required',
             'items'          => 'required|array|min:1', // Wajib ada minimal 1 item
         ]);
+        // dd($request->all());
 
         try {
             DB::transaction(function () use ($request) {
                 $user = Auth::user();
                 $cabangId = $user->cabang_id;
+                
+                $inputAsal = $request->asal_cabang_id;
+                if (empty($inputAsal) || $inputAsal === 'null' || $inputAsal === null) {
+                    $asalCabangId = null;
+                } else {
+                    $asalCabangId = $inputAsal;
+                }
 
                 // A. GENERATE NOMOR SPK (Logic Lama)
                 $cabangKode = $user->cabang->kode;
@@ -135,7 +163,7 @@ class SpkBantuanController extends Controller
                 $spk = MSpk::create([
                     'no_spk'         => $newNoSpk,
                     'is_bantuan'     => true,
-                    'asal_cabang_id' => $request->asal_cabang_id,
+                    'asal_cabang_id' => $asalCabangId,
                     'cabang_id'      => $user->cabang_id,
                     'tanggal_spk'    => $tgl,
                     'nama_pelanggan' => $request->nama_pelanggan,
@@ -152,13 +180,16 @@ class SpkBantuanController extends Controller
                         'spk_id'       => $spk->id, // Link ke Parent ID
                         'nama_file'    => $item['file'],
                         'jenis_order'  => $item['jenis'],
+                        'jenis_file'   => $item['jenis_file'],
                         'p'            => $item['p'],
                         'l'            => $item['l'],
                         'bahan_id'     => $item['bahan_id'],
                         'qty'          => $item['qty'],
                         'finishing'    => $item['finishing'] ?? '-',
+                        'finishing_2'    => $item['finishing_2'] ?? '-',
                         'catatan'      => $item['catatan'] ?? '-',
                         'operator_id'  => $item['operator_id'], // Operator per item
+                        'harga'        => $item['harga'] ?? 0,
                         'status_produksi' => 'pending'
                     ]);
                 }
@@ -230,7 +261,6 @@ class SpkBantuanController extends Controller
         $user = Auth::user();
 
         // 1. Query ke Tabel ITEM (MSubSpk), bukan Header SPK
-        // Eager Load relasi ke parent SPK, Bahan, dan Designer
         $query = MSubSpk::with(['spk', 'spk.designer', 'bahan'])
             ->whereHas('spk', function ($q) use ($user) {
                 // Filter Cabang (Hanya ambil item dari SPK yang masuk ke cabang ini)
@@ -247,8 +277,6 @@ class SpkBantuanController extends Controller
         $allowedTypes = [];
         if ($user->hasRole('operator indoor'))  $allowedTypes[] = 'indoor';
         if ($user->hasRole('operator outdoor')) $allowedTypes[] = 'outdoor';
-        // 'multi' jarang dipakai di level item, biasanya item itu tegas indoor/outdoor
-        // tapi kalau ada, masukkan saja
         if ($user->hasRole('operator multi'))   $allowedTypes[] = 'multi';
 
         $query->where(function ($q) use ($allowedTypes, $user) {
@@ -258,12 +286,17 @@ class SpkBantuanController extends Controller
                 ->orWhere('operator_id', $user->id);
         });
 
-        // 3. FILTER STATUS PRODUKSI (Hanya yang aktif)
-        // Sembunyikan yang sudah 'done' agar list tidak penuh (opsional, bisa dibuat tab history nanti)
-        $query->whereIn('status_produksi', ['pending', 'ripping', 'ongoing', 'finishing']);
+        // 3. --- FILTER STATUS PRODUKSI ---
+        if ($request->filled('status_filter')) {
+            // Jika dropdown filter dipilih
+            $query->where('status_produksi', $request->status_filter);
+        } else {
+            // Default: Hanya yang masih aktif
+            $query->whereIn('status_produksi', ['pending', 'ripping', 'ongoing', 'finishing']);
+        }
 
         // 4. PENCARIAN
-        if ($request->has('search') && $request->search != '') {
+        if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('nama_file', 'like', "%$search%")
@@ -279,7 +312,7 @@ class SpkBantuanController extends Controller
 
         return view('spk.operator.indexSpk', [
             'title' => 'Produksi SPK Bantuan',
-            'items' => $items // Kirim variable $items, bukan $spks
+            'items' => $items
         ]);
     }
 

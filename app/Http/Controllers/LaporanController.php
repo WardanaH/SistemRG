@@ -5,38 +5,55 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\MSpk;
 use App\Models\MSubSpk;
-use App\Models\MTarget; // Pastikan model ini sudah dibuat
+use App\Models\MTarget;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class LaporanController extends Controller
 {
+    // Helper function KECIL HANYA untuk memudahkan penentuan siklus 27-26
+    private function getSiklus($date)
+    {
+        if ($date->day >= 27) {
+            $start = $date->copy()->startOfDay()->day(27);
+            $end   = $date->copy()->addMonth()->endOfDay()->day(26);
+        } else {
+            $start = $date->copy()->subMonth()->startOfDay()->day(27);
+            $end   = $date->copy()->endOfDay()->day(26);
+        }
+        return ['start' => $start, 'end' => $end];
+    }
+
     public function index(Request $request)
     {
         $user = Auth::user();
 
-        // --- 1. SETUP FILTER TANGGAL ---
+        // --- 1. SETUP FILTER TANGGAL (SIKLUS 27-26) ---
         $filterType = $request->input('filter_type', 'bulan_ini');
-        $startDate = Carbon::now()->startOfMonth();
-        $endDate   = Carbon::now()->endOfMonth();
+        $now = Carbon::now();
+
+        // Default: Siklus bulan berjalan
+        $siklusSekarang = $this->getSiklus($now);
+        $startDate = $siklusSekarang['start'];
+        $endDate   = $siklusSekarang['end'];
 
         switch ($filterType) {
             case 'bulan_ini':
-                $startDate = Carbon::now()->startOfMonth();
-                $endDate   = Carbon::now()->endOfMonth();
+                // Sudah diset di default atas
                 break;
             case 'tri_wulan':
-                $startDate = Carbon::now()->subMonths(3)->startOfDay();
-                $endDate   = Carbon::now()->endOfDay();
+                // Tarik start date mundur 2 siklus (total 3 siklus)
+                $startDate = $this->getSiklus($now->copy()->subMonths(2))['start'];
                 break;
             case 'semester':
-                $startDate = Carbon::now()->subMonths(6)->startOfDay();
-                $endDate   = Carbon::now()->endOfDay();
+                // Tarik start date mundur 5 siklus (total 6 siklus)
+                $startDate = $this->getSiklus($now->copy()->subMonths(5))['start'];
                 break;
             case 'tahun_ini':
-                $startDate = Carbon::now()->startOfYear();
-                $endDate   = Carbon::now()->endOfYear();
+                // Dari 27 Des tahun lalu s/d 26 Des tahun ini
+                $startDate = Carbon::create($now->year - 1, 12, 27)->startOfDay();
+                $endDate   = Carbon::create($now->year, 12, 26)->endOfDay();
                 break;
             case 'custom':
                 if ($request->has('start_date') && $request->has('end_date')) {
@@ -52,15 +69,28 @@ class LaporanController extends Controller
         $operators = collect();
 
         // --- 3. HELPER CLOSURE UNTUK QUERY ---
-        // Fungsi ini digunakan untuk menghitung data user agar kode tidak berulang
         $mapUserData = function ($users, $roleType) use ($startDate, $endDate) {
             return $users->map(function ($u) use ($startDate, $endDate, $roleType) {
 
-                // A. Hitung Capaian (Actual)
                 if ($roleType == 'designer') {
+                    // A. Capaian Input SPK Normal
                     $u->capaian = MSpk::where('designer_id', $u->id)
                         ->whereBetween('created_at', [$startDate, $endDate])->count();
                     $targetType = 'input';
+
+                    // B. TAMBAHAN: Laporan Charge Desain Khusus Designer
+                    // Hitung jumlah item yang jenisnya 'charge' dan total nominal harganya
+                    $chargeData = MSubSpk::whereHas('spk', function($q) use ($u, $startDate, $endDate) {
+                            $q->where('designer_id', $u->id)
+                              ->whereBetween('created_at', [$startDate, $endDate]);
+                        })
+                        ->where('jenis_order', 'charge')
+                        ->selectRaw('COUNT(id) as total_item, SUM(harga) as total_nominal')
+                        ->first();
+
+                    $u->charge_count = $chargeData->total_item ?? 0;
+                    $u->charge_nominal = $chargeData->total_nominal ?? 0;
+
                 } elseif ($roleType == 'admin') {
                     $u->capaian = MSpk::where('admin_id', $u->id)
                         ->where('status_spk', 'acc')
@@ -73,14 +103,13 @@ class LaporanController extends Controller
                     $targetType = 'produksi';
                 }
 
-                // B. Hitung Target (Akumulasi target dalam rentang tanggal filter)
-                // Misal filter 1 tahun, maka target Jan + Feb + ... + Des dijumlahkan
+                // C. Hitung Target Bulanan
                 $u->target = MTarget::where('user_id', $u->id)
                     ->where('jenis_target', $targetType)
                     ->whereBetween('bulan', [$startDate, $endDate])
                     ->sum('jumlah');
 
-                // C. Hitung Persentase
+                // D. Hitung Persentase
                 if ($u->target > 0) {
                     $u->persentase = round(($u->capaian / $u->target) * 100);
                 } else {
@@ -92,8 +121,6 @@ class LaporanController extends Controller
         };
 
         // --- 4. LOGIKA PENGAMBILAN DATA BERDASARKAN ROLE LOGIN ---
-
-        // A. Jika ADMIN/MANAJEMEN (Lihat Semua)
         if ($user->hasRole(['admin', 'manajemen'])) {
             $rawDesigners = User::role('designer')->get();
             $designers = $mapUserData($rawDesigners, 'designer');
@@ -101,17 +128,14 @@ class LaporanController extends Controller
             $rawAdmins = User::role(['admin', 'manajemen'])->get();
             $admins = $mapUserData($rawAdmins, 'admin');
 
-            $rawOperators = User::role(['operator indoor', 'operator outdoor', 'operator multi'])->get();
+            // Include DTF if necessary
+            $rawOperators = User::role(['operator indoor', 'operator outdoor', 'operator multi', 'operator dtf'])->get();
             $operators = $mapUserData($rawOperators, 'operator');
         }
-
-        // B. Jika DESIGNER (Lihat Diri Sendiri)
         elseif ($user->hasRole('designer')) {
             $designers = $mapUserData(collect([$user]), 'designer');
         }
-
-        // C. Jika OPERATOR (Lihat Diri Sendiri)
-        elseif ($user->hasRole(['operator indoor', 'operator outdoor', 'operator multi'])) {
+        elseif ($user->hasRole(['operator indoor', 'operator outdoor', 'operator multi', 'operator dtf'])) {
             $operators = $mapUserData(collect([$user]), 'operator');
         }
 
@@ -136,8 +160,9 @@ class LaporanController extends Controller
             'jenis'   => 'required|in:input,acc,produksi'
         ]);
 
-        // Ubah format YYYY-MM menjadi Tanggal 1 bulan tersebut
-        $date = Carbon::createFromFormat('Y-m', $request->bulan)->startOfMonth();
+        // Ubah format YYYY-MM menjadi Tanggal 27 di bulan tersebut
+        // Ini agar cocok dengan pencarian whereBetween('bulan', [$startDate, $endDate]) di atas
+        $date = Carbon::createFromFormat('Y-m', $request->bulan)->startOfDay()->day(27);
 
         MTarget::updateOrCreate(
             [
@@ -161,7 +186,7 @@ class LaporanController extends Controller
             'jumlah'      => 'required|integer|min:1',
         ]);
 
-        $date = Carbon::createFromFormat('Y-m', $request->bulan)->startOfMonth();
+        $date = Carbon::createFromFormat('Y-m', $request->bulan)->startOfDay()->day(27);
         $targetAmount = $request->jumlah;
         $users = collect();
         $jenisTarget = '';
@@ -201,5 +226,141 @@ class LaporanController extends Controller
         }
 
         return back()->with('success', "Berhasil mengatur target untuk " . $users->count() . " pegawai role " . ucfirst($request->role_target) . "!");
+    }
+
+    // 1. HELPER FUNGSI UNTUK MENGAMBIL QUERY CHARGE (Agar Web, PDF, & Excel filternya sama)
+    private function getChargeQueryData(Request $request)
+    {
+        $user = Auth::user();
+        $filterType = $request->input('filter_type', 'bulan_ini');
+        $now = Carbon::now();
+
+        // Terapkan Logika 27-26 di sini juga
+        $siklusSekarang = $this->getSiklus($now);
+        $startDate = $siklusSekarang['start'];
+        $endDate   = $siklusSekarang['end'];
+
+        switch ($filterType) {
+            case 'tri_wulan':
+                $startDate = $this->getSiklus($now->copy()->subMonths(2))['start'];
+                break;
+            case 'semester':
+                $startDate = $this->getSiklus($now->copy()->subMonths(5))['start'];
+                break;
+            case 'tahun_ini':
+                $startDate = Carbon::create($now->year - 1, 12, 27)->startOfDay();
+                $endDate   = Carbon::create($now->year, 12, 26)->endOfDay();
+                break;
+            case 'custom':
+                if ($request->has('start_date') && $request->has('end_date')) {
+                    $startDate = Carbon::parse($request->start_date)->startOfDay();
+                    $endDate   = Carbon::parse($request->end_date)->endOfDay();
+                }
+                break;
+        }
+
+        $query = MSubSpk::with(['spk', 'spk.designer'])
+            ->where('jenis_order', 'charge')
+            ->whereHas('spk', function ($q) use ($user, $startDate, $endDate, $request) {
+                // Filter Tanggal
+                $q->whereBetween('created_at', [$startDate, $endDate]);
+
+                // --- 1. FILTER BERDASARKAN ROLE / CABANG ---
+                if ($user->hasRole('designer')) {
+                    // Designer hanya bisa melihat miliknya sendiri
+                    $q->where('designer_id', $user->id);
+                } elseif ($user->hasRole('admin') && $user->cabang->jenis !== 'pusat') {
+                    // Admin hanya bisa melihat data di cabangnya sendiri
+                    $q->where('cabang_id', $user->cabang_id);
+                }
+                // Manajemen (Pusat) otomatis lolos tanpa pembatasan cabang/designer
+
+                // --- 2. FILTER BERDASARKAN INPUT DROPDOWN DESIGNER ---
+                if ($request->filled('designer_filter')) {
+                    $q->where('designer_id', $request->designer_filter);
+                }
+            });
+
+        return compact('query', 'startDate', 'endDate', 'filterType');
+    }
+
+    // 2. TAMPILAN HALAMAN WEB
+    public function laporanCharge(Request $request)
+    {
+        $data = $this->getChargeQueryData($request);
+
+        $totalItem = $data['query']->count();
+        $totalNominal = $data['query']->sum('harga');
+        $items = $data['query']->latest()->paginate(20);
+
+        // --- AMBIL DAFTAR DESIGNER UNTUK DROPDOWN FILTER ---
+        $user = Auth::user();
+        $listDesigners = collect(); // Default kosong (untuk desainer)
+
+        // Hanya ambil daftar desainer jika role admin/manajemen
+        if ($user->hasRole(['admin', 'manajemen'])) {
+            $designersQuery = \App\Models\User::role('designer');
+
+            // Jika admin cabang, batas daftar desainer hanya yang ada di cabangnya
+            if ($user->hasRole('admin') && $user->cabang->jenis !== 'pusat') {
+                $designersQuery->where('cabang_id', $user->cabang_id);
+            }
+            $listDesigners = $designersQuery->get();
+        }
+
+        return view('spk.laporan.charge', [
+            'title'        => 'Laporan Pendapatan Charge Desain',
+            'items'        => $items,
+            'totalItem'    => $totalItem,
+            'totalNominal' => $totalNominal,
+            'filterType'   => $data['filterType'],
+            'startDate'    => $data['startDate'],
+            'endDate'      => $data['endDate'],
+            'listDesigners'=> $listDesigners, // Kirim daftar designer ke view
+        ]);
+    }
+
+    // 3. FUNGSI DOWNLOAD PDF
+    public function exportChargePdf(Request $request)
+    {
+        $data = $this->getChargeQueryData($request);
+
+        $items = $data['query']->latest()->get(); // Get semua (tanpa paginate)
+        $totalItem = $items->count();
+        $totalNominal = $items->sum('harga');
+
+        $viewData = [
+            'items' => $items,
+            'totalItem' => $totalItem,
+            'totalNominal' => $totalNominal,
+            'startDate' => $data['startDate'],
+            'endDate' => $data['endDate']
+        ];
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('spk.laporan.export_charge', $viewData);
+        return $pdf->download('Laporan_Charge_Desain_'.$data['startDate']->format('d-M-Y').'.pdf');
+    }
+
+    // 4. FUNGSI DOWNLOAD EXCEL
+    public function exportChargeExcel(Request $request)
+    {
+        $data = $this->getChargeQueryData($request);
+
+        $items = $data['query']->latest()->get();
+        $totalItem = $items->count();
+        $totalNominal = $items->sum('harga');
+
+        $viewData = [
+            'items' => $items,
+            'totalItem' => $totalItem,
+            'totalNominal' => $totalNominal,
+            'startDate' => $data['startDate'],
+            'endDate' => $data['endDate']
+        ];
+
+        return \Maatwebsite\Excel\Facades\Excel::download(
+            new \App\Exports\ChargeExport($viewData),
+            'Laporan_Charge_Desain_'.$data['startDate']->format('d-M-Y').'.xlsx'
+        );
     }
 }

@@ -15,9 +15,8 @@
 
                     {{-- SEARCH BAR --}}
                     <div>
-                        {{-- CEK ROUTE: Jika sedang di halaman bantuan, action ke bantuan. Jika tidak, ke reguler --}}
-                        <form action="{{ request()->routeIs(['spk-bantuan.riwayat', 'spk.riwayat']) ? route('spk-bantuan.riwayat') : route('spk.riwayat') }}" method="GET">
-
+                        {{-- Form otomatis mengarah ke halaman yang sedang aktif --}}
+                        <form action="{{ url()->current() }}" method="GET">
                             <div class="bg-white rounded d-flex align-items-center px-2" style="height: 40px; min-width: 250px;">
                                 <i class="material-icons text-secondary text-sm">search</i>
 
@@ -26,9 +25,8 @@
                                     style="box-shadow: none !important; height: 100%; background: transparent;">
 
                                 @if(request('search'))
-                                {{-- TOMBOL RESET JUGA HARUS DINAMIS --}}
-                                <a href="{{ request()->routeIs(['spk-bantuan.riwayat', 'spk.riwayat']) ? route('spk-bantuan.riwayat') : route('spk.riwayat') }}"
-                                    class="text-danger d-flex align-items-center cursor-pointer">
+                                {{-- Tombol reset otomatis kembali ke halaman aktif tanpa ?search= --}}
+                                <a href="{{ url()->current() }}" class="text-danger d-flex align-items-center cursor-pointer" title="Reset">
                                     <i class="material-icons text-sm">close</i>
                                 </a>
                                 @endif
@@ -79,7 +77,7 @@
 
                                 {{-- Kolom 2: ITEM SELESAI --}}
                                 <td>
-                                    <h6 class="mb-0 text-sm text-truncate" style="max-width: 200px;">{{ $item->nama_file }}</h6>
+                                    <h6 class="mb-0 text-sm text-wrap" style="max-width: 250px; line-height: 1.4;">{{ $item->nama_file }}</h6>
                                     <div>
                                         @if($item->jenis_order == 'outdoor') <span class="badge badge-sm bg-gradient-warning text-xxs">OUT</span>
                                         @else <span class="badge badge-sm bg-gradient-success text-xxs">IN</span>

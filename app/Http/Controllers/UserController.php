@@ -2,24 +2,41 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use App\Models\MCabang;
 use App\Imports\UsersImport;
+use App\Models\MCabang;
+use App\Models\User;
 use Illuminate\Http\Request;
-use Spatie\Permission\Models\Role;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
+use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // ambil data yang diperlukan untuk tabel + form tambah user di halaman index
-        $users = User::with('cabang', 'roles')->paginate(1000);
-        $roles = Role::all();         // <-- pastikan ini ada
-        $cabangs = MCabang::all();    // <-- dan ini juga
+        $roles = Role::all();
+        $cabangs = MCabang::all();
         $title = 'Manajemen User';
+
+        // Logika Pencarian
+        $query = User::with('cabang', 'roles');
+
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nama', 'like', "%{$search}%")
+                    ->orWhere('username', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhereHas('cabang', function ($c) use ($search) {
+                        $c->where('nama', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        // Pagination: 10 data per halaman
+        $users = $query->latest()->paginate(10);
 
         return view('spk.manajemen.user', compact('users', 'roles', 'cabangs', 'title'));
     }
@@ -155,18 +172,87 @@ class UserController extends Controller
         return redirect()->route('manajemen.user')->with('success', 'User dihapus.');
     }
 
-    public function getOperatorsByCabang()
+    public function getOperatorsByCabang(Request $request, $cabangId)
     {
-        $operators = User::role(['operator indoor', 'operator outdoor', 'operator multi'])
-            ->get()
-            ->map(function ($user) {
-                return [
-                    'id' => $user->id,
-                    'nama' => $user->nama,
-                    'roles' => $user->getRoleNames()->implode(', ')
-                ];
+        $jenisOrder = $request->query('jenis');
+
+        $query = User::query(); // Mulai query kosong
+
+        // Cek: Jika $cabangId BUKAN 'all', filter berdasarkan cabang.
+        // Jika 'all', abaikan filter cabang ini agar semua tampil.
+        if ($cabangId !== 'all') {
+            $query->where('cabang_id', $cabangId);
+        }
+
+        // Filter berdasarkan jenis order tetap jalan, baik lembur maupun tidak
+        if ($jenisOrder === 'outdoor') {
+            $query->whereHas('roles', function ($q) {
+                $q->where('name', 'Operator Outdoor');
             });
+        } elseif ($jenisOrder === 'indoor') {
+            $query->whereHas('roles', function ($q) {
+                $q->where('name', 'Operator Indoor');
+            });
+        } elseif ($jenisOrder === 'multi') {
+            $query->whereHas('roles', function ($q) {
+                $q->where('name', 'Operator Multi');
+            });
+        } elseif ($jenisOrder === 'dtf') {
+            $query->whereHas('roles', function ($q) {
+                $q->where('name', 'Operator DTF');
+            });
+        }
+
+        $operators = $query->get()->map(function ($op) {
+            return [
+                'id' => $op->id,
+                'nama' => $op->nama,
+                'roles' => $op->roles->pluck('name')->implode(', ')
+            ];
+        });
 
         return response()->json($operators);
+    }
+
+    public function indexSetting()
+    {
+        return view('spk.layout.userSetting', [
+            'title' => 'User Setting',
+            'user' => auth()->user(),
+        ]);
+    }
+    
+    public function updateUser(Request $request)
+    {
+        // 1. Ambil data user yang sedang login
+        $user = Auth::user();
+
+        // 2. Validasi Input dari Form
+        // Aturan 'confirmed' otomatis akan mencocokkan field 'password' dengan 'password_confirmation'
+        $request->validate([
+            'current_password' => 'required',
+            'password'         => 'required|min:6|confirmed',
+        ], [
+            // Kustomisasi pesan error (opsional) agar lebih mudah dipahami user
+            'current_password.required' => 'Password lama wajib diisi.',
+            'password.required'         => 'Password baru wajib diisi.',
+            'password.min'              => 'Password baru minimal harus 6 karakter.',
+            'password.confirmed'        => 'Konfirmasi password baru tidak cocok.',
+        ]);
+
+        // 3. Cek apakah password lama yang diinput SESUAI dengan password di Database
+        if (!Hash::check($request->current_password, $user->password)) {
+            // Jika salah, kembalikan ke halaman sebelumnya dengan pesan error
+            return back()->with('error', 'Password lama yang Anda masukkan salah!');
+        }
+
+        // 4. Jika password lama benar, Update ke password baru
+        // Kita gunakan Hash::make() agar password dienkripsi dengan aman
+        $user->update([
+            'password' => Hash::make($request->password)
+        ]);
+
+        // 5. Kembalikan dengan notifikasi sukses (SweetAlert di View akan menangkap ini)
+        return back()->with('success', 'Password Anda berhasil diperbarui!');
     }
 }

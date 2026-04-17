@@ -4,6 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
     <title>@yield('title', 'Dashboard')</title>
 
     <!-- Fonts & Icons -->
@@ -305,7 +307,7 @@ channel.bind('inventaris-notif', function (data) {
     /* ===============================
        3. AUDIO (TIDAK DIUBAH)
        =============================== */
-    let audio = new Audio('{{ asset("assets/sound/notif_spk.mp3") }}');
+    let audio = new Audio('{{ asset("assets/sound/notif_spk_masuk.mp3") }}');
     audio.play().catch(() => {});
 
     /* ===============================

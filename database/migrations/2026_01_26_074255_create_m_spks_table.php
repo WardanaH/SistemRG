@@ -15,10 +15,15 @@ return new class extends Migration
             $table->id();
             $table->string('no_spk')->unique();
             $table->timestamp('tanggal_spk');
+            $table->integer('harga')->default(0);
 
             // Info Pelanggan
             $table->string('nama_pelanggan');
             $table->string('no_telepon')->nullable();
+
+            // Advertising
+            $table->boolean('is_advertising')->default(false);
+            $table->string('folder')->nullable();
 
             // lembur
             $table->boolean('is_lembur')->default(false);

@@ -104,6 +104,7 @@
                                 <td>
                                     <div class="d-flex flex-column justify-content-center">
                                         <h6 class="mb-0 text-sm">{{ $item->nama_file }}</h6>
+                                        <h6 class="mb-0 text-sm">Jenis File : <span class="badge badge-sm bg-gradient-info">{{ $item->jenis_file }}</span></h6>
                                         <p class="text-xs text-secondary mb-0">{{ $item->catatan ?? '-' }}</p>
                                     </div>
                                 </td>
@@ -112,7 +113,8 @@
                                 <td>
                                     <p class="text-xs font-weight-bold mb-0">Bahan: {{ $item->bahan->nama_bahan ?? '-' }}</p>
                                     <p class="text-xs text-secondary mb-0">Ukuran: {{ $item->p }} x {{ $item->l }} cm</p>
-                                    <p class="text-xs text-secondary mb-0">Finishing: {{ $item->finishing ?? '-' }}</p>
+                                    <p class="text-xs text-secondary mb-0">Finishing 1: {{ $item->finishing ?? '-' }}</p>
+                                    <p class="text-xs text-secondary mb-0">Finishing 2: {{ $item->finishing_2 ?? '-' }}</p>
                                 </td>
 
                                 {{-- Qty --}}

@@ -18,7 +18,7 @@ class MBahanBakuController extends Controller
                 ->orWhere('kode_bahan', 'LIKE', "%{$search}%");
         }
 
-        $bahans = $query->get(); // atau paginate(10)
+        $bahans = $query->paginate(10); // atau paginate(10)
         $title = 'Manajemen Bahan Baku';
 
         return view('spk.manajemen.bahanbaku', compact('bahans', 'title'));
@@ -37,6 +37,34 @@ class MBahanBakuController extends Controller
         ]);
 
         return redirect()->route('manajemen.bahanbaku')->with('success', 'Bahan baku berhasil ditambahkan.');
+    }
+
+    // --- TAMBAHAN: FUNGSI EDIT ---
+    public function edit($id)
+    {
+        $bahan = MBahanBaku::findOrFail($id);
+        $title = 'Edit Bahan Baku';
+
+        // Kita buat view baru khusus edit agar rapi
+        return view('spk.manajemen.edit_bahanbaku', compact('bahan', 'title'));
+    }
+
+    // --- TAMBAHAN: FUNGSI UPDATE ---
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'kode' => 'required|unique:m_bahan_bakus,kode_bahan,'.$id, // Ignore unique untuk id ini
+            'nama' => 'required',
+        ]);
+
+        $bahan = MBahanBaku::findOrFail($id);
+
+        $bahan->update([
+            'kode_bahan' => $request->input('kode'),
+            'nama_bahan' => $request->input('nama'),
+        ]);
+
+        return redirect()->route('manajemen.bahanbaku')->with('success', 'Bahan baku berhasil diperbarui.');
     }
 
     public function destroy(MBahanBaku $bahanbaku)

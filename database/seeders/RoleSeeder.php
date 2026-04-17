@@ -16,8 +16,10 @@ class RoleSeeder extends Seeder
         Role::create(['name' => 'operator indoor']);
         Role::create(['name' => 'operator outdoor']);
         Role::create(['name' => 'operator multi']);
+        Role::create(['name' => 'operator dtf']);
         Role::create(['name' => 'inventory utama']);
         Role::create(['name' => 'inventory cabang']);
         Role::create(['name' => 'profil']);
+        Role::create(['name' => 'advertising']);
     }
 }

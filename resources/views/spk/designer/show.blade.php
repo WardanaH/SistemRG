@@ -46,6 +46,16 @@
                         <p class="text-xs mb-0 text-secondary font-weight-bold">Designer (Admin)</p>
                         <h6 class="text-sm font-weight-normal">{{ $spk->designer->nama ?? 'User Terhapus' }}</h6>
                     </div>
+                    <div class="col-md-3">
+                        <p class="text-xs mb-0 text-secondary font-weight-bold">Harga Desain</p>
+                        <h6 class="text-sm font-weight-normal">
+                            @if($spk->harga && $spk->harga > 0)
+                                Rp. {{ number_format($spk->harga, 0, ',', '.') }}
+                            @else
+                                Tanpa Jasa Desain
+                            @endif
+                        </h6>
+                    </div>
                 </div>
             </div>
         </div>
@@ -83,7 +93,8 @@
                                 {{-- Kolom File --}}
                                 <td>
                                     <div class="d-flex flex-column justify-content-center">
-                                        <h6 class="mb-0 text-sm">{{ $item->nama_file }}</h6>
+                                        <h6 class="mb-0 text-sm">Nama File : {{ $item->nama_file }}</h6>
+                                        <h6 class="mb-0 text-sm">Jenis File : <span class="badge badge-sm bg-gradient-info">{{ $item->jenis_file }}</span></h6>
                                         <p class="text-xs text-secondary mb-0">
                                             {{ $item->catatan ?? '-' }}
                                         </p>
@@ -92,11 +103,20 @@
 
                                 {{-- Kolom Spesifikasi --}}
                                 <td>
-                                    <p class="text-xs font-weight-bold mb-0">Bahan: {{ $item->bahan->nama_bahan ?? '-' }}</p>
-                                    <p class="text-xs text-secondary mb-0">
-                                        Ukuran: {{ $item->p }} x {{ $item->l }} cm
-                                    </p>
-                                    <p class="text-xs text-secondary mb-0">Finishing: {{ $item->finishing ?? '-' }}</p>
+                                    @if ($item->jenis_order === 'charge')
+                                        {{-- Tampilan Jika Charge Desain --}}
+                                        <p class="text-sm text-success font-weight-bold mb-0">
+                                            Rp {{ number_format($item->harga, 0, ',', '.') }}
+                                        </p>
+                                    @else
+                                        {{-- Tampilan Jika Cetakan Fisik Normal --}}
+                                        <p class="text-xs font-weight-bold mb-0">Bahan: {{ $item->bahan->nama_bahan ?? '-' }}</p>
+                                        <p class="text-xs text-secondary mb-0">
+                                            Ukuran: {{ $item->p }} x {{ $item->l }} cm
+                                        </p>
+                                        <p class="text-xs text-secondary mb-0">Fin 1: {{ $item->finishing ?? '-' }}</p>
+                                        <p class="text-xs text-secondary mb-0">Fin 2: {{ $item->finishing_2 ?? '-' }}</p>
+                                    @endif
                                 </td>
 
                                 {{-- Kolom Qty --}}
@@ -119,6 +139,8 @@
                                     @if($item->jenis_order == 'outdoor') <span class="badge badge-sm bg-gradient-warning">OUTDOOR</span>
                                     @elseif($item->jenis_order == 'indoor') <span class="badge badge-sm bg-gradient-warning">INDOOR</span>
                                     @elseif($item->jenis_order == 'multi') <span class="badge badge-sm bg-gradient-warning">MULTI</span>
+                                    @elseif($item->jenis_order == 'dtf') <span class="badge badge-sm bg-gradient-warning">DTF UV</span>
+                                    @elseif($item->jenis_order == 'charge') <span class="badge badge-sm bg-gradient-warning">CHARGE DESAIN</span>
                                     @endif
                                 </td>
 

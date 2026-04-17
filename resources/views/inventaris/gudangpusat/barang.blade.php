@@ -302,7 +302,8 @@
         'RIM' => 'layers',            // tumpukan kertas
         'TANK' => 'propane_tank',     // tangki
         'BOTOL' => 'liquor',          // botol
-        'LUSIN' => 'view_comfy'       // banyak item
+        'LUSIN' => 'view_comfy',       // banyak item
+        'GABAR' => 'grid_view'
     ];
 
     $icon = $icons[strtoupper(trim($item->satuan))] ?? 'inventory_2';
@@ -434,6 +435,7 @@ MODAL EDIT BARANG
                             <option>TANK</option>
                             <option>BOTOL</option>
                             <option>LUSIN</option>
+                            <option>GABAR</option>
                         </select>
                     </div>
 

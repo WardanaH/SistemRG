@@ -2,10 +2,61 @@
 
 @section('title', 'Dashboard')
 
+<style>
+
+/* ===============================
+   KHUSUS 4 CARD ATAS SAJA
+   =============================== */
+@media (max-width: 768px) {
+
+    .dashboard-top-cards {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .dashboard-top-cards > div {
+        width: 50% !important;
+        max-width: 50% !important;
+        flex: 0 0 50% !important;
+    }
+
+    /* Rapihin isi card biar gak tabrakan */
+    .dashboard-top-cards .card-header {
+        padding: 15px 12px !important;
+    }
+
+    .dashboard-top-cards .icon {
+        transform: scale(0.8);
+        margin-top: -25px;
+    }
+
+    .dashboard-top-cards h4 {
+        font-size: 18px;
+    }
+
+    .dashboard-top-cards p {
+        font-size: 12px;
+    }
+
+        /* Kasih ruang supaya text tidak ketimpa icon */
+    .dashboard-top-cards .text-end {
+        padding-left: 55px;
+    }
+
+    /* Perkecil icon sedikit */
+    .dashboard-top-cards .icon {
+        transform: scale(0.75);
+        margin-top: -20px;
+        left: 10px;
+    }
+}
+
+</style>
+
 @section('content')
 
     {{-- <div class="container-fluid py-4"> --}}
-      <div class="row">
+<div class="row dashboard-top-cards">
         <div class="col-xl-3 col-sm-6 mb-xl-0 mb-4">
           <div class="card">
             <div class="card-header p-3 pt-2">
@@ -14,7 +65,7 @@
               </div>
               <!-- kotak 1-->
               <div class="text-end pt-1">
-                <p class="text-sm mb-0">Total Permintaan Menunggu</p>
+                <p class="text-sm mb-0">Permintaan Menunggu</p>
                 <h4 class="mb-0">{{ $totalPermintaanMenunggu }}</h4>
               </div>
             </div>

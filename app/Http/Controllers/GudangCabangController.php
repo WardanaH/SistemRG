@@ -127,15 +127,17 @@ class GudangCabangController extends Controller
 
         $request->validate([
             'barang' => 'required|array',
-            'foto'   => 'required|image|max:2048',
+            'foto'   => 'nullable|image|max:2048',
+            'catatan_terima' => 'nullable|string'
         ]);
-        // dd($request->all());
 
         DB::beginTransaction();
+
         try {
 
-            $catatan_terima = $request->catatan_terima;
+            $catatanTerima = $request->catatan_terima;
 
+            // Decode detail barang permintaan
             $barangPermintaan = collect(
                 is_string($pengiriman->permintaan->detail_barang)
                     ? json_decode($pengiriman->permintaan->detail_barang, true)
@@ -152,7 +154,6 @@ class GudangCabangController extends Controller
                     $item['gudang_barang_id']
                 );
 
-                // ❌ tidak diterima / jumlah kurang
                 if (
                     !$diterima ||
                     empty($diterima['checked']) ||
@@ -162,16 +163,18 @@ class GudangCabangController extends Controller
                     continue;
                 }
 
-                // ✅ KURANGI STOK PUSAT DI SINI
+                // Update stok pusat
                 $barang = MGudangBarang::find($item['gudang_barang_id']);
+
                 if ($barang) {
+
                     $barang->stok -= (float) $diterima['jumlah'];
                     $barang->save();
 
-                    $cabangId = $pengiriman->cabang_tujuan_id;
+                    // Update stok cabang
                     $cabangBarang = MCabangBarang::firstOrCreate(
                         [
-                            'cabang_id'        => $cabangId,
+                            'cabang_id'        => $pengiriman->cabang_tujuan_id,
                             'gudang_barang_id' => $barang->id,
                         ],
                         [
@@ -184,12 +187,19 @@ class GudangCabangController extends Controller
                 }
             }
 
-            $fotoPath = $request->file('foto')
-                ->store('penerimaan', 'public');
+            // Upload foto jika ada
+            $fotoPath = null;
 
+            if ($request->hasFile('foto')) {
+                $fotoPath = $request->file('foto')
+                    ->store('penerimaan', 'public');
+            }
+
+            // Simpan detail diterima
             $detailTerima = [];
 
             foreach ($barangDiterima as $item) {
+
                 if (empty($item['checked'])) continue;
 
                 $barang = MGudangBarang::find($item['gudang_barang_id']);
@@ -197,32 +207,39 @@ class GudangCabangController extends Controller
 
                 $detailTerima[] = [
                     'gudang_barang_id' => $barang->id,
-                    'nama_barang'     => $barang->nama_bahan,
-                    'jumlah'          => (float) $item['jumlah'],
-                    'satuan'          => $barang->satuan,
-                    'keterangan'      => $item['keterangan'] ?? null
+                    'nama_barang'      => $barang->nama_bahan,
+                    'jumlah'           => (float) $item['jumlah'],
+                    'satuan'           => $barang->satuan,
+                    'keterangan'       => $item['keterangan'] ?? null
                 ];
             }
 
+            // Update pengiriman
             $pengiriman->update([
                 'status_pengiriman'  => 'Diterima',
                 'status_kelengkapan' => $statusKelengkapan,
                 'tanggal_diterima'   => now(),
                 'foto_penerimaan'    => $fotoPath,
                 'keterangan_terima'  => $detailTerima,
-                'catatan_terima'     => $catatan_terima
+                'catatan_terima'     => $catatanTerima
             ]);
 
-            $pengiriman->permintaan->update([
-                'status' => 'Selesai'
-            ]);
+            // Update status permintaan
+            if ($pengiriman->permintaan) {
+                $pengiriman->permintaan->update([
+                    'status' => 'Selesai'
+                ]);
+            }
 
             DB::commit();
+
             return back()->with('success', 'Pengiriman berhasil diterima');
 
         } catch (\Exception $e) {
+
             DB::rollBack();
-            return back()->with('error', $e->getMessage());
+
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
 
@@ -307,6 +324,20 @@ class GudangCabangController extends Controller
         return back()->with('success', 'Permintaan pengiriman berhasil dibuat');
     }
 
+    public function permintaanDestroy($id)
+    {
+        $permintaan = MPermintaanPengiriman::findOrFail($id);
+
+        // hanya boleh hapus kalau masih Menunggu
+        if ($permintaan->status !== 'Menunggu') {
+            return back()->with('error', 'Permintaan sudah diproses dan tidak bisa dihapus');
+        }
+
+        $permintaan->delete();
+
+        return back()->with('success', 'Permintaan berhasil dihapus');
+    }
+
 //4. LAPORAN
     public function laporanIndex(Request $request)
     {
@@ -346,7 +377,7 @@ class GudangCabangController extends Controller
 
         // Ambil pengiriman & pengambilan
         $pengiriman = MPengiriman::where('cabang_tujuan_id', $cabang->id)
-            ->where('status_pengiriman', 'Diterima')
+            // ->where('status_pengiriman', 'Diterima')
             ->when($start && $end, fn($q) => $q->whereBetween('tanggal_diterima', [$start, $end]))
             ->selectRaw('DATE(tanggal_diterima) as tanggal')
             ->get();
@@ -375,7 +406,7 @@ class GudangCabangController extends Controller
 
 
         $pengirimanQuery = MPengiriman::where('cabang_tujuan_id', $cabang->id)
-            ->where('status_pengiriman', 'Diterima')
+            // ->where('status_pengiriman', 'Diterima')
             ->selectRaw('MONTH(tanggal_diterima) as bulan, YEAR(tanggal_diterima) as tahun');
 
         if ($start && $end) {
@@ -425,51 +456,125 @@ class GudangCabangController extends Controller
 
         $user = Auth::user();
         $cabang = MCabang::findOrFail($user->cabang_id);
+        $semuaCabang = MCabang::all();
 
-        // =====================
-        // PENGIRIMAN
-        // =====================
-        $query = MPengiriman::where('cabang_tujuan_id', $cabang->id)
-            ->where('status_pengiriman', 'Diterima');
+        /*
+        ======================================================
+        PERMINTAAN (BELUM DIPROSES)
+        ======================================================
+        */
+        $permintaanQuery = MPermintaanPengiriman::where('cabang_id', $cabang->id)
+            ->whereDoesntHave('pengirimans');
 
         switch ($filterPeriode) {
+
             case 'hari':
-                if ($request->tanggal_awal && $request->tanggal_akhir) {
-                    $query->whereBetween('tanggal_diterima', [
-                        $request->tanggal_awal,
-                        $request->tanggal_akhir
+                if ($tanggalAwal && $tanggalAkhir) {
+                    $permintaanQuery->whereBetween('tanggal_permintaan', [
+                        Carbon::parse($tanggalAwal)->startOfDay(),
+                        Carbon::parse($tanggalAkhir)->endOfDay()
                     ]);
                 }
                 break;
+
             case 'bulan':
-                $query->whereMonth('tanggal_diterima', $bulan)
-                    ->whereYear('tanggal_diterima', $tahun);
+                $permintaanQuery->whereMonth('tanggal_permintaan', $bulan)
+                                ->whereYear('tanggal_permintaan', $tahun);
                 break;
+
             case 'tahun':
-                $query->whereYear('tanggal_diterima', $tahun);
+                $permintaanQuery->whereYear('tanggal_permintaan', $tahun);
+                break;
+        }
+
+        $permintaan = $permintaanQuery->get();
+
+        /*
+        ======================================================
+        PENGIRIMAN (SEMUA STATUS)
+        ======================================================
+        */
+        $query = MPengiriman::where('cabang_tujuan_id', $cabang->id);
+
+        switch ($filterPeriode) {
+
+            case 'hari':
+                if ($tanggalAwal && $tanggalAkhir) {
+
+                    $start = Carbon::parse($tanggalAwal)->startOfDay();
+                    $end   = Carbon::parse($tanggalAkhir)->endOfDay();
+
+                    $query->where(function($q) use ($start, $end) {
+                        $q->whereBetween('tanggal_diterima', [$start, $end])
+                        ->orWhereBetween('tanggal_pengiriman', [$start, $end])
+                        ->orWhereBetween('created_at', [$start, $end]);
+                    });
+                }
+                break;
+
+            case 'bulan':
+                $query->where(function($q) use ($bulan, $tahun) {
+
+                    $q->whereMonth('tanggal_diterima', $bulan)
+                    ->whereYear('tanggal_diterima', $tahun)
+
+                    ->orWhere(function($sub) use ($bulan, $tahun){
+                            $sub->whereMonth('tanggal_pengiriman', $bulan)
+                                ->whereYear('tanggal_pengiriman', $tahun);
+                    })
+
+                    ->orWhere(function($sub) use ($bulan, $tahun){
+                            $sub->whereMonth('created_at', $bulan)
+                                ->whereYear('created_at', $tahun);
+                    });
+                });
+                break;
+
+            case 'tahun':
+                $query->where(function($q) use ($tahun) {
+
+                    $q->whereYear('tanggal_diterima', $tahun)
+
+                    ->orWhere(function($sub) use ($tahun){
+                            $sub->whereYear('tanggal_pengiriman', $tahun);
+                    })
+
+                    ->orWhere(function($sub) use ($tahun){
+                            $sub->whereYear('created_at', $tahun);
+                    });
+                });
+                break;
+
+            case 'semua':
+                // tanpa filter tanggal
                 break;
         }
 
         $pengiriman = $query->get();
 
-        // =====================
-        // PENGAMBILAN
-        // =====================
+        /*
+        ======================================================
+        PENGAMBILAN
+        ======================================================
+        */
         $pengambilanQuery = MPengambilan::where('cabang_id', $cabang->id);
 
         switch ($filterPeriode) {
+
             case 'hari':
-                if ($request->tanggal_awal && $request->tanggal_akhir) {
+                if ($tanggalAwal && $tanggalAkhir) {
                     $pengambilanQuery->whereBetween('tanggal', [
-                        Carbon::parse($request->tanggal_awal)->startOfDay(),
-                        Carbon::parse($request->tanggal_akhir)->endOfDay()
+                        Carbon::parse($tanggalAwal)->startOfDay(),
+                        Carbon::parse($tanggalAkhir)->endOfDay()
                     ]);
                 }
                 break;
+
             case 'bulan':
                 $pengambilanQuery->whereMonth('tanggal', $bulan)
                                 ->whereYear('tanggal', $tahun);
                 break;
+
             case 'tahun':
                 $pengambilanQuery->whereYear('tanggal', $tahun);
                 break;
@@ -477,27 +582,67 @@ class GudangCabangController extends Controller
 
         $pengambilan = $pengambilanQuery->get();
 
-        // =====================
-        // GABUNG SEMUA TRANSAKSI
-        // =====================
+        /*
+        ======================================================
+        GABUNG SEMUA TRANSAKSI
+        ======================================================
+        */
         $transaksi = collect();
+
+        // ===== PERMINTAAN =====
+        foreach ($permintaan as $item) {
+
+            $detail = is_array($item->detail_barang)
+                ? $item->detail_barang
+                : json_decode($item->detail_barang, true);
+
+            foreach ($detail ?? [] as $d) {
+
+                $transaksi->push([
+                    'tanggal' => Carbon::parse($item->tanggal_permintaan)->format('Y-m-d'),
+                    'jenis'   => 'Permintaan',
+                    'cabang'  => $cabang->nama,
+                    'barang'  => $d['nama_barang'] ?? '-',
+                    'qty'     => $d['jumlah'] ?? 0,
+                    'satuan'  => $d['satuan'] ?? '-',
+                    'ket'     => $item->catatan ?? '-',
+                    'status'  => $item->status
+                ]);
+            }
+        }
 
         // ===== PENGIRIMAN =====
         foreach ($pengiriman as $item) {
 
-            $detail = is_string($item->keterangan_terima)
-                ? json_decode($item->keterangan_terima, true)
-                : $item->keterangan_terima;
+            // Kalau sudah diterima pakai keterangan_terima
+            // Kalau belum diterima pakai keterangan
+            $detail = null;
+
+            if ($item->status_pengiriman == 'Diterima') {
+                $detail = is_string($item->keterangan_terima)
+                    ? json_decode($item->keterangan_terima, true)
+                    : $item->keterangan_terima;
+            } else {
+                $detail = is_string($item->keterangan)
+                    ? json_decode($item->keterangan, true)
+                    : $item->keterangan;
+            }
 
             foreach ($detail ?? [] as $d) {
+
+                $tanggalFix = $item->tanggal_diterima
+                            ?? $item->tanggal_pengiriman
+                            ?? $item->created_at;
+
                 $transaksi->push([
-                    'tanggal' => Carbon::parse($item->tanggal_diterima)->format('Y-m-d'),
+                    'tanggal' => Carbon::parse($tanggalFix)->format('Y-m-d'),
                     'jenis'   => 'Pengiriman',
                     'cabang'  => $cabang->nama,
                     'barang'  => $d['nama_barang'] ?? '-',
                     'qty'     => $d['jumlah'] ?? 0,
                     'satuan'  => $d['satuan'] ?? '-',
-                    'ket'     => $d['keterangan'] ?? '-'
+                    'ket'     => $d['keterangan'] ?? '-',
+                    'status'  => $item->status_pengiriman
                 ]);
             }
         }
@@ -531,53 +676,43 @@ class GudangCabangController extends Controller
 
         $transaksi = $transaksi->sortByDesc('tanggal')->values();
 
-        // =====================
-        // REKAP TOTAL PER BARANG
-        // =====================
+        /*
+        ======================================================
+        REKAP
+        ======================================================
+        */
         $semuaBarang = MGudangBarang::all();
         $rekap = [];
 
         foreach ($transaksi as $item) {
+
             $key = $item['barang'];
+
             if (!isset($rekap[$key])) {
                 $rekap[$key] = [
                     'barang' => $item['barang'],
                     'satuan' => $item['satuan'],
-                    'total'  => 0
+                    'total'  => 0,
+                    'cabang' => []
                 ];
             }
+
             $rekap[$key]['total'] += (float) $item['qty'];
-        }
-
-        // Ambil barang yang dipilih dari request
-        $barangFilter = $request->barang_id ?? [];
-
-        // Jika ada filter barang, filter $transaksi
-        if (!empty($barangFilter)) {
-            $transaksi = $transaksi->filter(function($item) use ($barangFilter) {
-                // $item['barang'] bisa ada tambahan " - a.n ..." untuk pengambilan
-                // kita cek apakah ID barang ada di nama barang (bisa sesuaikan)
-                foreach ($barangFilter as $idBarang) {
-                    // ambil nama barang dari semuaBarang untuk ID ini
-                    $namaBarang = MGudangBarang::find($idBarang)->nama_bahan ?? null;
-                    if ($namaBarang && str_contains($item['barang'], $namaBarang)) {
-                        return true;
-                    }
-                }
-                return false;
-            })->values();
+            $rekap[$key]['cabang'][$cabang->id] =
+                ($rekap[$key]['cabang'][$cabang->id] ?? 0) + (float) $item['qty'];
         }
 
         return view('inventaris.gudangcabang.laporan.detaillaporan', [
-            'transaksi'   => $transaksi,
-            'bulan'       => $bulan,
-            'tahun'       => $tahun,
-            'cabang'      => $cabang,
-            'semuaBarang' => $semuaBarang,
-            'rekap'       => $rekap,
+            'transaksi'     => $transaksi,
+            'bulan'         => $bulan,
+            'tahun'         => $tahun,
+            'cabang'        => $cabang,
+            'semuaBarang'   => $semuaBarang,
+            'rekap'         => $rekap,
             'filterPeriode' => $filterPeriode,
             'tanggalAwal'   => $tanggalAwal,
             'tanggalAkhir'  => $tanggalAkhir,
+            'semuaCabang'   => $semuaCabang,
         ]);
     }
 
@@ -590,8 +725,8 @@ class GudangCabangController extends Controller
         $user = Auth::user();
         $cabang = MCabang::findOrFail($user->cabang_id);
 
-        $query = MPengiriman::where('cabang_tujuan_id', $cabang->id)
-            ->where('status_pengiriman', 'Diterima');
+        $query = MPengiriman::where('cabang_tujuan_id', $cabang->id);
+            // ->where('status_pengiriman', 'Diterima');
 
         $pengambilanQuery = MPengambilan::where('cabang_id', $cabang->id);
 
@@ -735,7 +870,7 @@ class GudangCabangController extends Controller
         $pengiriman = MPengiriman::where('cabang_tujuan_id', $cabangId)
             ->whereMonth('tanggal_diterima', $bulan)
             ->whereYear('tanggal_diterima', $tahun)
-            ->where('status_pengiriman', 'Diterima')
+            // ->where('status_pengiriman', 'Diterima')
             ->get();
 
         foreach ($pengiriman as $item) {

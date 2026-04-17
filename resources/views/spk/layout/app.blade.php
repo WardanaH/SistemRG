@@ -12,7 +12,6 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,900">
     <link href="{{ asset('assets/css/nucleo-icons.css') }}" rel="stylesheet">
     <link href="{{ asset('assets/css/nucleo-svg.css') }}" rel="stylesheet">
-    <script src="https://kit.fontawesome.com/42d5adcbca.js" crossorigin="anonymous"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 
     <!-- CSS -->
@@ -102,137 +101,231 @@
 
     <script>
         $(function() {
+            // 1. Inisialisasi Global Select2
             $('.select2').each(function() {
                 $(this).select2({
                     width: '100%',
-                    // Mengambil placeholder dari atribut data-placeholder atau default ke 'Pilih data'
                     placeholder: $(this).data('placeholder') || 'Pilih data',
                     allowClear: true,
-                    // Jika select2 berada di dalam Modal, tambahkan ini agar tidak error fokus
                     dropdownParent: $(this).closest('.modal').length ? $(this).closest('.modal') : null
                 });
             });
+
+            // 2. Fix UX: Buka otomatis Select2 saat di-Tab (Mendapat Fokus)
+            $(document).on('focus', '.select2-selection.select2-selection--single, .select2-selection.select2-selection--multiple', function (e) {
+                $(this).closest('.select2-container').siblings('select:enabled').select2('open');
+            });
+
+            // ==========================================
+            // 3. KODE BARU: Langsung fokus ke kotak pencarian saat dropdown terbuka
+            // ==========================================
+            $(document).on('select2:open', function(e) {
+                // Gunakan setTimeout kecil (50ms) untuk memberi waktu modal & dropdown selesai dirender
+                setTimeout(function() {
+                    let searchField = document.querySelector('.select2-container--open .select2-search__field');
+                    if (searchField) {
+                        searchField.focus();
+                    }
+                }, 50);
+            });
+
         });
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-        // 1. AKTIFKAN LOGGING
-        // Pusher.logToConsole = true;
-
-        // 2. Inisialisasi Pusher
-        var pusher = new Pusher('{{ config("broadcasting.connections.pusher.key") }}', {
+        // 1. Inisialisasi Pusher
+        const pusher = new Pusher('{{ config("broadcasting.connections.pusher.key") }}', {
             cluster: '{{ config("broadcasting.connections.pusher.options.cluster") }}',
             encrypted: true
         });
 
-        // Cek Config di Console
-        // console.log("Config Pusher:", {
-        //     key: '{{ config("broadcasting.connections.pusher.key") }}',
-        //     cluster: '{{ config("broadcasting.connections.pusher.options.cluster") }}'
-        // });
+        const isAdmin = {{ Auth::check() && Auth::user()->hasRole('admin') ? 'true' : 'false' }};
+        const authUserId = "{{ auth()->id() }}";
+        const cabangId = "{{ Auth::check() ? Auth::user()->cabang_id : 'null' }}";
 
-        // Status Admin
-        const isAdmin = {{Auth::check() && Auth::user() -> hasRole('admin') ? 'true' : 'false'}};
-        // console.log("Status Admin:", isAdmin);
+        let alertInterval = null; // Untuk looping suara
+        let reminderTimeout = null; // Untuk memunculkan kembali Swal yang ditutup paksa
 
-        // Id cabang Admin
-        const cabangId = {{Auth::check() && Auth::user() -> hasRole('admin') ? Auth::user()->cabang_id : 'null'}};
+        // --- FUNGSI LOGIKA DATA ---
 
-        var channel = pusher.subscribe('channel-admin-' + cabangId);
-        var channel_lembur = pusher.subscribe('channel-lembur');
-        // console.log("Channel:", channel, channel_lembur);
+        // Menangani notifikasi baru yang masuk
+        function handleIncomingNotif(title, data, redirectUrl = null) {
+            let notifications = JSON.parse(localStorage.getItem('notif_list')) || [];
 
-        // 3. Binding Event (Menangani Notifikasi Masuk)
-        channel.bind('spk-dibuat', function(data) {
+            const newNotif = {
+                id: Date.now(),
+                title: title,
+                pesan: data.pesan || '',
+                no_spk: data.no_spk || '',
+                nama_file: data.nama_file || '',
+                url: redirectUrl,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                is_operator: !!data.operator_id
+            };
 
-            // console.log("EVENT DITERIMA:", data);
+            notifications.unshift(newNotif);
+            if(notifications.length > 10) notifications.pop(); // Batasi 10 notif terakhir
 
-            if (isAdmin) {
-                // B. Mainkan Suara (File Custom Kamu)
-                playNotificationSound();
-                // A. Update Angka di Lonceng Navbar
-                updateBadgeNavbar();
-                // C. Tampilkan SweetAlert (Auto Close 5 Detik)
-                Swal.fire({
-                    title: 'SPK Baru Masuk!',
-                    html: `<p>${data.pesan}</p><small>No: <b>${data.no_spk}</b></small>`,
-                    icon: 'info',
-                    position: 'top-end', // Tampil di pojok kanan atas
-                    showConfirmButton: true,
-                    confirmButtonText: 'Lihat',
-                    showCancelButton: true,
-                    cancelButtonText: 'Tutup',
-                    timer: 5000, // Menutup otomatis dalam 5000ms (5 detik)
-                    timerProgressBar: true, // Ada bar progres berjalan
-                    didOpen: (toast) => {
-                        // Jika mouse diarahkan ke notif, waktu berhenti (biar bisa dibaca)
-                        toast.onmouseenter = Swal.stopTimer;
-                        toast.onmouseleave = Swal.resumeTimer;
-                    }
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        window.location.href = "{{ url('/spk') }}?search=" + data.no_spk;
-                    }
-                });
-            }
-        });
+            localStorage.setItem('notif_list', JSON.stringify(notifications));
+            localStorage.setItem('pending_active_notif', JSON.stringify(newNotif)); // Notif yang sedang "berisik"
 
-        channel_lembur.bind('spk-lembur-dibuat', function(data) {
-
-            // console.log("EVENT DITERIMA:", data);
-
-            if (isAdmin) {
-                // B. Mainkan Suara (File Custom Kamu)
-                playNotificationSound();
-                // A. Update Angka di Lonceng Navbar
-                updateBadgeNavbar();
-                // C. Tampilkan SweetAlert (Auto Close 5 Detik)
-                Swal.fire({
-                    title: 'SPK Baru Masuk!',
-                    html: `<p>${data.pesan}</p><small>No: <b>${data.no_spk}</b></small>`,
-                    icon: 'info',
-                    position: 'top-end', // Tampil di pojok kanan atas
-                    showConfirmButton: true,
-                    confirmButtonText: 'Lihat',
-                    showCancelButton: true,
-                    cancelButtonText: 'Tutup',
-                    timer: 5000, // Menutup otomatis dalam 5000ms (5 detik)
-                    timerProgressBar: true, // Ada bar progres berjalan
-                    didOpen: (toast) => {
-                        // Jika mouse diarahkan ke notif, waktu berhenti (biar bisa dibaca)
-                        toast.onmouseenter = Swal.stopTimer;
-                        toast.onmouseleave = Swal.resumeTimer;
-                    }
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        window.location.href = "{{ url('/spk-lembur') }}?search=" + data.no_spk;
-                    }
-                });
-            }
-        });
-
-        // 4. Fungsi Menambah Angka Badge Lonceng
-        function updateBadgeNavbar() {
-            let badge = document.getElementById('badge-notif');
-            if (badge) {
-                // Ambil angka sekarang, ubah ke integer, tambah 1
-                let currentCount = parseInt(badge.innerText) || 0;
-                badge.innerText = currentCount + 1;
-
-                // Tampilkan badge (karena defaultnya display:none)
-                badge.style.display = 'inline-block';
-            }
+            renderNotifList();
+            triggerNotifUI();
         }
 
-        // 5. Fungsi Audio (SESUAI PERMINTAAN: File tidak diubah)
-        function playNotificationSound() {
-            let audio = new Audio('{{ asset("assets/sound/notif_spk.mp3") }}');
-            audio.play().catch(function(error) {
-                console.log("Audio error: " + error);
+        // Menjalankan UI (Suara + SweetAlert)
+        function triggerNotifUI() {
+            const activeNotif = JSON.parse(localStorage.getItem('pending_active_notif'));
+            if (!activeNotif) return;
+
+            // Bersihkan interval lama
+            if (alertInterval) clearInterval(alertInterval);
+            if (reminderTimeout) clearTimeout(reminderTimeout);
+
+            const soundPath = activeNotif.is_operator ? "assets/sound/tugas_baru.mp3" : "assets/sound/notif_spk.mp3";
+            const audio = new Audio(`{{ asset('') }}${soundPath}`);
+
+            const playAlert = () => {
+                audio.play().catch(e => console.log("Interaksi user diperlukan untuk suara."));
+            };
+
+            playAlert();
+            alertInterval = setInterval(playAlert, 10000); // Ulangi suara setiap 10 detik
+
+            Swal.fire({
+                title: activeNotif.title,
+                html: `<div class="text-start">
+                        <p class="mb-1">${activeNotif.pesan}</p>
+                        <small>No: <b>${activeNotif.no_spk}</b></small><br>
+                        <small class="text-truncate d-block">${activeNotif.nama_file}</small>
+                    </div>`,
+                icon: 'info',
+                position: 'top-end',
+                toast: !isAdmin,
+                showConfirmButton: true,
+                confirmButtonText: activeNotif.url ? 'Buka / Lihat' : 'Tandai Dibaca',
+                showCancelButton: true,
+                cancelButtonText: 'Nanti Saja',
+                timer: 20000,
+                timerProgressBar: true,
+                allowOutsideClick: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Berhenti Total
+                    stopNotificationLoop();
+                    if (activeNotif.url) window.location.href = activeNotif.url;
+                } else {
+                    // User klik "Nanti" atau Timer habis: Diam sebentar, lalu muncul lagi
+                    clearInterval(alertInterval);
+                    reminderTimeout = setTimeout(triggerNotifUI, 60000); // Muncul lagi dalam 40 detik
+                }
             });
         }
+
+        function stopNotificationLoop() {
+            localStorage.removeItem('pending_active_notif');
+            clearInterval(alertInterval);
+            clearTimeout(reminderTimeout);
+            alertInterval = null;
+            reminderTimeout = null;
+        }
+
+        // --- FUNGSI TAMPILAN DROPDOWN ---
+
+        function renderNotifList() {
+            const listContainer = document.getElementById('dropdown-notif-list');
+            const badge = document.getElementById('badge-notif');
+            if (!listContainer) return;
+
+            let notifications = JSON.parse(localStorage.getItem('notif_list')) || [];
+
+            if (notifications.length > 0) {
+                badge.innerText = notifications.length;
+                badge.style.display = 'inline-block';
+
+                let html = notifications.map(n => `
+                    <li class="mb-2 border-bottom pb-2">
+                        <a class="dropdown-item border-radius-md" href="${n.url || 'javascript:;'}" onclick="clearSingleNotif(${n.id})">
+                            <div class="d-flex py-1">
+                                <div class="my-auto">
+                                    <i class="material-icons text-primary me-3">assignment</i>
+                                </div>
+                                <div class="d-flex flex-column justify-content-center">
+                                    <h6 class="text-sm font-weight-normal mb-1">
+                                        <span class="font-weight-bold">${n.title}</span>
+                                    </h6>
+                                    <p class="text-xs text-secondary mb-0">
+                                        <i class="fa fa-clock me-1"></i> ${n.time} | ${n.no_spk}
+                                    </p>
+                                </div>
+                            </div>
+                        </a>
+                    </li>
+                `).join('');
+
+                html += `<li><a class="dropdown-item text-center text-primary text-xs font-weight-bold" href="javascript:;" onclick="clearAllNotif()">Hapus Semua</a></li>`;
+                listContainer.innerHTML = html;
+            } else {
+                badge.style.display = 'none';
+                listContainer.innerHTML = '<li class="p-2 text-center"><p class="text-xs text-secondary mb-0">Tidak ada notifikasi</p></li>';
+            }
+        }
+
+        function clearSingleNotif(id) {
+            let notifications = JSON.parse(localStorage.getItem('notif_list')) || [];
+            localStorage.setItem('notif_list', JSON.stringify(notifications.filter(n => n.id !== id)));
+            stopNotificationLoop();
+            renderNotifList();
+        }
+
+        function clearAllNotif() {
+            localStorage.removeItem('notif_list');
+            stopNotificationLoop();
+            renderNotifList();
+        }
+
+        // --- BROADCAST LISTENER ---
+
+        if (isAdmin) {
+            pusher.subscribe('channel-admin-' + cabangId).bind('spk-dibuat', (data) => {
+                let url = data.tipe === 'Reguler' ? "{{ url('/spk') }}" : "{{ url('/spk-bantuan') }}";
+                handleIncomingNotif(`SPK ${data.tipe} Baru!`, data, `${url}?search=${data.no_spk}`);
+            });
+
+            pusher.subscribe('channel-lembur').bind('spk-lembur-dibuat', (data) => {
+                handleIncomingNotif('SPK Lembur Baru!', data, `{{ url('/spk-lembur') }}?search=${data.no_spk}`);
+            });
+        }
+
+        pusher.subscribe('operator.' + authUserId).bind('kerjaan-baru', (data) => {
+            // Log untuk ngecek apakah tipe sudah masuk
+            console.log("Data tipe order masuk:", data.tipe);
+
+            if (data.tipe === 'advertising') {
+                // Sesuaikan nama route ini dengan yang ada di web.php Anda
+                handleIncomingNotif('Tugas Advertising Masuk!', data, "{{ route('advertising.produksi-index') }}");
+            }
+            else if (data.tipe === 'lembur') {
+                handleIncomingNotif('Tugas Lembur Masuk!', data, "{{ route('spk-lembur.produksi') }}");
+            }
+            else if (data.tipe === 'bantuan') {
+                handleIncomingNotif('Tugas Bantuan Masuk!', data, "{{ route('spk-bantuan.produksi') }}");
+                // Catatan: Biasanya SPK Bantuan numpuk di antrean reguler, kalau halamannya dipisah, sesuaikan routenya.
+            }
+            else {
+                handleIncomingNotif('Tugas Reguler Masuk!', data, "{{ route('spk.produksi') }}");
+            }
+        });
+
+        // Jalankan saat pertama kali buka halaman atau refresh
+        window.addEventListener('load', () => {
+            renderNotifList();
+            if (localStorage.getItem('pending_active_notif')) {
+                setTimeout(triggerNotifUI, 3000); // Munculkan kembali setelah 3 detik loading halaman
+            }
+        });
     </script>
 
     <script>
@@ -255,6 +348,37 @@
                     document.getElementById('logout-form').submit();
                 }
             });
+        }
+    </script>
+
+    <script>
+        // --- SCRIPT JAM REALTIME WITA UNTUK SIDEBAR ---
+        function updateSidebarClock() {
+            const now = new Date();
+
+            // Memaksa waktu menyesuaikan zona Asia/Makassar (WITA)
+            const options = {
+                timeZone: 'Asia/Makassar',
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            };
+
+            // Format menjadi string HH:MM:SS
+            const timeString = now.toLocaleTimeString('id-ID', options);
+
+            // Cari elemen dengan id 'sidebar-clock'
+            const clockElement = document.getElementById('sidebar-clock');
+            if (clockElement) {
+                clockElement.innerText = timeString + ' WITA';
+            }
+        }
+
+        // Jalankan jika elemen jam ditemukan di halaman
+        if(document.getElementById('sidebar-clock')) {
+            setInterval(updateSidebarClock, 1000);
+            updateSidebarClock(); // Panggil sekali saat dimuat
         }
     </script>
 
