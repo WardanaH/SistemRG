@@ -74,11 +74,13 @@
                                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-3">Info SPK (Parent)</th>
                                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Detail Item (File)</th>
                                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Spesifikasi</th>
+                                <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Qty</th>
                                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Catatan Produksi</th>
                                 <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Catatan Operator</th>
-                                <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Qty</th>
                                 <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Status Item</th>
+                                @hasrole('operator indoor|operator outdoor|operator multi|operator dtf')
                                 <th class="text-secondary opacity-7 text-end pe-4">Aksi</th>
+                                @endhasrole
                             </tr>
                         </thead>
                         <tbody>
@@ -135,12 +137,13 @@
                                     <hr class="my-2" style="border-top: 1px dashed #d2d6da; opacity: 1;">
 
                                     <h6 class="mb-0 text-sm text-wrap" style="max-width: 200px; line-height: 1.4;">
-                                        {{ rtrim(rtrim($item->p, '0'), '.') }} x {{ rtrim(rtrim($item->l, '0'), '.') }} cm
+                                        {{ $item->p }} x {{ $item->l }} cm
                                     </h6>
 
                                     <hr class="my-2" style="border-top: 1px dashed #d2d6da; opacity: 1;">
 
-                                    <h6 class="mb-0 text-sm text-wrap" style="max-width: 200px; line-height: 1.4;">Fin: {{ $item->finishing ?? '-' }}</h6>
+                                    <h6 class="mb-0 text-sm text-wrap" style="max-width: 200px; line-height: 1.4;">Fin1: {{ $item->finishing ?? '-' }}</h6>
+                                    <h6 class="mb-0 text-sm text-wrap" style="max-width: 200px; line-height: 1.4;">Fin2: {{ $item->finishing_2 ?? '-' }}</h6>
                                 </td>
 
                                 {{-- KOLOM 6: QTY --}}
@@ -177,6 +180,7 @@
                                     </span>
                                 </td>
 
+                                @hasrole('operator indoor|operator outdoor|operator multi|operator dtf')
                                 {{-- KOLOM 8: AKSI --}}
                                 <td class="align-middle text-end pe-4">
                                     <button type="button"
@@ -188,6 +192,7 @@
                                         Update Status
                                     </button>
                                 </td>
+                                @endhasrole
                             </tr>
                             @empty
                             <tr>

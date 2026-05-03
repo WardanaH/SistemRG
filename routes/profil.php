@@ -34,7 +34,7 @@ Route::prefix('profil')->name('profil.')->group(function () {
 // ADMIN PROFIL
 // =======================
 Route::prefix('admin')->name('profil.admin.')->group(function () {
-    Route::view('/dashboard', 'profil.admin.pages.dashboard')->name('dashboard');
+    Route::view('/dashboard-profil', 'profil.admin.pages.dashboard')->name('dashboard');
     Route::get('/beranda/edit', [AdminPBerandaController::class, 'edit'])->name('beranda.edit');
     Route::put('/beranda', [AdminPBerandaController::class, 'update'])->name('beranda.update');
     Route::get('/tentang/edit', [AdminPTentangController::class, 'edit'])->name('tentang.edit');
