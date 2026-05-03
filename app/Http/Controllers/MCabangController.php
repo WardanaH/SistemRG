@@ -15,10 +15,10 @@ class MCabangController extends Controller
         return view('spk.manajemen.cabang', compact('cabangs', 'title'));
     }
 
-    public function create()
-    {
-        return view('admin.cabangs.create');
-    }
+    // public function create()
+    // {
+    //     return view('admin.cabangs.create');
+    // }
 
     public function store(Request $request)
     {
@@ -55,15 +55,15 @@ class MCabangController extends Controller
         }
     }
 
-    public function edit(MCabang $cabang)
-    {
-        return view('admin.cabangs.edit', compact('cabang'));
-    }
+    // public function edit(MCabang $cabang)
+    // {
+    //     return view('admin.cabangs.edit', compact('cabang'));
+    // }
 
     public function update(Request $request, MCabang $cabang)
     {
         $validated = $request->validate([
-            'kode' => 'required|string|max:20|unique:cabangs,kode,' . $cabang->id,
+            'kode' => 'required|string|max:20|unique:m_cabangs,kode,' . $cabang->id,
             'nama' => 'required|string|max:255',
             'email' => 'nullable|email',
             'telepon' => 'nullable|string|max:20',

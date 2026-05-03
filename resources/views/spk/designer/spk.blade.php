@@ -93,15 +93,15 @@
                         </div>
 
                         {{-- Charge design (Opsional untuk Reguler) --}}
-                        <!-- <div class="col-md-3 mb-3">
-                            <div class="input-group input-group-outline">
-                                <label class="form-label">Harga Desain (Opsional)</label>
-                                {{-- Input tampilan untuk User --}}
-                                <input type="text" class="form-control" id="harga_design_tampil" value="{{ old('harga_design') }}">
-                                {{-- Input tersembunyi yang akan dikirim ke Backend --}}
-                                <input type="hidden" name="harga_design" id="harga_design_asli" value="{{ old('harga_design') }}">
-                            </div>
-                        </div> -->
+                        <!--<div class="col-md-3 mb-3">-->
+                        <!--    <div class="input-group input-group-outline">-->
+                        <!--        <label class="form-label">Harga Desain (Opsional)</label>-->
+                        <!--        {{-- Input tampilan untuk User --}}-->
+                        <!--        <input type="text" class="form-control" id="harga_design_tampil" value="{{ old('harga_design') }}">-->
+                        <!--        {{-- Input tersembunyi yang akan dikirim ke Backend --}}-->
+                        <!--        <input type="hidden" name="harga_design" id="harga_design_asli" value="{{ old('harga_design') }}">-->
+                        <!--    </div>-->
+                        <!--</div>-->
                     </div>
 
                     <hr class="horizontal dark my-2">

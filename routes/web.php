@@ -19,6 +19,7 @@ Route::get('/table', function () {
 
 
 
+
 // require route
 require __DIR__.'/auth.php';
 require __DIR__.'/manajemen.php';
@@ -27,25 +28,31 @@ require __DIR__.'/operator.php';
 require __DIR__.'/designer.php';
 require __DIR__.'/gudang_pusat.php';
 require __DIR__.'/gudang_cabang.php';
+require __DIR__.'/profil.php';
 require __DIR__.'/advertising.php';
 
 Route::get('/', function () {
-    $user = auth()->user();
+    // 1. Cek apakah user sudah login
+    if (auth()->check()) {
+        $user = auth()->user();
 
-    if ($user->hasRole('manajemen')) {
-        return redirect()->route('manajemen.dashboard');
-    } elseif ($user->hasRole('operator indoor') || $user->hasRole('operator outdoor') || $user->hasRole('operator multi') || $user->hasRole('operator dtf')) {
-        return redirect()->route('operator.dashboard');
-    } elseif ($user->hasRole('designer')) {
-        return redirect()->route('designer.dashboard');
-    } elseif ($user->hasrole('admin')) {
-        return redirect()->route('admin.dashboard');
-    } elseif ($user->hasrole('advertising')) {
-        return redirect()->route('advertising.dashboard');
+        if ($user->hasRole('manajemen')) {
+            return redirect()->route('manajemen.dashboard');
+        } elseif ($user->hasAnyRole(['operator indoor', 'operator outdoor', 'operator multi', 'operator dtf'])) {
+            return redirect()->route('operator.dashboard');
+        } elseif ($user->hasRole('designer')) {
+            return redirect()->route('designer.dashboard');
+        } elseif ($user->hasRole('admin')) {
+            return redirect()->route('admin.dashboard');
+        } elseif ($user->hasRole('advertising')) {
+            return redirect()->route('advertising.dashboard');
+        }
     }
 
-    return redirect()->route('auth.index');
-})->middleware('auth')->name('home');
+
+    // 2. Jika tidak login ATAU tidak punya role di atas, arahkan ke beranda profil
+    return redirect()->route('profil.beranda');
+})->name('home');
 
 
 // inventaris qr tanpalogin
@@ -77,4 +84,7 @@ Route::middleware('auth')->group(function (){
     Route::put('/user-setting', [UserController::class, 'updateUser'])
     ->name('user.update');
 });
+
+
+
 

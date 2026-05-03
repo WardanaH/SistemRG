@@ -497,6 +497,7 @@ class MSpkController extends Controller
                 'items.*.jenis'       => 'required|in:outdoor,indoor,multi,dtf,charge', // dtf & charge ditambahkan
                 'items.*.file'        => 'required|string',
                 'items.*.qty'         => 'required|integer|min:1',
+                // 'items.*.jenis_file'  => 'required|in:online,offline',
 
                 'items.*.harga'       => 'required_if:items.*.jenis,charge|nullable|numeric|min:0',
                 'items.*.p'           => 'required_unless:items.*.jenis,charge|numeric|min:0',
@@ -534,7 +535,7 @@ class MSpkController extends Controller
                         'spk_id'          => $spk->id,
                         'nama_file'       => $item['file'],
                         'jenis_order'     => $item['jenis'],
-                        'jenis_file'      => $isCharge ? 'online' : $item['jenis_file'],
+                        'jenis_file'      => $item['jenis_file'],
                         'harga'           => $isCharge ? ($item['harga'] ?? 0) : 0,
                         'p'               => $isCharge ? null : $item['p'],
                         'l'               => $isCharge ? null : $item['l'],
@@ -649,7 +650,7 @@ class MSpkController extends Controller
         $query = MSubSpk::with(['spk', 'spk.designer', 'bahan'])
             ->whereHas('spk', function ($q) use ($user) {
                 // Filter Cabang (Hanya di cabang user login)
-                if ($user->cabang->jenis !== 'pusat') {
+                if (!$user->hasRole('manajemen') && $user->cabang->jenis !== 'pusat') {
                     $q->where('cabang_id', $user->cabang_id);
                 }
 
@@ -660,8 +661,9 @@ class MSpkController extends Controller
             });
 
         // 2. FILTER SPESIFIK PER USER
-        $query->where('operator_id', $user->id);
-
+        if (!$user->hasRole('manajemen')) {
+            $query->where('operator_id', $user->id);
+        }
         // 3. --- FILTER STATUS PRODUKSI (BARU) ---
         if ($request->filled('status_filter')) {
             // Jika dropdown filter dipilih
@@ -841,8 +843,8 @@ class MSpkController extends Controller
                 // Filter Cabang (Hanya riwayat pekerjaan di cabang sendiri)
 
                 $q->where('is_bantuan', false)
-                    ->where('is_lembur', true)
-                    ->where('jenis_order', '!=', 'charge');
+                    ->where('jenis_order', '!=', 'charge')
+                    ->where('is_lembur', true);
             });
 
         // 2. Filter Utama: Milik Operator yg Login & Status DONE

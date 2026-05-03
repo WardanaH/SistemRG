@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Imports\UsersImport;
-use App\Models\MCabang;
 use App\Models\User;
+use App\Models\MCabang;
+use App\Imports\UsersImport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
-use Maatwebsite\Excel\Facades\Excel;
 use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Hash;
+use Maatwebsite\Excel\Facades\Excel;
 
 class UserController extends Controller
 {
@@ -221,7 +221,7 @@ class UserController extends Controller
             'user' => auth()->user(),
         ]);
     }
-    
+
     public function updateUser(Request $request)
     {
         // 1. Ambil data user yang sedang login

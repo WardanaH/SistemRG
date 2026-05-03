@@ -19,17 +19,17 @@ Route::middleware('auth')->group(function () {
     Route::get('/manajemen/cabang', [MCabangController::class, 'index'])->middleware('role:manajemen')->name('manajemen.cabang');
     Route::post('/manajemen/cabang', [MCabangController::class, 'store'])->middleware('role:manajemen')->name('manajemen.cabang.store');
     Route::get('/manajemen/cabang/{cabang}/edit', [MCabangController::class, 'edit'])->middleware('role:manajemen')->name('manajemen.cabang.edit');
-    Route::post('/manajemen/cabang/{cabang}', [MCabangController::class, 'update'])->middleware('role:manajemen')->name('manajemen.cabang.update');
+    Route::put('/manajemen/cabang/{cabang}', [MCabangController::class, 'update'])->middleware('role:manajemen')->name('manajemen.cabang.update');
     Route::delete('/manajemen/cabang/{cabang}/delete', [MCabangController::class, 'destroy'])->middleware('role:manajemen')->name('manajemen.cabang.destroy');
 
     Route::get('/manajemen/bahanbaku', [MBahanBakuController::class, 'index'])->middleware('role:manajemen')->name('manajemen.bahanbaku');
     Route::post('/manajemen/bahanbaku', [MBahanBakuController::class, 'store'])->middleware('role:manajemen')->name('manajemen.bahanbaku.store');
     Route::get('/manajemen/bahanbaku/{bahanbaku}/edit', [MBahanBakuController::class, 'edit'])->middleware('role:manajemen')->name('manajemen.bahanbaku.edit');
-    Route::post('/manajemen/bahanbaku/{bahanbaku}', [MBahanBakuController::class, 'update'])->middleware('role:manajemen')->name('manajemen.bahanbaku.update');
+    Route::put('/manajemen/bahanbaku/{bahanbaku}', [MBahanBakuController::class, 'update'])->middleware('role:manajemen')->name('manajemen.bahanbaku.update');
     Route::delete('/manajemen/bahanbaku/{bahanbaku}/delete', [MBahanBakuController::class, 'destroy'])->middleware('role:manajemen')->name('manajemen.bahanbaku.destroy');
 
     Route::get('/finishing', [MFinishingController::class, 'index'])->middleware('role:manajemen')->name('manajemen.finishing');
     Route::post('/finishing', [MFinishingController::class, 'store'])->middleware('role:manajemen')->name('manajemen.finishing.store');
-    Route::post('/finishing/{finishing}/update', [MFinishingController::class, 'update'])->middleware('role:manajemen')->name('manajemen.finishing.update');
+    Route::put('/finishing/{finishing}/update', [MFinishingController::class, 'update'])->middleware('role:manajemen')->name('manajemen.finishing.update');
     Route::delete('/finishing/{finishing}/delete', [MFinishingController::class, 'destroy'])->middleware('role:manajemen')->name('manajemen.finishing.destroy');
 });

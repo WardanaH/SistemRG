@@ -9,7 +9,7 @@ class MFinishingController extends Controller
 {
     public function index()
     {
-        $finishings = MFinishing::latest()->get();
+        $finishings = MFinishing::latest()->paginate(10);
         return view('spk.manajemen.finishing', [
             'title' => 'Data Finishing',
             'finishings' => $finishings

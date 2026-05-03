@@ -164,10 +164,10 @@
                                 </td>
 
                                 <td class="align-middle">
-                                    <a href="{{ route('manajemen.cabang.edit', $cabang) }}"
+                                    <a href="#"
                                         class="text-secondary font-weight-bold text-xs me-3"
-                                        data-toggle="tooltip"
-                                        data-original-title="Edit user">
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#editModal{{ $cabang->id }}">
                                         Edit
                                     </a>
 
@@ -180,6 +180,63 @@
                                         </button>
                                     </form>
                                 </td>
+
+                                <div class="modal fade" id="editModal{{ $cabang->id }}" tabindex="-1" role="dialog" aria-labelledby="editModalLabel{{ $cabang->id }}" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered" role="document">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title font-weight-normal" id="editModalLabel{{ $cabang->id }}">Edit Data Cabang</h5>
+                                                <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span>
+                                                </button>
+                                            </div>
+
+                                            <form method="POST" action="{{ route('manajemen.cabang.update', $cabang->id) }}">
+                                                @csrf
+                                                @method('PUT')
+                                                <div class="modal-body">
+                                                    <div class="input-group input-group-outline mb-3 is-filled">
+                                                        <label class="form-label">Kode Cabang</label>
+                                                        <input type="text" name="kode" class="form-control" value="{{ $cabang->kode }}" required>
+                                                    </div>
+
+                                                    <div class="input-group input-group-outline mb-3 is-filled">
+                                                        <label class="form-label">Nama Cabang</label>
+                                                        <input type="text" name="nama" class="form-control" value="{{ $cabang->nama }}" required>
+                                                    </div>
+
+                                                    <div class="input-group input-group-outline mb-3 {{ $cabang->email ? 'is-filled' : '' }}">
+                                                        <label class="form-label">Email Cabang</label>
+                                                        <input type="email" name="email" class="form-control" value="{{ $cabang->email }}">
+                                                    </div>
+
+                                                    <div class="input-group input-group-outline mb-3 is-filled">
+                                                        <select name="jenis" class="form-control" style="appearance: auto; padding-left: 10px;">
+                                                            <option value="pusat" {{ $cabang->jenis == 'pusat' ? 'selected' : '' }}>Pusat</option>
+                                                            <option value="cabang" {{ $cabang->jenis == 'cabang' ? 'selected' : '' }}>Cabang</option>
+                                                        </select>
+                                                    </div>
+
+                                                    <div class="input-group input-group-outline mb-3 {{ $cabang->telepon ? 'is-filled' : '' }}">
+                                                        <label class="form-label">Telepon Cabang</label>
+                                                        <input type="text" name="telepon" class="form-control" value="{{ $cabang->telepon }}">
+                                                    </div>
+
+                                                    <div class="input-group input-group-outline mb-3 {{ $cabang->alamat ? 'is-filled' : '' }}">
+                                                        <label class="form-label">Alamat Cabang</label>
+                                                        <input type="text" name="alamat" class="form-control" value="{{ $cabang->alamat }}">
+                                                    </div>
+                                                </div>
+
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn bg-gradient-secondary" data-bs-dismiss="modal">Batal</button>
+                                                    <button type="submit" class="btn bg-gradient-success">Simpan Perubahan</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+
                             </tr>
                             @endforeach
                         </tbody>
