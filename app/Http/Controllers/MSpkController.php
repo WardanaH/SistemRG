@@ -140,7 +140,7 @@ class MSpkController extends Controller
         // --- FILTER TANGGAL ---
         if ($request->filled('start_date') && $request->filled('end_date')) {
             $query->whereDate('tanggal_spk', '>=', $request->start_date)
-                  ->whereDate('tanggal_spk', '<=', $request->end_date);
+                ->whereDate('tanggal_spk', '<=', $request->end_date);
         }
 
         // --- FILTER STATUS SPK ---
@@ -874,5 +874,19 @@ class MSpkController extends Controller
             'title' => 'Riwayat Pekerjaan Selesai',
             'items' => $items
         ]);
+    }
+
+    public function tandaiDicatat($id)
+    {
+        $spk = MSpk::findOrFail($id);
+
+        // Toggle status: jika 0 jadi 1, jika 1 jadi 0
+        $spk->is_dicatat = !$spk->is_dicatat;
+        $spk->save();
+
+        // Buat pesan dinamis
+        $pesan = $spk->is_dicatat ? 'ditandai sudah dicatat' : 'batal ditandai';
+
+        return back()->with('success', "SPK $spk->no_spk berhasil $pesan.");
     }
 }

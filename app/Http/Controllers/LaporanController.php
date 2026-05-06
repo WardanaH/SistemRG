@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use App\Models\MSpk;
 use App\Models\MSubSpk;
 use App\Models\MTarget;
-use Illuminate\Http\Request;
+use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class LaporanController extends Controller
 {
@@ -80,17 +81,16 @@ class LaporanController extends Controller
 
                     // B. TAMBAHAN: Laporan Charge Desain Khusus Designer
                     // Hitung jumlah item yang jenisnya 'charge' dan total nominal harganya
-                    $chargeData = MSubSpk::whereHas('spk', function($q) use ($u, $startDate, $endDate) {
-                            $q->where('designer_id', $u->id)
-                              ->whereBetween('created_at', [$startDate, $endDate]);
-                        })
+                    $chargeData = MSubSpk::whereHas('spk', function ($q) use ($u, $startDate, $endDate) {
+                        $q->where('designer_id', $u->id)
+                            ->whereBetween('created_at', [$startDate, $endDate]);
+                    })
                         ->where('jenis_order', 'charge')
                         ->selectRaw('COUNT(id) as total_item, SUM(harga) as total_nominal')
                         ->first();
 
                     $u->charge_count = $chargeData->total_item ?? 0;
                     $u->charge_nominal = $chargeData->total_nominal ?? 0;
-
                 } elseif ($roleType == 'admin') {
                     $u->capaian = MSpk::where('admin_id', $u->id)
                         ->where('status_spk', 'acc')
@@ -131,11 +131,9 @@ class LaporanController extends Controller
             // Include DTF if necessary
             $rawOperators = User::role(['operator indoor', 'operator outdoor', 'operator multi', 'operator dtf'])->get();
             $operators = $mapUserData($rawOperators, 'operator');
-        }
-        elseif ($user->hasRole('designer')) {
+        } elseif ($user->hasRole('designer')) {
             $designers = $mapUserData(collect([$user]), 'designer');
-        }
-        elseif ($user->hasRole(['operator indoor', 'operator outdoor', 'operator multi', 'operator dtf'])) {
+        } elseif ($user->hasRole(['operator indoor', 'operator outdoor', 'operator multi', 'operator dtf'])) {
             $operators = $mapUserData(collect([$user]), 'operator');
         }
 
@@ -309,14 +307,14 @@ class LaporanController extends Controller
         }
 
         return view('spk.laporan.charge', [
-            'title'        => 'Laporan Pendapatan Charge Desain',
-            'items'        => $items,
-            'totalItem'    => $totalItem,
-            'totalNominal' => $totalNominal,
-            'filterType'   => $data['filterType'],
-            'startDate'    => $data['startDate'],
-            'endDate'      => $data['endDate'],
-            'listDesigners'=> $listDesigners, // Kirim daftar designer ke view
+            'title'         => 'Laporan Pendapatan Charge Desain',
+            'items'         => $items,
+            'totalItem'     => $totalItem,
+            'totalNominal'  => $totalNominal,
+            'filterType'    => $data['filterType'],
+            'startDate'     => $data['startDate'],
+            'endDate'       => $data['endDate'],
+            'listDesigners' => $listDesigners, // Kirim daftar designer ke view
         ]);
     }
 
@@ -338,7 +336,7 @@ class LaporanController extends Controller
         ];
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('spk.laporan.export_charge', $viewData);
-        return $pdf->download('Laporan_Charge_Desain_'.$data['startDate']->format('d-M-Y').'.pdf');
+        return $pdf->download('Laporan_Charge_Desain_' . $data['startDate']->format('d-M-Y') . '.pdf');
     }
 
     // 4. FUNGSI DOWNLOAD EXCEL
@@ -360,7 +358,155 @@ class LaporanController extends Controller
 
         return \Maatwebsite\Excel\Facades\Excel::download(
             new \App\Exports\ChargeExport($viewData),
-            'Laporan_Charge_Desain_'.$data['startDate']->format('d-M-Y').'.xlsx'
+            'Laporan_Charge_Desain_' . $data['startDate']->format('d-M-Y') . '.xlsx'
         );
+    }
+
+    // LAPORAN BAHAN BAKU
+    public function laporanBahanBaku(Request $request)
+    {
+        // 1. Tangkap input dropdown 'rentang', defaultnya 'bulan_ini'
+        $rentang = $request->input('rentang', 'bulan_ini');
+        $now = Carbon::now();
+
+        // 2. Set Default (Bulan Ini) pakai siklus 27-26
+        $siklusSekarang = $this->getSiklus($now);
+        $startDate = $siklusSekarang['start'];
+        $endDate   = $siklusSekarang['end'];
+
+        // 3. Logika untuk mengubah tanggal berdasarkan pilihan dropdown
+        switch ($rentang) {
+            case '3_bulan':
+                // Mundur 2 siklus + siklus saat ini = 3 bulan
+                $startDate = $this->getSiklus($now->copy()->subMonths(2))['start'];
+                break;
+            case '6_bulan':
+                // Mundur 5 siklus + siklus saat ini = 6 bulan
+                $startDate = $this->getSiklus($now->copy()->subMonths(5))['start'];
+                break;
+            case 'tahun_ini':
+                $startDate = Carbon::create($now->year - 1, 12, 27)->startOfDay();
+                $endDate   = Carbon::create($now->year, 12, 26)->endOfDay();
+                break;
+            case 'custom':
+                if ($request->has('start_date') && $request->has('end_date')) {
+                    $startDate = Carbon::parse($request->start_date)->startOfDay();
+                    $endDate   = Carbon::parse($request->end_date)->endOfDay();
+                }
+                break;
+        }
+
+        // 4. Query Database berdasarkan tanggal yang sudah difilter dan digabung per cabang
+        $dataLaporan = MSubSpk::join('m_spks', 'm_sub_spks.spk_id', '=', 'm_spks.id')
+            ->join('m_cabangs', 'm_spks.cabang_id', '=', 'm_cabangs.id') // Tambahkan Join ke tabel cabang
+            ->with('bahan') // Cukup load relasi bahan saja
+            ->select(
+                'm_cabangs.nama as nama_cabang', // Langsung ambil nama cabang dari database
+                'm_sub_spks.bahan_id',
+                DB::raw('SUM(CASE WHEN m_sub_spks.p > 0 AND m_sub_spks.l > 0 THEN (m_sub_spks.p * m_sub_spks.l * m_sub_spks.qty) / 10000 ELSE 0 END) as total_meter'),
+                DB::raw('SUM(CASE WHEN m_sub_spks.p <= 0 OR m_sub_spks.l <= 0 OR m_sub_spks.p IS NULL OR m_sub_spks.l IS NULL THEN m_sub_spks.qty ELSE 0 END) as total_pcs')
+            )
+            ->whereNotNull('m_sub_spks.bahan_id')
+            ->whereBetween('m_sub_spks.created_at', [$startDate, $endDate])
+            ->groupBy('m_cabangs.nama', 'm_sub_spks.bahan_id')
+            ->get()
+            ->groupBy('nama_cabang'); // Langsung kelompokkan pakai nama cabang
+            // dd($dataLaporan);
+        // 5. Kembalikan ke View
+        return view('spk.laporan.laporanBahanBaku', [
+            'title'       => 'Laporan Penggunaan Bahan Baku',
+            'dataLaporan' => $dataLaporan,
+            'startDate'   => $startDate->format('Y-m-d'),
+            'endDate'     => $endDate->format('Y-m-d')
+        ]);
+    }
+
+    // LAPORAN KINERJA DESAINER (DETAIL SPK & SUB SPK)
+    public function laporanKinerjaDesainerDetail(Request $request)
+    {
+        $user = Auth::user();
+
+        // 1. Tangkap input dropdown 'rentang', defaultnya 'bulan_ini'
+        $rentang = $request->input('rentang', 'bulan_ini');
+        $now = Carbon::now();
+
+        // 2. Set Default (Bulan Ini) pakai siklus 27-26
+        $siklusSekarang = $this->getSiklus($now);
+        $startDate = $siklusSekarang['start'];
+        $endDate   = $siklusSekarang['end'];
+
+        // 3. Logika Filter Tanggal
+        switch ($rentang) {
+            case '3_bulan':
+                $startDate = $this->getSiklus($now->copy()->subMonths(2))['start'];
+                break;
+            case '6_bulan':
+                $startDate = $this->getSiklus($now->copy()->subMonths(5))['start'];
+                break;
+            case 'tahun_ini':
+                $startDate = Carbon::create($now->year - 1, 12, 27)->startOfDay();
+                $endDate   = Carbon::create($now->year, 12, 26)->endOfDay();
+                break;
+            case 'custom':
+                if ($request->has('start_date') && $request->has('end_date')) {
+                    $startDate = Carbon::parse($request->start_date)->startOfDay();
+                    $endDate   = Carbon::parse($request->end_date)->endOfDay();
+                }
+                break;
+        }
+
+        // 4. Batasi siapa yang bisa dilihat berdasarkan Role
+        if ($user->hasRole(['admin', 'manajemen'])) {
+            $designersQuery = User::role('designer');
+            // Jika admin cabang, hanya tampilkan desainer cabangnya saja
+            if ($user->hasRole('admin') && $user->cabang->jenis !== 'pusat') {
+                $designersQuery->where('cabang_id', $user->cabang_id);
+            }
+            $rawDesigners = $designersQuery->get();
+        } elseif ($user->hasRole('designer')) {
+            // Desainer cuma bisa lihat datanya sendiri
+            $rawDesigners = collect([$user]);
+        } else {
+            // Role lain (misal operator) tidak punya akses data desainer, kembalikan kosong
+            $rawDesigners = collect();
+        }
+
+        // 5. Olah data (Hitung SPK Induk dan Sub SPK per Jenis Order)
+        $dataDesainer = $rawDesigners->map(function ($u) use ($startDate, $endDate) {
+
+            // Hitung Total SPK Induk
+            $u->total_spk_induk = MSpk::where('designer_id', $u->id)
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->count();
+
+            // Hitung Detail Sub SPK (dikelompokkan berdasarkan jenis_order)
+            $subSpks = MSubSpk::whereHas('spk', function ($q) use ($u, $startDate, $endDate) {
+                    $q->where('designer_id', $u->id)
+                      ->whereBetween('created_at', [$startDate, $endDate]);
+                })
+                ->select('jenis_order', DB::raw('count(*) as total'))
+                ->groupBy('jenis_order')
+                ->pluck('total', 'jenis_order');
+
+            // Masukkan data sub spk ke object user (gunakan fallback 0 jika tidak ada)
+            $u->indoor  = $subSpks['indoor'] ?? 0;
+            $u->outdoor = $subSpks['outdoor'] ?? 0;
+            $u->multi   = $subSpks['multi'] ?? 0;
+            $u->dtf     = $subSpks['dtf'] ?? 0;
+            $u->charge  = $subSpks['charge'] ?? 0;
+
+            // Total Keseluruhan Item (Sub SPK)
+            $u->total_sub_spk = $u->indoor + $u->outdoor + $u->multi + $u->dtf + $u->charge;
+
+            return $u;
+        });
+
+        // 6. Kembalikan ke View
+        return view('spk.laporan.kinerja_desainer', [
+            'title'        => 'Detail Kinerja Desainer',
+            'dataDesainer' => $dataDesainer,
+            'startDate'    => $startDate->format('Y-m-d'),
+            'endDate'      => $endDate->format('Y-m-d'),
+        ]);
     }
 }

@@ -30,6 +30,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('/spk/{spk}/delete', [MSpkController::class, 'destroy'])
         ->middleware('role:manajemen|designer|admin')
         ->name('spk.destroy');
+    Route::patch('/spk/{id}/tandai-dicatat', [MSpkController::class, 'tandaiDicatat'])
+        ->name('spk.tandai-dicatat');
 
     Route::put('/manajemen/spk/update-status/{id}', [MSpkController::class, 'updateStatus'])
         ->middleware('role:manajemen|admin')
