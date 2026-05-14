@@ -421,7 +421,7 @@ class LaporanController extends Controller
         ]);
     }
 
-    // LAPORAN KINERJA DESAINER (DETAIL SPK & SUB SPK)
+    // LAPORAN KINERJA DESAINER (DETAIL SPK & SUB SPK DIPISAH PER KATEGORI)
     public function laporanKinerjaDesainerDetail(Request $request)
     {
         $user = Auth::user();
@@ -458,50 +458,61 @@ class LaporanController extends Controller
         // 4. Batasi siapa yang bisa dilihat berdasarkan Role
         if ($user->hasRole(['admin', 'manajemen'])) {
             $designersQuery = User::role('designer');
-            // Jika admin cabang, hanya tampilkan desainer cabangnya saja
             if ($user->hasRole('admin') && $user->cabang->jenis !== 'pusat') {
                 $designersQuery->where('cabang_id', $user->cabang_id);
             }
             $rawDesigners = $designersQuery->get();
         } elseif ($user->hasRole('designer')) {
-            // Desainer cuma bisa lihat datanya sendiri
             $rawDesigners = collect([$user]);
         } else {
-            // Role lain (misal operator) tidak punya akses data desainer, kembalikan kosong
             $rawDesigners = collect();
         }
 
-        // 5. Olah data (Hitung SPK Induk dan Sub SPK per Jenis Order)
+        // 5. Olah data (Satu Query Eager Loading agar tidak lemot)
         $dataDesainer = $rawDesigners->map(function ($u) use ($startDate, $endDate) {
 
-            // Hitung Total SPK Induk
-            $u->total_spk_induk = MSpk::where('designer_id', $u->id)
+            // Ambil semua SPK milik desainer beserta itemnya di rentang waktu ini
+            $spks = MSpk::with('items')
+                ->where('designer_id', $u->id)
                 ->whereBetween('created_at', [$startDate, $endDate])
-                ->count();
+                ->get();
 
-            // Hitung Detail Sub SPK (dikelompokkan berdasarkan jenis_order)
-            $subSpks = MSubSpk::whereHas('spk', function ($q) use ($u, $startDate, $endDate) {
-                    $q->where('designer_id', $u->id)
-                      ->whereBetween('created_at', [$startDate, $endDate]);
-                })
-                ->select('jenis_order', DB::raw('count(*) as total'))
-                ->groupBy('jenis_order')
-                ->pluck('total', 'jenis_order');
+            // Siapkan wadah kosong untuk 3 kategori
+            $stats = [
+                'reguler' => ['spk' => 0, 'indoor' => 0, 'outdoor' => 0, 'multi' => 0, 'dtf' => 0, 'charge' => 0, 'total_sub' => 0],
+                'lembur'  => ['spk' => 0, 'indoor' => 0, 'outdoor' => 0, 'multi' => 0, 'dtf' => 0, 'charge' => 0, 'total_sub' => 0],
+                'bantuan' => ['spk' => 0, 'indoor' => 0, 'outdoor' => 0, 'multi' => 0, 'dtf' => 0, 'charge' => 0, 'total_sub' => 0],
+            ];
 
-            // Masukkan data sub spk ke object user (gunakan fallback 0 jika tidak ada)
-            $u->indoor  = $subSpks['indoor'] ?? 0;
-            $u->outdoor = $subSpks['outdoor'] ?? 0;
-            $u->multi   = $subSpks['multi'] ?? 0;
-            $u->dtf     = $subSpks['dtf'] ?? 0;
-            $u->charge  = $subSpks['charge'] ?? 0;
+            // Looping dan kelompokkan
+            foreach ($spks as $spk) {
+                // Tentukan kategori SPK
+                if ($spk->is_bantuan == 1) {
+                    $kategori = 'bantuan';
+                } elseif ($spk->is_lembur == 1) {
+                    $kategori = 'lembur';
+                } else {
+                    $kategori = 'reguler';
+                }
 
-            // Total Keseluruhan Item (Sub SPK)
-            $u->total_sub_spk = $u->indoor + $u->outdoor + $u->multi + $u->dtf + $u->charge;
+                // Tambah hitungan SPK Induk
+                $stats[$kategori]['spk'] += 1;
 
+                // Tambah hitungan per item (Sub SPK)
+                foreach ($spk->items as $item) {
+                    $jenis = $item->jenis_order;
+                    if (isset($stats[$kategori][$jenis])) {
+                        $stats[$kategori][$jenis] += 1;
+                        $stats[$kategori]['total_sub'] += 1;
+                    }
+                }
+            }
+
+            // Simpan array stats ke object user
+            $u->stats = $stats;
             return $u;
         });
 
-        // 6. Kembalikan ke View
         return view('spk.laporan.kinerja_desainer', [
             'title'        => 'Detail Kinerja Desainer',
             'dataDesainer' => $dataDesainer,

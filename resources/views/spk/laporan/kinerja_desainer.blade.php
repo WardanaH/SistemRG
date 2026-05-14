@@ -58,17 +58,27 @@
         </div>
     </div>
 
-    {{-- 2. TABEL DETAIL KINERJA --}}
+    {{-- SETUP 3 KATEGORI TABEL --}}
+    @php
+        $kategoris = [
+            'reguler' => ['judul' => 'SPK Reguler', 'bg' => 'bg-gradient-info', 'icon' => 'analytics', 'desc' => 'Kinerja input pesanan pada jam kerja normal'],
+            'lembur'  => ['judul' => 'SPK Lembur', 'bg' => 'bg-gradient-warning', 'icon' => 'more_time', 'desc' => 'Kinerja input pesanan di luar jam kerja (Overtime)'],
+            'bantuan' => ['judul' => 'SPK Bantuan', 'bg' => 'bg-gradient-success', 'icon' => 'handshake', 'desc' => 'Kinerja pengerjaan order lemparan dari cabang lain']
+        ];
+    @endphp
+
+    {{-- 2. LOOPING CETAK 3 TABEL KINERJA --}}
     <div class="row">
-        <div class="col-12">
-            <div class="card mb-4 shadow-sm">
-                <div class="card-header p-3 bg-gradient-info d-flex justify-content-between align-items-center">
+        @foreach($kategoris as $key => $kat)
+        <div class="col-12 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header p-3 {{ $kat['bg'] }} d-flex justify-content-between align-items-center">
                     <div class="text-white">
                         <h6 class="text-white mb-0">
-                            <i class="material-icons text-sm me-2">analytics</i>
-                            Detail Input Kinerja Desainer
+                            <i class="material-icons text-sm me-2">{{ $kat['icon'] }}</i>
+                            Detail Kinerja - {{ $kat['judul'] }}
                         </h6>
-                        <span class="text-xs opacity-8">Rincian Nota (SPK Induk) dan Jumlah Item (Sub SPK) per Divisi</span>
+                        <span class="text-xs opacity-8">{{ $kat['desc'] }}</span>
                     </div>
                 </div>
                 <div class="card-body px-0 pt-0 pb-2">
@@ -80,7 +90,7 @@
                                     <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Nama Desainer</th>
                                     <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center">Cabang</th>
                                     <th class="text-uppercase text-dark text-xxs font-weight-bolder opacity-9 text-center bg-gray-100 border-end border-start">Total Nota (SPK)</th>
-                                    <th class="text-uppercase text-info text-xxs font-weight-bolder opacity-9 text-center">Total Item<br>(Sub SPK)</th>
+                                    <th class="text-uppercase text-primary text-xxs font-weight-bolder opacity-9 text-center">Total Item<br>(Sub SPK)</th>
                                     <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center">Indoor</th>
                                     <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center">Outdoor</th>
                                     <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center">Multi</th>
@@ -105,22 +115,22 @@
                                         <span class="text-xs font-weight-bold text-secondary">{{ $desainer->cabang->nama ?? 'Pusat' }}</span>
                                     </td>
 
-                                    {{-- Kolom Total SPK Induk (Di Highlight) --}}
+                                    {{-- Kolom Total SPK Induk (Sesuai Kategori) --}}
                                     <td class="align-middle text-center bg-gray-100 border-end border-start">
-                                        <span class="text-dark text-sm font-weight-bold">{{ $desainer->total_spk_induk }}</span>
+                                        <span class="text-dark text-sm font-weight-bold">{{ $desainer->stats[$key]['spk'] }}</span>
                                     </td>
 
-                                    {{-- Kolom Total Sub SPK --}}
+                                    {{-- Kolom Total Sub SPK (Sesuai Kategori) --}}
                                     <td class="align-middle text-center">
-                                        <span class="badge badge-sm bg-gradient-info">{{ $desainer->total_sub_spk }}</span>
+                                        <span class="badge badge-sm {{ $kat['bg'] }}">{{ $desainer->stats[$key]['total_sub'] }}</span>
                                     </td>
 
                                     {{-- Rincian per Jenis --}}
-                                    <td class="align-middle text-center"><span class="text-secondary text-sm">{{ $desainer->indoor }}</span></td>
-                                    <td class="align-middle text-center"><span class="text-secondary text-sm">{{ $desainer->outdoor }}</span></td>
-                                    <td class="align-middle text-center"><span class="text-secondary text-sm">{{ $desainer->multi }}</span></td>
-                                    <td class="align-middle text-center"><span class="text-secondary text-sm">{{ $desainer->dtf }}</span></td>
-                                    <td class="align-middle text-center"><span class="text-secondary text-sm">{{ $desainer->charge }}</span></td>
+                                    <td class="align-middle text-center"><span class="text-secondary text-sm">{{ $desainer->stats[$key]['indoor'] }}</span></td>
+                                    <td class="align-middle text-center"><span class="text-secondary text-sm">{{ $desainer->stats[$key]['outdoor'] }}</span></td>
+                                    <td class="align-middle text-center"><span class="text-secondary text-sm">{{ $desainer->stats[$key]['multi'] }}</span></td>
+                                    <td class="align-middle text-center"><span class="text-secondary text-sm">{{ $desainer->stats[$key]['dtf'] }}</span></td>
+                                    <td class="align-middle text-center"><span class="text-secondary text-sm">{{ $desainer->stats[$key]['charge'] }}</span></td>
                                 </tr>
                                 @empty
                                 <tr>
@@ -138,6 +148,7 @@
                 </div>
             </div>
         </div>
+        @endforeach
     </div>
 
 </div>
