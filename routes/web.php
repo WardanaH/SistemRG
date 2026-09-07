@@ -26,9 +26,12 @@ require __DIR__ . '/manajemen.php';
 require __DIR__ . '/admin.php';
 require __DIR__ . '/operator.php';
 require __DIR__ . '/designer.php';
-require __DIR__ . '/gudang_pusat.php';
-require __DIR__ . '/gudang_cabang.php';
+require __DIR__ . '/gudang_pusat_v2.php';
+// require __DIR__ . '/gudang_pusat.php';
+require __DIR__ . '/gudang_cabang_v2.php';
+// require __DIR__ . '/gudang_cabang.php';
 require __DIR__ . '/profil.php';
+require __DIR__ . '/profil2.php';
 require __DIR__ . '/advertising.php';
 
 Route::get('/', function () {
@@ -46,6 +49,14 @@ Route::get('/', function () {
             return redirect()->route('admin.dashboard');
         } elseif ($user->hasRole('advertising')) {
             return redirect()->route('advertising.dashboard');
+        } elseif ($user->hasRole('inventory utama')) {
+            return redirect()->route('gudang-pusat.dashboard');
+        } elseif ($user->hasRole('inventory cabang')) {
+            return redirect()->route('gudang-cabang.dashboard');
+        } elseif ($user->hasRole('adminprofil')) {
+            return redirect()->route('profil.admin.dashboard');
+        } elseif ($user->hasrole('profil2')) {
+            return redirect()->route('profil2.dashboard');
         }
     }
 

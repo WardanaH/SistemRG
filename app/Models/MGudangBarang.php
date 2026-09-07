@@ -17,7 +17,7 @@ class MGudangBarang extends Model
         'keterangan',
     ];
 
-        protected $casts = [
+    protected $casts = [
         'stok' => 'float',
         'batas_stok' => 'float',
     ];
@@ -33,5 +33,19 @@ class MGudangBarang extends Model
         return rtrim(rtrim(number_format($this->stok, 2, ',', '.'), '0'), ',');
     }
 
-}
+    /**
+     * Relasi ka stok barang di cabang-cabang
+     */
+    public function stokCabang()
+    {
+        return $this->hasMany(MCabangBarang::class, 'gudang_barang_id', 'id');
+    }
 
+    /**
+     * Relasi ka detail permintaan (melihat barang ini pernah direquest di transaksi mana saja)
+     */
+    public function detailPermintaan()
+    {
+        return $this->hasMany(DetailPermintaan::class, 'barang_id', 'id');
+    }
+}

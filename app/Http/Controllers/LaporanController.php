@@ -411,7 +411,7 @@ class LaporanController extends Controller
             ->groupBy('m_cabangs.nama', 'm_sub_spks.bahan_id')
             ->get()
             ->groupBy('nama_cabang'); // Langsung kelompokkan pakai nama cabang
-            // dd($dataLaporan);
+        // dd($dataLaporan);
         // 5. Kembalikan ke View
         return view('spk.laporan.laporanBahanBaku', [
             'title'       => 'Laporan Penggunaan Bahan Baku',

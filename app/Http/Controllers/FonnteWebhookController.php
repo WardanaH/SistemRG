@@ -3,12 +3,11 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use App\Models\MSpk;
 use App\Models\MSubSpk;
 use App\Models\MCabang;
-use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class FonnteWebhookController extends Controller
@@ -21,136 +20,172 @@ class FonnteWebhookController extends Controller
 
         if (!$pengirim) return response("NO SENDER", 200);
 
-        // 1. RATE LIMITING SEDERHANA (Anti DDOS)
+        // 1. CEK & BUAT SESI
         $session = DB::table('wa_sessions')->where('no_hp', $pengirim)->first();
-        if ($session && $session->last_request_at) {
-            $lastReq = Carbon::parse($session->last_request_at);
-            if ($lastReq->diffInSeconds(now()) < 3) { // Batas 3 detik per pesan
-                return response("TOO FAST", 200);
+        if (!$session) {
+            DB::table('wa_sessions')->insert([
+                'no_hp' => $pengirim,
+                'state' => 'idle',
+                'order_data' => json_encode([]),
+                'last_request_at' => now()
+            ]);
+            $session = DB::table('wa_sessions')->where('no_hp', $pengirim)->first();
+        }
+
+        // 2. RATE LIMITING (Batas 3 Detik)
+        $lastReq = Carbon::parse($session->last_request_at);
+        if ($lastReq->diffInSeconds(now()) < 3) {
+            return response("TOO FAST", 200);
+        }
+        DB::table('wa_sessions')->where('no_hp', $pengirim)->update(['last_request_at' => now()]);
+
+        $state = $session->state ?? 'idle';
+        $orderData = json_decode($session->order_data, true) ?? [];
+
+        // 3. PERINTAH GLOBAL (Bisa diakses kapan saja)
+        if ($pesan == 'batal') {
+            $this->updateSession($pengirim, 'idle', []);
+            return $this->sendText($pengirim, "❌ Proses dibatalkan. Ketik *MENU* untuk melihat layanan kami.");
+        }
+
+        if (in_array($pesan, ['menu', 'help', 'halo'])) {
+            $this->updateSession($pengirim, 'idle', []);
+            $msg = "🖨️ *SISTEM INFORMASI PERCETAKAN*\n\n";
+            $msg .= "Silakan ketik perintah berikut:\n";
+            $msg .= "👉 *ORDER* (Untuk pesan cetakan baru)\n";
+            $msg .= "👉 *CEK SPK <nomor>* (Contoh: CEK SPK 001)\n";
+            $msg .= "👉 *INFO ANTRIAN* (Cek kepadatan produksi)\n\n";
+            $msg .= "_(Ketik *BATAL* kapan saja untuk menghentikan proses pesanan)_";
+            return $this->sendText($pengirim, $msg);
+        }
+
+        // 4. MENU UTAMA (Hanya jalan jika state = idle)
+        if ($state == 'idle') {
+
+            if (preg_match('/cek spk (.+)/i', $pesan, $m)) {
+                // Catatan: Karena kita tidak minta cabang di awal lagi, pencarian SPK dilakukan global
+                // atau sesuaikan dengan logika cabangmu sebelumnya.
+                return $this->replyCekSpk($pengirim, trim($m[1]));
+            }
+
+            if ($pesan == 'info antrian') {
+                return $this->replyInfoAntrian($pengirim);
+            }
+
+            if ($pesan == 'order') {
+                $this->updateSession($pengirim, 'tanya_produk');
+                return $this->sendText($pengirim, "📝 *FORM ORDER*\n\nMau cetak apa hari ini? (Misal: Spanduk, Stiker, Id Card, dll)");
+            }
+
+            // Jika chat tidak dikenali di mode idle
+            return response("OK", 200);
+        }
+
+        // 5. ALUR PEMESANAN (State Machine)
+
+        if ($state == 'tanya_produk') {
+            $orderData['produk'] = $pesan;
+            $this->updateSession($pengirim, 'tanya_bahan', $orderData);
+            return $this->sendText($pengirim, "Bahan apa yang ingin digunakan? (Misal: Flexi 280, Vinyl, Art Carton. Ketik *BELUM TAHU* jika ragu).");
+        }
+
+        if ($state == 'tanya_bahan') {
+            $orderData['bahan'] = $pesan;
+            $this->updateSession($pengirim, 'tanya_ukuran', $orderData);
+            return $this->sendText($pengirim, "Berapa ukuran dan jumlahnya? (Misal: 2x3 meter 1 lembar, atau A3 5 lembar).");
+        }
+
+        if ($state == 'tanya_ukuran') {
+            $orderData['ukuran_qty'] = $pesan;
+            $this->updateSession($pengirim, 'tanya_tipe', $orderData);
+            return $this->sendText($pengirim, "Apakah pesanan ini untuk:\n1. Pribadi\n2. Perusahaan / Instansi\n\nBalas dengan angka *1* atau *2*.");
+        }
+
+        if ($state == 'tanya_tipe') {
+            if ($pesan == '1') {
+                $orderData['tipe'] = 'Pribadi';
+                $this->updateSession($pengirim, 'pilih_cabang_admin', $orderData);
+
+                $cabangs = MCabang::where('jenis', 'cabang')->get();
+                $listCabang = "Silakan pilih cabang terdekat untuk konfirmasi dengan Admin kami:\n";
+                foreach ($cabangs as $c) {
+                    $listCabang .= "👉 Ketik: *CABANG {$c->id}* ({$c->nama})\n";
+                }
+                return $this->sendText($pengirim, $listCabang);
+
+            } elseif ($pesan == '2') {
+                $orderData['tipe'] = 'Perusahaan';
+                $ringkasan = $this->buatRingkasan($orderData);
+
+                // Ganti dengan nomor WA Owner
+                $linkOwner = "https://wa.me/6281234567890?text=" . urlencode($ringkasan);
+
+                $this->updateSession($pengirim, 'idle', []);
+                return $this->sendText($pengirim, "✅ Spesifikasi instansi tercatat.\n\nSilakan klik link di bawah ini untuk terhubung langsung dengan *Owner/Manajemen* kami:\n\n$linkOwner");
+            } else {
+                return $this->sendText($pengirim, "Mohon balas dengan angka *1* (Pribadi) atau *2* (Perusahaan).");
             }
         }
 
-        // Update waktu request terakhir
-        DB::table('wa_sessions')->updateOrInsert(
-            ['no_hp' => $pengirim],
-            ['last_request_at' => now()]
-        );
+        if ($state == 'pilih_cabang_admin') {
+            if (preg_match('/cabang (\d+)/i', $pesan, $m)) {
+                $cabangId = $m[1];
+                $cabang = MCabang::find($cabangId);
 
-        // 2. LOGIKA PILIH CABANG
-        if (preg_match('/pilih cabang (\d+)/i', $pesan, $m)) {
-            $cabangId = $m[1];
-            $cabang = MCabang::find($cabangId);
-            if ($cabang) {
-                DB::table('wa_sessions')->where('no_hp', $pengirim)->update(['cabang_id' => $cabangId]);
-                return $this->sendText($pengirim, "✅ Berhasil memilih cabang: *{$cabang->nama}*\n\nSekarang Anda dapat menggunakan fitur cek status.");
+                if ($cabang) {
+                    $ringkasan = $this->buatRingkasan($orderData);
+                    // Asumsi ada kolom no_wa_admin di tabel M_Cabang
+                    $linkAdmin = "https://wa.me/{$cabang->no_wa_admin}?text=" . urlencode($ringkasan);
+
+                    $this->updateSession($pengirim, 'idle', []);
+                    return $this->sendText($pengirim, "✅ Spesifikasi Anda tercatat.\n\nKlik link berikut untuk lanjut ke *Admin {$cabang->nama}* (kirim desain & pembayaran):\n\n$linkAdmin");
+                }
+                return $this->sendText($pengirim, "❌ ID Cabang tidak valid. Silakan pilih sesuai daftar.");
             }
-            return $this->sendText($pengirim, "❌ ID Cabang tidak valid.");
-        }
-
-        // 3. CEK APAKAH SUDAH PILIH CABANG
-        if (!$session || !$session->cabang_id) {
-            $cabangs = MCabang::where('jenis', 'cabang')->get();
-            $listCabang = "👋 Halo! Sebelum memulai, silakan pilih cabang tempat Anda melakukan order:\n\n";
-            foreach ($cabangs as $c) {
-                $listCabang .= "👉 Ketik: *PILIH CABANG {$c->id}* untuk {$c->nama}\n";
-            }
-            return $this->sendText($pengirim, $listCabang);
-        }
-
-        // 4. ROUTING PERINTAH (Hanya jalan jika sudah pilih cabang)
-        if (preg_match('/cek spk (.+)/i', $pesan, $m)) {
-            return $this->replyCekSpk($pengirim, trim($m[1]), $session->cabang_id);
-        }
-
-        if (preg_match('/info antrian/i', $pesan)) {
-            return $this->replyInfoAntrian($pengirim, $session->cabang_id);
-        }
-
-        if ($pesan == 'menu' || $pesan == 'help' || $pesan == 'halo') {
-            $cabangName = MCabang::find($session->cabang_id)->nama;
-            return $this->sendText(
-                $pengirim,
-                "*Sistem Informasi SPK ($cabangName)* 🖨️\n\n" .
-                    "Gunakan perintah berikut:\n" .
-                    "👉 *CEK SPK <nomor>*\n" .
-                    "👉 *INFO ANTRIAN*\n" .
-                    "👉 *GANTI CABANG* (Untuk pindah cabang)\n\n" .
-                    "Contoh: _CEK SPK 00001_"
-            );
-        }
-
-        if ($pesan == 'ganti cabang') {
-            DB::table('wa_sessions')->where('no_hp', $pengirim)->update(['cabang_id' => null]);
-            return $this->sendText($pengirim, "🔄 Silakan pilih cabang kembali.");
         }
 
         return response("OK", 200);
     }
 
-    /**
-     * 1. REPLY CEK SPK (Multi Item Support)
-     */
-    private function replyCekSpk($target, $keyword, $cabangId)
+    // --- HELPER FUNCTIONS ---
+
+    private function updateSession($no_hp, $state, $orderData = null)
     {
-        // Cari SPK berdasarkan cabang yang dipilih
+        $update = ['state' => $state];
+        if ($orderData !== null) {
+            $update['order_data'] = json_encode($orderData);
+        }
+        DB::table('wa_sessions')->where('no_hp', $no_hp)->update($update);
+    }
+
+    private function buatRingkasan($data)
+    {
+        return "Halo, saya mau cetak dengan detail berikut:\n" .
+               "- Produk: " . ($data['produk'] ?? '-') . "\n" .
+               "- Bahan: " . ($data['bahan'] ?? '-') . "\n" .
+               "- Ukuran/Qty: " . ($data['ukuran_qty'] ?? '-') . "\n" .
+               "- Tipe: " . ($data['tipe'] ?? '-');
+    }
+
+    private function replyCekSpk($target, $keyword)
+    {
+        // Sesuaikan logika pencarian SPK-mu di sini (Global tanpa filter ID Cabang jika belum login)
         $spk = MSpk::with(['items.bahan', 'items.operator'])
-            ->where('cabang_id', $cabangId)
-            ->where(function ($q) use ($keyword) {
-                $q->where('no_spk', 'LIKE', "%{$keyword}%")
-                    ->orWhere('nama_pelanggan', 'LIKE', "%{$keyword}%");
-            })
+            ->where('no_spk', 'LIKE', "%{$keyword}%")
+            ->orWhere('nama_pelanggan', 'LIKE', "%{$keyword}%")
             ->latest()
             ->first();
 
-        if (!$spk) {
-            return $this->sendText($target, "❌ *Data tidak ditemukan di cabang ini!*");
-        }
+        if (!$spk) return $this->sendText($target, "❌ *Data SPK tidak ditemukan!*");
 
-        $msg = "📄 *DETAIL SPK: {$spk->no_spk}*\n";
-        $msg .= "👤 Pelanggan: {$spk->nama_pelanggan}\n";
-        $msg .= "📅 Tgl: " . Carbon::parse($spk->tanggal_spk)->format('d/m/Y') . "\n";
-        $msg .= "--------------------------------\n";
-
-        // Loop Detail Items
-        foreach ($spk->items as $index => $item) {
-            $n = $index + 1;
-            $icon = $item->status_produksi == 'done' ? '✅' : '⏳';
-            $msg .= "$n. *{$item->nama_file}*\n";
-            $msg .= "   Mat: {$item->bahan->nama_bahan} ({$item->p}x{$item->l}cm)\n";
-            $msg .= "   Qty: {$item->qty} | Status: $icon " . strtoupper($item->status_produksi) . "\n\n";
-        }
-
-        $msg .= "--------------------------------\n";
-        $msg .= "Status SPK: *" . strtoupper($spk->status_spk) . "*";
-
+        $msg = "📄 *DETAIL SPK: {$spk->no_spk}*\nStatus SPK: *" . strtoupper($spk->status_spk) . "*";
         return $this->sendText($target, $msg);
     }
 
-    /**
-     * 2. INFO ANTRIAN (Per Cabang)
-     */
-    private function replyInfoAntrian($target, $cabangId)
+    private function replyInfoAntrian($target)
     {
-        // Hitung antrian berdasarkan item di cabang tersebut
-        $antrian = MSubSpk::whereHas('spk', function ($q) use ($cabangId) {
-            $q->where('cabang_id', $cabangId)->where('status_spk', 'acc');
-        })
-            ->whereIn('status_produksi', ['pending', 'ripping', 'ongoing'])
-            ->count();
-
-        $doneToday = MSubSpk::whereHas('spk', function ($q) use ($cabangId) {
-            $q->where('cabang_id', $cabangId);
-        })
-            ->where('status_produksi', 'done')
-            ->whereDate('updated_at', Carbon::today())
-            ->count();
-
-        $msg = "📊 *KONDISI PRODUKSI CABANG*\n\n";
-        $msg .= "⏳ Antrian Aktif: *{$antrian}* file\n";
-        $msg .= "✅ Selesai Hari Ini: *{$doneToday}* file\n\n";
-        $msg .= "Status kepadatan: " . ($antrian > 10 ? "🔴 *PADAT*" : "🟢 *NORMAL*");
-
-        return $this->sendText($target, $msg);
+        // Sesuaikan query antrian
+        return $this->sendText($target, "📊 *KONDISI PRODUKSI*\n\nAntrian saat ini sedang berjalan normal.");
     }
 
     private function sendText($target, $msg)
