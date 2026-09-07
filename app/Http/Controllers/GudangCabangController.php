@@ -25,16 +25,16 @@ use PDF;
 class GudangCabangController extends Controller
 {
 
-// 1. BARANG
+    // 1. BARANG
     public function barang(Request $request)
     {
         $user = Auth::user();
         $cabang = MCabang::findOrFail($user->cabang_id);
 
         $query = MGudangBarang::leftJoin('cabang_barangs', function ($join) use ($cabang) {
-                $join->on('gudang_barangs.id', '=', 'cabang_barangs.gudang_barang_id')
-                    ->where('cabang_barangs.cabang_id', $cabang->id);
-            })
+            $join->on('gudang_barangs.id', '=', 'cabang_barangs.gudang_barang_id')
+                ->where('cabang_barangs.cabang_id', $cabang->id);
+        })
             ->select(
                 'gudang_barangs.*',
                 DB::raw('IFNULL(cabang_barangs.stok, 0) as stok_cabang')
@@ -54,8 +54,8 @@ class GudangCabangController extends Controller
         }
 
         $datas = $query->orderBy('gudang_barangs.nama_bahan')
-                    ->paginate(10)
-                    ->withQueryString();
+            ->paginate(10)
+            ->withQueryString();
 
         return view('inventaris.gudangcabang.barang', [
             'title'   => 'Data Barang - ' . $cabang->nama,
@@ -80,7 +80,7 @@ class GudangCabangController extends Controller
         MCabangBarang::updateOrCreate(
             [
                 'cabang_id'       => $cabang->id,
-                'gudang_barang_id'=> $gudangBarang->id
+                'gudang_barang_id' => $gudangBarang->id
             ],
             [
                 'stok' => $stok
@@ -102,7 +102,7 @@ class GudangCabangController extends Controller
         return back()->with('success', 'Stok barang cabang berhasil dihapus.');
     }
 
-//2. PENERIMAAN BARANG
+    //2. PENERIMAAN BARANG
     public function penerimaan()
     {
         $user = Auth::user();
@@ -113,6 +113,29 @@ class GudangCabangController extends Controller
             ->orderByDesc('updated_at')
             ->orderByDesc('id')
             ->paginate(10);
+
+        // Nyari stok cabang dan tambahkan ke detail
+        $datas->getCollection()->transform(function ($pengiriman) use ($cabang) {
+
+            // Ambil detail barang. (Sesuaikan amun nyawa ngirim 'keterangan_terima' bukannya 'permintaan->detail_barang')
+            $details = is_string($pengiriman->permintaan->detail_barang)
+                ? json_decode($pengiriman->permintaan->detail_barang, true)
+                : $pengiriman->permintaan->detail_barang;
+
+            if (is_array($details)) {
+                foreach ($details as &$item) {
+                    // Ambil stok dari MCabangBarang
+                    $stok = \App\Models\MCabangBarang::where('cabang_id', $cabang->id)
+                        ->where('gudang_barang_id', $item['gudang_barang_id'])
+                        ->value('stok');
+
+                    $item['stok_cabang'] = $stok ?? 0;
+                }
+                // Bikin properti baru gasan dipakai di view
+                $pengiriman->detail_dengan_stok = $details;
+            }
+            return $pengiriman;
+        });
 
         return view('inventaris.gudangcabang.penerimaan', [
             'title' => 'Penerimaan Barang - ' . $cabang->nama,
@@ -234,7 +257,6 @@ class GudangCabangController extends Controller
             DB::commit();
 
             return back()->with('success', 'Pengiriman berhasil diterima');
-
         } catch (\Exception $e) {
 
             DB::rollBack();
@@ -243,7 +265,7 @@ class GudangCabangController extends Controller
         }
     }
 
-// 3. PERMINTAAN PENGIRIMAN KE GUDANG
+    // 3. PERMINTAAN PENGIRIMAN KE GUDANG
     public function permintaan()
     {
         $user = Auth::user();
@@ -251,11 +273,11 @@ class GudangCabangController extends Controller
         return view('inventaris.gudangcabang.permintaanpengiriman', [
             'barangs' => MGudangBarang::orderBy('nama_bahan')->get(),
             'datas'   => MPermintaanPengiriman::where('cabang_id', $user->cabang_id)
-                            ->whereDoesntHave('pengirimans', function ($q) {
-                                $q->where('status_pengiriman', 'Diterima');
-                            })
-                            ->latest()
-                            ->paginate(10)
+                ->whereDoesntHave('pengirimans', function ($q) {
+                    $q->where('status_pengiriman', 'Diterima');
+                })
+                ->latest()
+                ->paginate(10)
         ]);
     }
 
@@ -338,7 +360,7 @@ class GudangCabangController extends Controller
         return back()->with('success', 'Permintaan berhasil dihapus');
     }
 
-//4. LAPORAN
+    //4. LAPORAN
     public function laporanIndex(Request $request)
     {
         $user = Auth::user();
@@ -479,7 +501,7 @@ class GudangCabangController extends Controller
 
             case 'bulan':
                 $permintaanQuery->whereMonth('tanggal_permintaan', $bulan)
-                                ->whereYear('tanggal_permintaan', $tahun);
+                    ->whereYear('tanggal_permintaan', $tahun);
                 break;
 
             case 'tahun':
@@ -504,44 +526,44 @@ class GudangCabangController extends Controller
                     $start = Carbon::parse($tanggalAwal)->startOfDay();
                     $end   = Carbon::parse($tanggalAkhir)->endOfDay();
 
-                    $query->where(function($q) use ($start, $end) {
+                    $query->where(function ($q) use ($start, $end) {
                         $q->whereBetween('tanggal_diterima', [$start, $end])
-                        ->orWhereBetween('tanggal_pengiriman', [$start, $end])
-                        ->orWhereBetween('created_at', [$start, $end]);
+                            ->orWhereBetween('tanggal_pengiriman', [$start, $end])
+                            ->orWhereBetween('created_at', [$start, $end]);
                     });
                 }
                 break;
 
             case 'bulan':
-                $query->where(function($q) use ($bulan, $tahun) {
+                $query->where(function ($q) use ($bulan, $tahun) {
 
                     $q->whereMonth('tanggal_diterima', $bulan)
-                    ->whereYear('tanggal_diterima', $tahun)
+                        ->whereYear('tanggal_diterima', $tahun)
 
-                    ->orWhere(function($sub) use ($bulan, $tahun){
+                        ->orWhere(function ($sub) use ($bulan, $tahun) {
                             $sub->whereMonth('tanggal_pengiriman', $bulan)
                                 ->whereYear('tanggal_pengiriman', $tahun);
-                    })
+                        })
 
-                    ->orWhere(function($sub) use ($bulan, $tahun){
+                        ->orWhere(function ($sub) use ($bulan, $tahun) {
                             $sub->whereMonth('created_at', $bulan)
                                 ->whereYear('created_at', $tahun);
-                    });
+                        });
                 });
                 break;
 
             case 'tahun':
-                $query->where(function($q) use ($tahun) {
+                $query->where(function ($q) use ($tahun) {
 
                     $q->whereYear('tanggal_diterima', $tahun)
 
-                    ->orWhere(function($sub) use ($tahun){
+                        ->orWhere(function ($sub) use ($tahun) {
                             $sub->whereYear('tanggal_pengiriman', $tahun);
-                    })
+                        })
 
-                    ->orWhere(function($sub) use ($tahun){
+                        ->orWhere(function ($sub) use ($tahun) {
                             $sub->whereYear('created_at', $tahun);
-                    });
+                        });
                 });
                 break;
 
@@ -572,7 +594,7 @@ class GudangCabangController extends Controller
 
             case 'bulan':
                 $pengambilanQuery->whereMonth('tanggal', $bulan)
-                                ->whereYear('tanggal', $tahun);
+                    ->whereYear('tanggal', $tahun);
                 break;
 
             case 'tahun':
@@ -631,8 +653,8 @@ class GudangCabangController extends Controller
             foreach ($detail ?? [] as $d) {
 
                 $tanggalFix = $item->tanggal_diterima
-                            ?? $item->tanggal_pengiriman
-                            ?? $item->created_at;
+                    ?? $item->tanggal_pengiriman
+                    ?? $item->created_at;
 
                 $transaksi->push([
                     'tanggal' => Carbon::parse($tanggalFix)->format('Y-m-d'),
@@ -726,7 +748,7 @@ class GudangCabangController extends Controller
         $cabang = MCabang::findOrFail($user->cabang_id);
 
         $query = MPengiriman::where('cabang_tujuan_id', $cabang->id);
-            // ->where('status_pengiriman', 'Diterima');
+        // ->where('status_pengiriman', 'Diterima');
 
         $pengambilanQuery = MPengambilan::where('cabang_id', $cabang->id);
 
@@ -823,7 +845,7 @@ class GudangCabangController extends Controller
         ]);
 
         return $pdf->download(
-            'laporan_cabang_'.$cabang->nama.'_'.$bulan.'_'.$tahun.'.pdf'
+            'laporan_cabang_' . $cabang->nama . '_' . $bulan . '_' . $tahun . '.pdf'
         );
     }
 
@@ -954,7 +976,7 @@ class GudangCabangController extends Controller
         ];
     }
 
-// 5. NOTIFIKASI
+    // 5. NOTIFIKASI
     public function getHeaderNotifications()
     {
         $user = Auth::user();
@@ -975,7 +997,7 @@ class GudangCabangController extends Controller
         return response()->json(['success' => true]);
     }
 
-// 6. INVENTARIS KANTOR CABANG
+    // 6. INVENTARIS KANTOR CABANG
     public function inventarisIndex(Request $request)
     {
         $cabangId = Auth::user()->cabang_id;
@@ -987,7 +1009,7 @@ class GudangCabangController extends Controller
 
             $query->where(function ($q) use ($search) {
                 $q->where('kode_barang', 'like', '%' . $search . '%')
-                ->orWhere('nama_barang', 'like', '%' . $search . '%');
+                    ->orWhere('nama_barang', 'like', '%' . $search . '%');
             });
 
             $query->orderByRaw("CASE
@@ -998,8 +1020,8 @@ class GudangCabangController extends Controller
         }
 
         $data = $query->latest()
-                    ->paginate(10)
-                    ->withQueryString();
+            ->paginate(10)
+            ->withQueryString();
 
         return view('inventaris.gudangcabang.inventaris.index', compact('data'));
     }
@@ -1011,82 +1033,82 @@ class GudangCabangController extends Controller
     }
 
     // SIMPAN + QR
-public function inventarisStore(Request $req)
-{
-    $req->validate([
-        'nama_barang'   => 'required',
-        'jumlah'        => 'required|numeric|min:1',
-        'kondisi'       => 'required',
-        'tanggal_input' => 'required|date',
-        'foto'          => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-    ]);
+    public function inventarisStore(Request $req)
+    {
+        $req->validate([
+            'nama_barang'   => 'required',
+            'jumlah'        => 'required|numeric|min:1',
+            'kondisi'       => 'required',
+            'tanggal_input' => 'required|date',
+            'foto'          => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+        ]);
 
-    $cabangId = Auth::user()->cabang_id;
+        $cabangId = Auth::user()->cabang_id;
 
-    // ambil nama cabang
-    $cabang = \App\Models\MCabang::find($cabangId);
+        // ambil nama cabang
+        $cabang = \App\Models\MCabang::find($cabangId);
 
-    // tentukan prefix kode
-    $cabangId = Auth::user()->cabang_id;
+        // tentukan prefix kode
+        $cabangId = Auth::user()->cabang_id;
 
-    $cabang = \App\Models\MCabang::findOrFail($cabangId);
+        $cabang = \App\Models\MCabang::findOrFail($cabangId);
 
-    $parts = explode('-', $cabang->kode);
-    $prefix = end($parts);
+        $parts = explode('-', $cabang->kode);
+        $prefix = end($parts);
 
-    // ambil kode terakhir berdasarkan cabang
-    $last = MInventarisCabang::where('cabang_id', $cabangId)
-        ->where('kode_barang', 'like', $prefix.'-%')
-        ->orderBy('kode_barang', 'desc')
-        ->first();
+        // ambil kode terakhir berdasarkan cabang
+        $last = MInventarisCabang::where('cabang_id', $cabangId)
+            ->where('kode_barang', 'like', $prefix . '-%')
+            ->orderBy('kode_barang', 'desc')
+            ->first();
 
-    if ($last) {
-        $lastNumber = (int) substr($last->kode_barang, -4);
-        $newNumber = $lastNumber + 1;
-    } else {
-        $newNumber = 1;
+        if ($last) {
+            $lastNumber = (int) substr($last->kode_barang, -4);
+            $newNumber = $lastNumber + 1;
+        } else {
+            $newNumber = 1;
+        }
+
+        $kodeBarang = $prefix . '-' . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
+
+        // upload foto
+        $fotoPath = null;
+        if ($req->hasFile('foto')) {
+            $fotoPath = $req->file('foto')->store('inventaris', 'public');
+        }
+
+        // simpan inventaris
+        $inventaris = MInventarisCabang::create([
+            'cabang_id'     => $cabangId,
+            'kode_barang'   => $kodeBarang,
+            'nama_barang'   => $req->nama_barang,
+            'jumlah'        => $req->jumlah,
+            'kondisi'       => $req->kondisi,
+            'lokasi'        => $req->lokasi,
+            'tanggal_input' => $req->tanggal_input,
+            'foto'          => $fotoPath,
+        ]);
+
+        // generate QR
+        $qrUrl = route('inventaris.qr.public', $inventaris->kode_barang);
+
+        $svg = QrCode::format('svg')
+            ->size(300)
+            ->margin(2)
+            ->generate($qrUrl);
+
+        $path = 'qr_inventaris/qr_' . $inventaris->id . '.svg';
+
+        Storage::disk('public')->put($path, $svg);
+
+        $inventaris->update([
+            'qr_code' => $path
+        ]);
+
+        return redirect()
+            ->route('gudangcabang.inventaris.index')
+            ->with('success', 'Inventaris berhasil ditambahkan');
     }
-
-    $kodeBarang = $prefix . '-' . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
-
-    // upload foto
-    $fotoPath = null;
-    if ($req->hasFile('foto')) {
-        $fotoPath = $req->file('foto')->store('inventaris', 'public');
-    }
-
-    // simpan inventaris
-    $inventaris = MInventarisCabang::create([
-        'cabang_id'     => $cabangId,
-        'kode_barang'   => $kodeBarang,
-        'nama_barang'   => $req->nama_barang,
-        'jumlah'        => $req->jumlah,
-        'kondisi'       => $req->kondisi,
-        'lokasi'        => $req->lokasi,
-        'tanggal_input' => $req->tanggal_input,
-        'foto'          => $fotoPath,
-    ]);
-
-    // generate QR
-    $qrUrl = route('inventaris.qr.public', $inventaris->kode_barang);
-
-    $svg = QrCode::format('svg')
-        ->size(300)
-        ->margin(2)
-        ->generate($qrUrl);
-
-    $path = 'qr_inventaris/qr_'.$inventaris->id.'.svg';
-
-    Storage::disk('public')->put($path, $svg);
-
-    $inventaris->update([
-        'qr_code' => $path
-    ]);
-
-    return redirect()
-        ->route('gudangcabang.inventaris.index')
-        ->with('success','Inventaris berhasil ditambahkan');
-}
 
 
     // AMBIL DATA UNTUK MODAL EDIT (AJAX)
@@ -1123,7 +1145,7 @@ public function inventarisStore(Request $req)
     }
 
 
-// 7. DASHBOARD
+    // 7. DASHBOARD
     public function dashboard()
     {
         $today = Carbon::today();
@@ -1233,7 +1255,7 @@ public function inventarisStore(Request $req)
         ));
     }
 
-// 8. AMBIL ANTAR (SEMENTARA GA DIPAKE)
+    // 8. AMBIL ANTAR (SEMENTARA GA DIPAKE)
     //ambil
     public function ambilIndex()
     {
@@ -1367,7 +1389,7 @@ public function inventarisStore(Request $req)
     }
 
 
-// 9. PENGAMBILAN
+    // 9. PENGAMBILAN
     public function pengambilanIndex()
     {
         $cabangId = Auth::user()->cabang_id;
@@ -1384,7 +1406,7 @@ public function inventarisStore(Request $req)
         $request->validate([
             'ambil_ke'   => 'required|string',
             'tanggal'    => 'required|date',
-            'list_barang'=> 'required|array',
+            'list_barang' => 'required|array',
             'list_barang.*.nama_barang' => 'required|string',
             'list_barang.*.jumlah'     => 'required|numeric|min:1',
             'list_barang.*.atas_nama'  => 'required|string',
@@ -1416,7 +1438,7 @@ public function inventarisStore(Request $req)
             'ambil_ke'   => 'required|string',
             'tanggal'    => 'required|date',
             // 'atas_nama'  => 'required|string',
-            'list_barang'=> 'required|array',
+            'list_barang' => 'required|array',
             'list_barang.*.nama_barang' => 'required|string',
             'list_barang.*.jumlah'     => 'required|numeric|min:1',
             'foto'       => 'nullable|image|max:2048',
@@ -1444,5 +1466,4 @@ public function inventarisStore(Request $req)
         MPengambilan::findOrFail($id)->delete();
         return back()->with('success', 'Data pengambilan berhasil dihapus');
     }
-
 }

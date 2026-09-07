@@ -21,15 +21,18 @@ Route::get('/table', function () {
 
 
 // require route
-require __DIR__.'/auth.php';
-require __DIR__.'/manajemen.php';
-require __DIR__.'/admin.php';
-require __DIR__.'/operator.php';
-require __DIR__.'/designer.php';
-require __DIR__.'/gudang_pusat.php';
-require __DIR__.'/gudang_cabang.php';
-require __DIR__.'/profil.php';
-require __DIR__.'/advertising.php';
+require __DIR__ . '/auth.php';
+require __DIR__ . '/manajemen.php';
+require __DIR__ . '/admin.php';
+require __DIR__ . '/operator.php';
+require __DIR__ . '/designer.php';
+require __DIR__ . '/gudang_pusat_v2.php';
+// require __DIR__ . '/gudang_pusat.php';
+require __DIR__ . '/gudang_cabang_v2.php';
+// require __DIR__ . '/gudang_cabang.php';
+require __DIR__ . '/profil.php';
+require __DIR__ . '/profil2.php';
+require __DIR__ . '/advertising.php';
 
 Route::get('/', function () {
     // 1. Cek apakah user sudah login
@@ -46,6 +49,14 @@ Route::get('/', function () {
             return redirect()->route('admin.dashboard');
         } elseif ($user->hasRole('advertising')) {
             return redirect()->route('advertising.dashboard');
+        } elseif ($user->hasRole('inventory utama')) {
+            return redirect()->route('gudang-pusat.dashboard');
+        } elseif ($user->hasRole('inventory cabang')) {
+            return redirect()->route('gudang-cabang.dashboard');
+        } elseif ($user->hasRole('adminprofil')) {
+            return redirect()->route('profil.admin.dashboard');
+        } elseif ($user->hasrole('profil2')) {
+            return redirect()->route('profil2.dashboard');
         }
     }
 
@@ -56,7 +67,7 @@ Route::get('/', function () {
 
 
 // inventaris qr tanpalogin
-Route::get('/inventaris/qr/{kode}',[GudangCabangController::class, 'inventarisQr'])->name('inventaris.qr.public');
+Route::get('/inventaris/qr/{kode}', [GudangCabangController::class, 'inventarisQr'])->name('inventaris.qr.public');
 
 Route::middleware(['auth'])->group(function () {
     // Ganti middleware role agar bisa diakses semua role yang berkepentingan
@@ -76,15 +87,17 @@ Route::middleware(['auth'])->group(function () {
         ->name('laporan.charge.pdf');
     Route::get('/laporan-charge/excel', [LaporanController::class, 'exportChargeExcel'])
         ->name('laporan.charge.excel');
+
+    // laporan bahan baku
+    Route::get('/laporan/bahanbaku', [LaporanController::class, 'laporanBahanBaku'])
+        ->name('laporan.bahan-baku');
+    Route::get('/laporan/kinerja-desainer-detail', [LaporanController::class, 'laporanKinerjaDesainerDetail'])
+        ->name('laporan.kinerjaDesainerDetail');
 });
 
-Route::middleware('auth')->group(function (){
+Route::middleware('auth')->group(function () {
     Route::get('/user-setting', [UserController::class, 'indexSetting'])
-    ->name('user.setting');
+        ->name('user.setting');
     Route::put('/user-setting', [UserController::class, 'updateUser'])
-    ->name('user.update');
+        ->name('user.update');
 });
-
-
-
-

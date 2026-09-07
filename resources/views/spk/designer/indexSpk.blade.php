@@ -114,7 +114,7 @@
                             </thead>
                             <tbody>
                                 @forelse($spks as $spk)
-                                <tr>
+                                <tr class="{{ $spk->is_dicatat ? 'bg-gray-200' : '' }}">
                                     {{-- KOLOM 1: NO SPK --}}
                                     <td class="ps-3">
                                         <div class="d-flex px-2 py-1">
@@ -164,6 +164,19 @@
                                     {{-- KOLOM 6: AKSI --}}
                                     <td class="align-middle text-end pe-4">
                                         <div class="d-flex justify-content-end align-items-center gap-2">
+
+                                            {{-- TOMBOL TANDAI SUDAH DICATAT --}}
+                                            @hasrole('manajemen|admin')
+                                            <form action="{{ route('spk.tandai-dicatat', $spk->id) }}" method="POST" class="d-inline m-0">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button type="submit" class="badge {{ $spk->is_dicatat ? 'bg-gradient-secondary' : 'bg-gradient-dark' }} border-0 text-white text-xs cursor-pointer" data-toggle="tooltip" title="{{ $spk->is_dicatat ? 'Batal Tandai' : 'Tandai Sudah Dicatat' }}">
+                                                    <i class="material-icons text-xs position-relative" style="top: 1px;">
+                                                        {{ $spk->is_dicatat ? 'check_box' : 'check_box_outline_blank' }}
+                                                    </i>
+                                                </button>
+                                            </form>
+                                            @endhasrole
 
                                             {{-- TOMBOL LIHAT DETAIL (MATA) --}}
                                             <a href="{{ route('spk.show', $spk->id) }}" class="badge bg-gradient-info text-white text-xs" data-toggle="tooltip" title="Lihat Detail Item">

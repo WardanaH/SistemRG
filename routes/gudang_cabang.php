@@ -134,3 +134,4 @@ Route::middleware(['auth', 'role:inventory cabang'])
             ->name('pengambilan.destroy');
 
     });
+

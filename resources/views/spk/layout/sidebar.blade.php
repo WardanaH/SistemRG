@@ -138,6 +138,7 @@
                     <span class="nav-link-text ms-1">Data SPK Bantuan</span>
                 </a>
             </li>
+
             <li class="nav-item">
                 <a class="nav-link text-white {{ request()->routeIs('spk-lembur.index') ? 'active bg-gradient-primary' : '' }}"
                     href="{{ route('spk-lembur.index') }}">
@@ -270,6 +271,18 @@
                         <i class="material-icons opacity-10">attach_money</i>
                     </div>
                     <span class="nav-link-text ms-1">Laporan Charge Design</span>
+                </a>
+            </li>
+            @endhasrole
+
+            @hasrole('manajemen|admin|designer')
+            <li class="nav-item">
+                <a class="nav-link text-white {{ request()->routeIs('laporan.kinerjaDesainerDetail') ? 'active bg-gradient-primary' : '' }}"
+                    href="{{ route('laporan.kinerjaDesainerDetail') }}">
+                    <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+                        <i class="material-icons opacity-10">attach_money</i>
+                    </div>
+                    <span class="nav-link-text ms-1">Laporan Kinerja Detail</span>
                 </a>
             </li>
             @endhasrole

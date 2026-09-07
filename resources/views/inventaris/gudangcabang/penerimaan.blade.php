@@ -229,7 +229,7 @@
                                     <td class="text-center">
                                         <button type="button"
                                             class="btn btn-link text-primary btn-detail"
-                                            data-detail='@json($detail)'
+                                            data-detail="{{ json_encode($r->detail_dengan_stok) }}"
                                             data-detail-terima='@json($r->keterangan_terima)'
                                             data-kode="{{ $r->kode_pengiriman }}"
                                             data-cabang="{{ $cabang->nama }}"
@@ -473,6 +473,7 @@ $(document).on('click', '.btn-detail', function() {
                         <th>Barang</th>
                         <th>Qty</th>
                         <th>Satuan</th>
+                        <th>Stok Saat Ini</th>
                         <th>Keterangan</th>
                     </tr>
                 </thead>
@@ -488,6 +489,7 @@ $(document).on('click', '.btn-detail', function() {
                 <td class="fw-semibold">${d.nama_barang}</td>
                 <td>${d.jumlah}</td>
                 <td>${d.satuan}</td>
+                <td>${d.stok_cabang !== undefined ? d.stok_cabang : 0}</td>
                 <td class="text-muted">${d.keterangan ? d.keterangan : '-'}</td>
             </tr>
             `;
