@@ -168,10 +168,41 @@ class GudangPusatControllerV2 extends Controller
     {
         $query = DetailPermintaan::with(['permintaan.gudang', 'barangPusat']);
 
+        // 1. Filter Pencarian Nama Barang
         if ($request->filled('search')) {
             $query->whereHas('barangPusat', function ($q) use ($request) {
                 $q->where('nama_bahan', 'like', '%' . $request->search . '%');
             });
+        }
+
+        // 2. Filter Periode Tanggal
+        $periode = $request->periode ?? 'semua'; // Default 'semua' biar amun hanyar buka, tampil barataan
+
+        if ($periode === 'custom') {
+            if ($request->filled('start_date') && $request->filled('end_date')) {
+                $startDate = Carbon::parse($request->start_date)->startOfDay();
+                $endDate = Carbon::parse($request->end_date)->endOfDay();
+                $query->whereBetween('created_at', [$startDate, $endDate]);
+            }
+        } elseif ($periode !== 'semua') {
+            $now = now();
+            $start = now();
+
+            switch ($periode) {
+                case '1_bulan':
+                    $start = now()->subMonth();
+                    break;
+                case '3_bulan':
+                    $start = now()->subMonths(3);
+                    break;
+                case '6_bulan':
+                    $start = now()->subMonths(6);
+                    break;
+                case '1_tahun':
+                    $start = now()->subYear();
+                    break;
+            }
+            $query->whereBetween('created_at', [$start, $now]);
         }
 
         // Hitung total keseluruhan
@@ -179,10 +210,10 @@ class GudangPusatControllerV2 extends Controller
         $totalDikirim = $query->sum('jumlah_disetujui');
         $totalDiterima = $query->sum('jumlah_diterima');
 
-        // Bikin rekap per cabang amun ada pencarian
+        // Bikin rekap per cabang amun ada pencarian atawa filter
         $rekapPerCabang = collect();
-        if ($request->filled('search')) {
-            // Ambil semua data (tanpa paginate) gasan dihitung per cabang
+        // Tampilkan rekap amun user me-request pencarian atau memilih periode selain 'semua'
+        if ($request->filled('search') || request('periode', 'semua') !== 'semua') {
             $allData = (clone $query)->get();
 
             $rekapPerCabang = $allData->groupBy(function ($item) {
@@ -203,7 +234,7 @@ class GudangPusatControllerV2 extends Controller
             'totalDiminta',
             'totalDikirim',
             'totalDiterima',
-            'rekapPerCabang' // Passing variabel baru ke view
+            'rekapPerCabang'
         ));
     }
 }
