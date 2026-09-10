@@ -8,24 +8,66 @@
             <h3 class="card-title">Laporan Distribusi Barang</h3>
         </div>
         <div class="card-body">
-            {{-- Form Pencarian --}}
+
+            {{-- Form Pencarian & Filter Terpadu --}}
             <form action="{{ route('gudang-pusat.laporan.barang') }}" method="GET" class="mb-4">
-                <div class="row align-items-end">
-                    <div class="col-md-9 mb-3">
+                <div class="row align-items-end mb-3">
+                    <div class="col-md-12">
                         <label class="form-label text-sm fw-bold">Cari Nama Barang</label>
                         <input type="text" name="search" class="form-control border px-3 py-2"
                             placeholder="Contoh: flexy 280..." value="{{ request('search') }}">
                     </div>
+                </div>
+
+                <div class="row align-items-end">
+                    <!-- Filter Dropdown -->
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label text-sm fw-bold">Periode Laporan</label>
+                        <select name="periode" id="periode" class="select2 form-select border px-3 py-2"
+                            onchange="toggleCustomDate()">
+                            <option value="semua" {{ request('periode') == 'semua' ? 'selected' : '' }}>Semua Waktu
+                            </option>
+                            <option value="1_bulan" {{ request('periode') == '1_bulan' ? 'selected' : '' }}>1 Bulan Terakhir
+                            </option>
+                            <option value="3_bulan" {{ request('periode') == '3_bulan' ? 'selected' : '' }}>3 Bulan Terakhir
+                            </option>
+                            <option value="6_bulan" {{ request('periode') == '6_bulan' ? 'selected' : '' }}>6 Bulan Terakhir
+                            </option>
+                            <option value="1_tahun" {{ request('periode') == '1_tahun' ? 'selected' : '' }}>1 Tahun Terakhir
+                            </option>
+                            <option value="custom" {{ request('periode') == 'custom' ? 'selected' : '' }}>Pilih Tanggal
+                                Sendiri</option>
+                        </select>
+                    </div>
+
+                    <!-- Custom Date (Disembunyikan default) -->
+                    <div class="col-md-6 mb-3" id="custom_date_wrapper"
+                        style="display: {{ request('periode') == 'custom' ? 'block' : 'none' }};">
+                        <div class="d-flex align-items-center gap-2">
+                            <div>
+                                <label class="form-label text-sm fw-bold">Dari</label>
+                                <input type="date" name="start_date" class="form-control border px-3 py-2"
+                                    value="{{ request('start_date') }}">
+                            </div>
+                            <div class="mt-4">-</div>
+                            <div>
+                                <label class="form-label text-sm fw-bold">Sampai</label>
+                                <input type="date" name="end_date" class="form-control border px-3 py-2"
+                                    value="{{ request('end_date') }}">
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="col-md-3 mb-3">
                         <button type="submit" class="btn bg-gradient-primary w-100 mb-0 px-4 py-2">
-                            <i class="fas fa-search me-1"></i> Cari Barang
+                            <i class="fas fa-filter me-1"></i> Terapkan Filter
                         </button>
                     </div>
                 </div>
             </form>
 
-            {{-- KOTAK TOTAL (Tampil amun ada pencarian) --}}
-            @if (request('search'))
+            {{-- KOTAK TOTAL DAN REKAP (Tampil amun ada pencarian atau filter) --}}
+            @if (request('search') || (request('periode') && request('periode') != 'semua'))
                 <div class="row mb-4">
                     <div class="col-md-4">
                         <div class="card shadow-sm border-0 bg-gradient-info text-white">
@@ -52,6 +94,7 @@
                         </div>
                     </div>
                 </div>
+
                 {{-- REKAP PER CABANG --}}
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-light py-2">
@@ -62,8 +105,7 @@
                             <thead class="bg-white">
                                 <tr>
                                     <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Nama
-                                        Cabang
-                                    </th>
+                                        Cabang</th>
                                     <th
                                         class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center">
                                         Total Diminta</th>
@@ -107,15 +149,13 @@
                                 <tr>
                                     <th
                                         class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center">
-                                        No
-                                    </th>
+                                        No</th>
                                     <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Tanggal
                                     </th>
                                     <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Barang
                                     </th>
                                     <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Cabang
-                                        Peminta
-                                    </th>
+                                        Peminta</th>
                                     <th
                                         class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center">
                                         Diminta</th>
@@ -135,11 +175,9 @@
                                         <td class="text-sm align-middle">
                                             {{ \Carbon\Carbon::parse($item->created_at)->format('d M Y') }}</td>
                                         <td class="text-sm fw-bold align-middle">
-                                            {{ $item->barangPusat->nama_bahan ?? '-' }}
-                                        </td>
+                                            {{ $item->barangPusat->nama_bahan ?? '-' }}</td>
                                         <td class="text-sm align-middle">
-                                            {{ optional($item->permintaan->gudang)->nama ?? '-' }}
-                                        </td>
+                                            {{ optional($item->permintaan->gudang)->nama ?? '-' }}</td>
                                         <td class="text-sm text-center align-middle fw-bold">{{ $item->jumlah_diminta }}
                                         </td>
                                         <td class="text-sm text-center align-middle text-primary fw-bold">
@@ -149,15 +187,14 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="7" class="text-center py-4 text-sm">Barang kada ditemukan atau balum
-                                            ada
-                                            transaksi.</td>
+                                        <td colspan="7" class="text-center py-4 text-sm">Barang tidak ditemukan atau
+                                            belum ada transaksi.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
                         </table>
                     </div>
-                    <div class="d-flex justify-content-end mt-3">
+                    <div class="d-flex justify-content-end mt-3 px-3">
                         {{ $laporan->links('pagination::bootstrap-5') }}
                     </div>
                 </div>
@@ -165,3 +202,23 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+    <script>
+        function toggleCustomDate() {
+            let periode = document.getElementById('periode').value;
+            let customDateWrapper = document.getElementById('custom_date_wrapper');
+
+            if (periode === 'custom') {
+                customDateWrapper.style.display = 'block';
+            } else {
+                customDateWrapper.style.display = 'none';
+            }
+        }
+
+        // Jalankan sekali saat halaman dimuat
+        document.addEventListener('DOMContentLoaded', function() {
+            toggleCustomDate();
+        });
+    </script>
+@endpush
