@@ -18,8 +18,13 @@ Route::middleware(['auth', 'role:inventory cabang'])->prefix('gudang-cabangs')->
         ->name('gudang-cabang.permintaan.riwayat');
 
     // Rute untuk penerimaan barang
-    Route::get('/gudang-cabang/permintaan/penerimaan', [GudangCabangControllerV2::class, 'penerimaan'])
+    Route::get('/permintaan/penerimaan', [GudangCabangControllerV2::class, 'penerimaan'])
         ->name('gudang-cabang.permintaan.penerimaan');
-    Route::post('/gudang-cabang/permintaan/{id}/terima', [GudangCabangControllerV2::class, 'terimaBarang'])
+    Route::post('/permintaan/{id}/terima', [GudangCabangControllerV2::class, 'terimaBarang'])
         ->name('gudang-cabang.permintaan.terima');
+
+    // Rute Pengambilan barang ke pihak lain
+    Route::get('/pengambilan', [GudangCabangControllerV2::class, 'index_pengambilan'])->name('gudang-cabang.pengambilan.index');
+    Route::get('/pengambilan/create', [GudangCabangControllerV2::class, 'pengambilan_create'])->name('gudang-cabang.pengambilan.create');
+    Route::post('/pengambilan', [GudangCabangControllerV2::class, 'pengambilan_store'])->name('gudang-cabang.pengambilan.store');
 });

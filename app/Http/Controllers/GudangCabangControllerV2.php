@@ -9,10 +9,15 @@ use App\Models\PermintaanBarang;
 use App\Models\DetailPermintaan;
 use App\Models\MCabangBarang;
 use App\Models\MGudangBarang; // <-- Sudah diganti ka MGudangBarang
+use App\Models\Pengambilan;
+use App\Models\PengambilanDetail;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class GudangCabangControllerV2 extends Controller
 {
+
+    // area distribusi
     public function dashboard()
     {
         $today = Carbon::today();
@@ -217,6 +222,83 @@ class GudangCabangControllerV2 extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Gagal manerima barang: ' . $e->getMessage());
+        }
+    }
+
+    // area pengambilan ke pihak lain
+    public function index_pengambilan()
+    {
+        // Ambil riwayat terbaru, load relasi, dan batasi 10 per halaman
+        $riwayat = Pengambilan::with(['cabang', 'detail'])
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return view('distribusi.gudang_cabang.pengambilan.index', compact('riwayat'));
+    }
+
+    public function pengambilan_create()
+    {
+        return view('distribusi.gudang_cabang.pengambilan.create');
+    }
+
+    public function pengambilan_store(Request $request)
+    {
+        // 1. Validasi inputan array
+        $request->validate([
+            'nama_barang' => 'required|array',
+            'nama_barang.*' => 'required|string|max:255',
+            'ukuran_barang' => 'nullable|array',
+            'ukuran_barang.*' => 'nullable|string|max:100',
+            'jumlah_barang' => 'required|array',
+            'jumlah_barang.*' => 'required|integer|min:1',
+            'atas_nama' => 'nullable|array',
+            'atas_nama.*' => 'nullable|string|max:255',
+            'ambil_ke' => 'required|array',
+            'ambil_ke.*' => 'required|string|max:255',
+        ]);
+        dd($request->all());
+
+        try {
+            DB::beginTransaction();
+
+            // 2. Olah Nomor Pengambilan Otomatis (Contoh: PGL-20260914-001)
+            $hariIni = now()->format('Ymd');
+            $jumlahHariIni = Pengambilan::whereDate('created_at', now()->today())->count() + 1;
+            $nomorPengambilan = 'PGL-' . $hariIni . '-' . str_pad($jumlahHariIni, 3, '0', STR_PAD_LEFT);
+
+            // 3. Simpan ka tabel utama (pengambilan)
+            $pengambilan = Pengambilan::create([
+                'cabang_id' => Auth::user()->cabang_id, // Sesuaikan amun field relasi di tabel user nyawa beda ngarannya
+                'nomor_pengambilan' => $nomorPengambilan,
+                'foto_pengambilan' => null // Dikosongkan dangsanak ai karna nyawa balum butuh foto
+            ]);
+
+            // 4. Looping gasan menyusun data detail pengambilan
+            $detailData = [];
+            foreach ($request->nama_barang as $index => $nama) {
+                $detailData[] = [
+                    'id_pengambilan' => $pengambilan->id,
+                    'nama_barang' => $nama,
+                    'ukuran_barang' => $request->ukuran_barang[$index] ?? null,
+                    'jumlah_barang' => $request->jumlah_barang[$index],
+                    'atas_nama' => $request->atas_nama[$index] ?? null,
+                    'ambil_ke' => $request->ambil_ke[$index],
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+
+            // 5. Insert sekaligus ka tabel pengambilan_detail
+            PengambilanDetail::insert($detailData);
+
+            DB::commit();
+
+            // Sesuaikan route redirect-nya ka halaman nang bujur
+            return redirect()->back()->with('success', 'Data pengambilan barang berhasil disimpan!');
+        } catch (\Exception $e) {
+            Log::error('Gagal menyimpan data pengambilan barang: ' . $e->getMessage());
+            DB::rollBack();
+            return back()->with('error', 'Gagal menyimpan data: ' . $e->getMessage());
         }
     }
 }
