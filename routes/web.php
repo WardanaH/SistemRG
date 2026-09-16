@@ -34,6 +34,10 @@ require __DIR__ . '/profil.php';
 require __DIR__ . '/profil2.php';
 require __DIR__ . '/advertising.php';
 
+Route::get('/landingpage', function () {
+    return view('landing');
+})->name('landingpage');
+
 Route::get('/', function () {
     // 1. Cek apakah user sudah login
     if (auth()->check()) {
