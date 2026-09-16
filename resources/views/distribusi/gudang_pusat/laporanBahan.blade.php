@@ -11,16 +11,35 @@
 
             {{-- Form Pencarian & Filter Terpadu --}}
             <form action="{{ route('gudang-pusat.laporan.barang') }}" method="GET" class="mb-4">
+
                 <div class="row align-items-end mb-3">
-                    <div class="col-md-12">
+                    <!-- Cari Nama Barang -->
+                    <div class="col-md-8 mb-3 mb-md-0">
                         <label class="form-label text-sm fw-bold">Cari Nama Barang</label>
                         <input type="text" name="search" class="form-control border px-3 py-2"
                             placeholder="Contoh: flexy 280..." value="{{ request('search') }}">
                     </div>
+
+                    <!-- Filter Cabang -->
+                    <div class="col-md-4">
+                        <label class="form-label text-sm fw-bold">Filter Cabang</label>
+                        <select name="cabang_id" class="select2 form-select border px-3 py-2">
+                            <option value="semua" {{ request('cabang_id') == 'semua' ? 'selected' : '' }}>Semua Cabang
+                            </option>
+                            @if (isset($cabangs))
+                                @foreach ($cabangs as $cabang)
+                                    <option value="{{ $cabang->id }}"
+                                        {{ request('cabang_id') == $cabang->id ? 'selected' : '' }}>
+                                        {{ $cabang->nama }}
+                                    </option>
+                                @endforeach
+                            @endif
+                        </select>
+                    </div>
                 </div>
 
                 <div class="row align-items-end">
-                    <!-- Filter Dropdown -->
+                    <!-- Filter Dropdown Periode -->
                     <div class="col-md-3 mb-3">
                         <label class="form-label text-sm fw-bold">Periode Laporan</label>
                         <select name="periode" id="periode" class="select2 form-select border px-3 py-2"
@@ -33,8 +52,8 @@
                             </option>
                             <option value="6_bulan" {{ request('periode') == '6_bulan' ? 'selected' : '' }}>6 Bulan Terakhir
                             </option>
-                            <option value="1_tahun" {{ request('periode') == '1_tahun' ? 'selected' : '' }}>1 Tahun Terakhir
-                            </option>
+                            <option value="1_tahun" {{ request('periode') == '1_tahun' ? 'selected' : '' }}>1 Tahun
+                                Terakhir</option>
                             <option value="custom" {{ request('periode') == 'custom' ? 'selected' : '' }}>Pilih Tanggal
                                 Sendiri</option>
                         </select>
@@ -66,8 +85,10 @@
                 </div>
             </form>
 
-            {{-- KOTAK TOTAL DAN REKAP (Tampil amun ada pencarian atau filter) --}}
-            @if (request('search') || (request('periode') && request('periode') != 'semua'))
+            {{-- KOTAK TOTAL DAN REKAP (Tampil amun ada pencarian atawa filter) --}}
+            @if (request('search') ||
+                    (request('periode') && request('periode') != 'semua') ||
+                    (request('cabang_id') && request('cabang_id') != 'semua'))
                 <div class="row mb-4">
                     <div class="col-md-4">
                         <div class="card shadow-sm border-0 bg-gradient-info text-white">
